@@ -1,0 +1,10 @@
+{
+  "name": "agent-skills",
+  "version": "0.0.1",
+  "description": "PowerSync Agent Skills for developers building applications with PowerSync.",
+  "main": "",
+  "keywords": [],
+  "author": "",
+  "license": "CC0-1.0",
+  "packageManager": "pnpm@10.30.2"
+}

@@ -34,5 +34,5 @@ Update my list to use a reactive watch query so users can see updates in real-ti
 Suggest sync streams based on my current schema, where the user should only sync projects for tenant that they belong to.
 ```
 ```
-Add a upload endpoint to my backend API that accepts write operations from client applications.
+Add an upload endpoint to my backend API that accepts write operations from client applications.
 ```

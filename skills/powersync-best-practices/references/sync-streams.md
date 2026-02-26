@@ -142,7 +142,10 @@ There are big differences between Sync Rules and Sync Streams, consider the foll
 Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](http://localhost:3000/sync/streams/client-usage) Usage for a full breakdown.
 This covers topics such as:
 - Initializing a subscription
-- 
+- Inspect the sync status of a subscription
+- Waiting for the first sync of a subscription
+- Setting a TTL on a subscription
+- Unsubscribing
 
 There are examples available for each PowerSync Client SDK.
 

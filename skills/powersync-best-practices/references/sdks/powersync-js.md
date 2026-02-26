@@ -1,8 +1,8 @@
 # PowerSync JavaScript/TypeScript SDK
 
-Best practices and guidance for building apps with the PowerSync JavaScript/TypeScript SDK. Use this reference when setting up PowerSync in a JS/TS project, selecting the right package for a target platform (web, React Native, Node.js, Capacitor), configuring the client, defining schemas, writing queries, or handling sync lifecycle events.
+Best practices and guidance for building apps with the PowerSync JavaScript/TypeScript SDK. Use this reference when setting up PowerSync in a JS/TS project, selecting the right package for a target platform (web, React Native, Node.js, Capacitor, Vue), configuring the client, defining schemas, writing queries, or handling sync lifecycle events.
 
-## Package Selection
+## Package Coverage
 
 | Need | Package |
 |------|---------|
@@ -12,7 +12,7 @@ Best practices and guidance for building apps with the PowerSync JavaScript/Type
 | Capacitor | `@powersync/capacitor` |
 | React hooks | `@powersync/react` |
 | Vue composables | `@powersync/vue` |
-| Type-safe ORM | `@powersync/drizzle-driver` or `@powersync/kysely-driver` |
+| ORM | `@powersync/drizzle-driver` or `@powersync/kysely-driver` |
 
 ## Quick Setup
 
@@ -21,17 +21,21 @@ Best practices and guidance for building apps with the PowerSync JavaScript/Type
 ```bash
 # Web
 npm install @powersync/web
+npm install @journeyapps/wa-sqlite # Needed (peer-dependency)
 
-# React Native (choose one)
+# React Native
 npm install @powersync/react-native
-npm install @powersync/powersync-op-sqlite  # Needed (peer-dependecy)
+npm install @powersync/powersync-op-sqlite  # Needed (peer-dependency)
 
 # Node.js
 npm install @powersync/node
-npm install better-sqlite3 # Needed (peer-dependecy)
+npm install better-sqlite3 # Needed (peer-dependency)
 
 # React integration
 npm install @powersync/react
+
+# Vue 
+npm install @powersync/vue
 ```
 
 ### 2. Define Schema
@@ -127,6 +131,8 @@ export async function initPowerSync() {
 }
 ```
 
+### 5. PowerSync 
+
 ## Query Patterns
 
 ### One-Time Queries
@@ -143,8 +149,7 @@ const todo = await db.getOptional('SELECT * FROM todos WHERE id = ?', [id]);
 
 // Execute (INSERT/UPDATE/DELETE)
 await db.execute(
-  'INSERT INTO todos (id, description, completed) VALUES (?, ?, ?)',
-  [crypto.randomUUID(), 'New todo', 0]
+  'INSERT INTO todos (id, description, completed) VALUES (uuid(), ?, ?)', 'New todo', 0]
 );
 ```
 
@@ -161,9 +166,6 @@ const unsubscribe = db.watch(
     }
   }
 );
-
-// Cleanup
-unsubscribe();
 ```
 
 ### Incremental Watch (v1.4.0+)
@@ -185,10 +187,8 @@ const unsubscribe = db.watch(
 
 ```typescript
 await db.writeTransaction(async (tx) => {
-  const listId = crypto.randomUUID();
   await tx.execute('INSERT INTO lists (id, name) VALUES (?, ?)', [listId, 'Shopping']);
-  await tx.execute('INSERT INTO todos (id, list_id, description) VALUES (?, ?, ?)',
-    [crypto.randomUUID(), listId, 'Buy milk']);
+  await tx.execute('INSERT INTO todos (id, list_id, description) VALUES (uuid(), ?, ?)', listId, 'Buy milk']);
 });
 ```
 
@@ -317,8 +317,7 @@ try {
 // Writes are instant - no loading states needed
 async function addTodo(text: string) {
   await db.execute(
-    'INSERT INTO todos (id, description, completed) VALUES (?, ?, ?)',
-    [crypto.randomUUID(), text, 0]
+    'INSERT INTO todos (id, description, completed) VALUES (uuid(), ?, ?)', [text, 0]
   );
   // UI updates automatically via reactive query
   // No spinner, no "saving...", no refresh needed
@@ -395,19 +394,6 @@ function App() {
 4. **Use incremental watch** - For lists with 100+ items
 5. **Paginate large results** - Use LIMIT/OFFSET
 
-## Verification
-
-```bash
-# Type check
-npx tsc --noEmit
-
-# Validate PowerSync config
-npx powersync validate
-
-# Test connection
-npx powersync diagnose
-```
-
 ## Common Issues
 
 | Issue | Solution |
@@ -415,5 +401,4 @@ npx powersync diagnose
 | "Database not connected" | Call `db.connect(connector)` before queries |
 | "Schema mismatch" | Ensure client schema matches sync rules |
 | Upload queue growing | Check `uploadData` calls `batch.complete()` |
-| Slow initial sync | Review bucket sizes, use priority sync |
-| Web worker errors | Ensure COOP/COEP headers set for SharedArrayBuffer |
+| Slow initial sync | Review bucket sizes |

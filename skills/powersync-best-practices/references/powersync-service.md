@@ -4,73 +4,36 @@ Guidance for configuring PowerSync Service, sync rules, and database replication
 
 ## Architecture Overview
 
-```
-                              DOWNLOAD PATH (Sync)
-┌─────────────────┐     ┌──────────────────────────────────┐     ┌────────────┐
-│ Source Database │────▶│       PowerSync Service          │────▶│  Clients   │
-│  (Postgres/etc) │     │  ┌──────────┐  ┌─────────────┐   │     │  (SDKs)    │
-│                 │     │  │Replicator│  │ Sync Engine │   │     │            │
-└─────────────────┘     │  └──────────┘  └─────────────┘   │     └────────────┘
-         ▲              └──────────────────────────────────┘            │
-         │                                                              │
-         │                     UPLOAD PATH                              │
-         │              (Bypasses PowerSync Service)                    │
-         │                                                              │
-┌─────────────────┐                                                     │
-│  Your Backend   │◀────────────────────────────────────────────────────┘
-│      API        │
-└─────────────────┘
-```
+### Download Path 
+The source database (Postgres or other supported databases) is connected to the PowerSync Service, which internally consists of a Replicator and API. The PowerSync Service streams data down to clients via the SDKs.
 
 **Important:** The PowerSync Service handles the **download/sync path only**. Client uploads go directly to your backend API, which then writes to the source database. PowerSync picks up those changes via replication.
 
-## Sync Rules Examples
+## Sync Rules Information
 
 [sync-rules.md](./sync-rules.md)
 
-## Service Configuration
+## Sync Streams Information
 
-### Environment Variables
+[sync-rules.md](./sync-streams.md)
 
-```bash
-# Database connection
-POWERSYNC_DATABASE_URL=postgresql://user:pass@host:5432/db
+## Service Configuration (Self-hosted)
 
-# JWT authentication
-POWERSYNC_JWT_SECRET=your-jwt-secret
-POWERSYNC_JWT_AUDIENCE=your-app
+There are various options when configuring a PowerSync instance. See [Configuration File Structure](http://localhost:3000/configuration/powersync-service/self-hosted-instances#configuration-file-structure) for an outline on what's possible. 
 
-# Service settings
-POWERSYNC_PORT=8080
-POWERSYNC_LOG_LEVEL=info
-```
+### Bucket Storage Database
+This is required by PowerSync and can be configured in two different ways.
 
-### YAML Configuration
+| Storage Database | Configuration Reference                                                                                   |
+|-----------------|--------------------------------------------------------------------------------------------------------------|
+| MongoDB         | [MongoDB Storage](http://localhost:3000/configuration/powersync-service/self-hosted-instances#mongodb-storage) |
+| Postgres        | [Postgres Storage](http://localhost:3000/configuration/powersync-service/self-hosted-instances#postgres-storage) |
 
-```yaml
-# powersync.yaml
-replication:
-  source:
-    type: postgresql  # or mongodb, mysql, mssql
-    uri: ${POWERSYNC_DATABASE_URL}
+### Client Authentication
 
-storage:
-  type: postgresql
-  uri: ${POWERSYNC_STORAGE_URL}
+There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](http://localhost:3000/configuration/powersync-service/self-hosted-instances#client-authentication) for more information on the options.
 
-api:
-  port: 8080
-
-sync_rules:
-  path: ./sync-rules.yaml
-
-client_auth:
-  supabase_jwt_secret: ${SUPABASE_JWT_SECRET}
-  # OR
-  jwks_uri: https://your-auth-provider/.well-known/jwks.json
-```
-
-## Database Replication Setup
+## Source Database Setup
 
 ### PostgreSQL
 
@@ -185,50 +148,6 @@ JWT tokens must include:
 - `sub` - User ID (accessible via `request.user_id()`)
 - `aud` - Audience (must match config)
 - `exp` - Expiration time
-
-Custom claims accessible via `request.jwt()`.
-
-## Performance Tuning
-
-### Bucket Design
-
-**Good:**
-- Small buckets (100s-1000s of rows)
-- Clear partition boundaries
-- Minimal cross-bucket references
-
-**Bad:**
-- Single bucket for all users
-- Buckets with millions of rows
-- Frequent bucket membership changes
-
-### Compacting
-
-Reduces storage by combining updates to same row:
-
-```yaml
-# powersync.yaml
-compacting:
-  enabled: true
-  interval: 86400  # Daily
-```
-
-## Docker Deployment
-
-```yaml
-# docker-compose.yaml
-version: '3.8'
-services:
-  powersync:
-    image: journeyapps/powersync-service:latest
-    ports:
-      - "8080:8080"
-    environment:
-      - POWERSYNC_DATABASE_URL=postgresql://...
-      - POWERSYNC_JWT_SECRET=...
-    volumes:
-      - ./sync-rules.yaml:/app/sync-rules.yaml
-```
 
 ## Troubleshooting
 

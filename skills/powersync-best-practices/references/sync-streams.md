@@ -151,14 +151,14 @@ There are examples available for each PowerSync Client SDK.
 
 | SDK                  | Client Usage Reference URL                                                                                         |
 |----------------------|-------------------------------------------------------------------------------------------------------------------|
-| TypeScript/JavaScript| [Client Usage](http://localhost:3000/sync/streams/client-usage#typescript%2Fjavascript)                           |
-| Dart                 | [Client Usage](http://localhost:3000/sync/streams/client-usage#dart)                                              |
-| Kotlin               | [Client Usage](http://localhost:3000/sync/streams/client-usage#kotlin)                                            |
-| Swift                | [Client Usage](http://localhost:3000/sync/streams/client-usage#swift)                                             |
-| .NET                 | [Client Usage](http://localhost:3000/sync/streams/client-usage#net)                                               |
+| TypeScript/JavaScript| [Client Usage](http://localhost:3000/sync/streams/client-usage.md#typescript%2Fjavascript)                           |
+| Dart                 | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#dart)                                              |
+| Kotlin               | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#kotlin)                                            |
+| Swift                | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#swift)                                             |
+| .NET                 | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#net)                                               |
 
 ### Frameworks 
 
 | Framework                 | Client Usage Reference URL                                                                                         |
 |---------------------------|--------------------------------------------------------------------------------------------------------------------|
-| React                     | [Client Usage](http://localhost:3000/sync/streams/client-usage#react-hooks)                                        |
+| React                     | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#react-hooks)                                        |

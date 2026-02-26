@@ -18,3 +18,10 @@ Contains references to specific components of PowerSync.
 | [powersync-debug.md](references/powersync-debug.md) | Skills references for debugging and troubleshooting PowerSync applications. |
 | [sync-rules.md](references/sync-rules.md) | Skills reference for Sync Rules. |
 | [sync-streams.md](references/sync-streams.md) | Skills reference for Sync Streams. Suggested default.  |
+
+## SDK Mapping
+
+| SDK | Description |
+|-----------|-------------|
+| [powersync-js](references/sdks/powersync-js.md) | Use this skills reference if you're working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for ORMs such as Kysely, Drizzle and TanStack DB |
+| [powersync-swift](references/sdks/powersync-swift.md) | Use this skills reference if you're working on Swfit applications. It also includes references for ORM support using GRDB |

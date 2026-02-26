@@ -6,7 +6,7 @@ These PowerSync skills follow the [Agent Skills](https://agentskills.io/) specif
 
 ## Available Skills
 
-| SDK                  | Description|
+| Skill                  | Description|
 |----------------------|-----------------------|
 | PowerSync Best Practices|Comprehensive PowerSync Agent Skills that covers best practices and know-how's to get the best out of PowerSync|
 

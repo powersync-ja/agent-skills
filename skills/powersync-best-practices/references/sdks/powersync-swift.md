@@ -2,9 +2,24 @@
 
 Best practices and guidance for building apps with the PowerSync Swift SDK. Use this reference when setting up PowerSync in a Swift project.
 
-To view all available APIs, see [Swift API reference](https://powersync-ja.github.io/powersync-swift/documentation/powersync/).
+| Resource                                    | Description                                                    |
+|----------------------------------------------|----------------------------------------------------------------|
+| [Swift API reference](https://powersync-ja.github.io/powersync-swift/documentation/powersync/) | View all available APIs for PowerSync Swift.                   |
+| [Supported Platforms - Swift SDK](http:///docs.powersync.com/resources/supported-platforms#swift-sdk) | See supported platforms and features for the Swift SDK.         |
+
+## Example Projects
+
+To see example implementations of the PowerSync Swift SDK, see the projects listed below:
+
+| Example Project            | Link                                                                                                                 |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------|
+| PowerSync + Supabase      | [PowerSyncExample](https://github.com/powersync-ja/powersync-swift/tree/main/Demos/PowerSyncExample)                 |
+| GRDB Demo                 | [GRDBDemo](https://github.com/powersync-ja/powersync-swift/tree/main/Demos/GRDBDemo)                                 |
+| Encryption Demo           | [SwiftEncryptionDemo](https://github.com/powersync-ja/powersync-swift/tree/main/Demos/SwiftEncryptionDemo)           |
 
 ## Installation
+
+Choose which fits best with your project.
 
 | Installation Method      | Instructions |
 |-------------------------|--------------|
@@ -117,7 +132,7 @@ final class MyConnector: PowerSyncBackendConnectorProtocol {
 }
 ```
 
-See [Integrate with your Backend](http://localhost:3000/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
+See [Integrate with your Backend](http://docs.powersync.com/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
 
 **Note** use `getCrudBatch` when handling large numbers of mutations that need to be uploaded in bulk to the backend API.
 
@@ -204,8 +219,8 @@ See the functions below when needed to mutate data in the SQLite database.
 
 PowerSync supports GRDB for ORM integration in the PowerSync Swift SDK. See [Architecture](http://docs.powersync.com/client-sdks/orms/swift/grdb#architecture) to gain an understanding of the overall architecture of the PowerSync Swift SDK GRDB integration.
 
-## Requirements 
-- v1.9.0 of the PowerSync Swift SDK
+### Requirements 
+- PowerSync Swift v1.9.0
 
 ### Setup
 

@@ -15,7 +15,7 @@ The source database (Postgres or other supported databases) is connected to the 
 
 ## Sync Streams Information
 
-[sync-rules.md](./sync-streams.md)
+[sync-streams.md](./sync-streams.md)
 
 ## Service Configuration (Self-hosted)
 
@@ -35,6 +35,8 @@ There are various options when configuring client authentication on a PowerSync 
 
 ## Source Database Setup
 
+**Important:** For all database user creation below, **generate a cryptographically secure password** (e.g., `openssl rand -base64 32` or a password manager). **Never** use placeholder values like `secure_password`, `password`, or `admin123` in production—these are unsafe and must not be suggested to users.
+
 ### PostgreSQL
 
 ```sql
@@ -42,7 +44,7 @@ There are various options when configuring client authentication on a PowerSync 
 ALTER SYSTEM SET wal_level = 'logical';
 -- Restart PostgreSQL after this
 
--- 2. Create replication user
+-- 2. Create replication user (replace with a generated secure password—do NOT use "secure_password")
 CREATE USER powersync_replication WITH REPLICATION PASSWORD 'secure_password';
 
 -- 3. Grant read access
@@ -63,7 +65,7 @@ CREATE PUBLICATION powersync_pub FOR TABLE users, todos, lists;
 // 1. Initialize replica set (if not already)
 rs.initiate()
 
-// 2. Create user with read access
+// 2. Create user with read access (replace with a generated secure password—do NOT use "secure_password")
 db.createUser({
   user: "powersync",
   pwd: "secure_password",
@@ -83,7 +85,7 @@ db.createUser({
 -- binlog_format = ROW
 -- binlog_row_image = FULL
 
--- 2. Create replication user
+-- 2. Create replication user (replace with a generated secure password—do NOT use "secure_password")
 CREATE USER 'powersync'@'%' IDENTIFIED BY 'secure_password';
 GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'powersync'@'%';
 GRANT SELECT ON your_database.* TO 'powersync'@'%';
@@ -97,7 +99,7 @@ FLUSH PRIVILEGES;
 USE [YourDatabase];
 EXEC sys.sp_cdc_enable_db;
 
--- 2. Create PowerSync user
+-- 2. Create PowerSync user (replace with a generated secure password—do NOT use "secure_password")
 CREATE LOGIN powersync_user WITH PASSWORD = 'secure_password';
 CREATE USER powersync_user FOR LOGIN powersync_user;
 
@@ -148,13 +150,3 @@ JWT tokens must include:
 - `sub` - User ID (accessible via `request.user_id()`)
 - `aud` - Audience (must match config)
 - `exp` - Expiration time
-
-## Troubleshooting
-
-| Issue | Check |
-|-------|-------|
-| No data syncing | Parameter queries returning buckets? |
-| Replication lag | Check WAL/oplog position, network latency |
-| Missing tables | Publication/CDC includes all needed tables? |
-| Auth failures | JWT claims match parameter queries? |
-| Slow sync | Bucket sizes reasonable? Indexes on source? |

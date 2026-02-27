@@ -1,6 +1,6 @@
 # Sync Rules Reference
 
-Sync rules define how data is partitioned into buckets and distributed to clients.
+Sync rules define how data is partitioned into buckets and distributed to clients. This is considered legacy, however will still be supported. For the best experience use [sync-streams](./sync-streams.md).
 
 ## Structure
 

@@ -8,7 +8,7 @@ These PowerSync skills follow the [Agent Skills](https://agentskills.io/) specif
 
 | Skill                  | Description|
 |----------------------|-----------------------|
-| PowerSync Best Practices|Comprehensive PowerSync Agent Skills that covers best practices and know-how's to get the best out of PowerSync|
+| PowerSync |Comprehensive best practices for PowerSync Agent Skills. It includes all of the necessary topics from the SDKs, Service and debugging|
 
 ## Installation
 

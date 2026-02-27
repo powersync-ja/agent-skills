@@ -2,6 +2,8 @@
 
 These are debugging steps most frequently recommended by PowerSync, with an explanation of what problem each step helps identify and why it works.
 
+Make sure to understand the [PowerSync Architecture](./powersync-overview.md) before debugging.
+
 ## Check `SyncStatus` / `currentStatus` Before Investigating Further
 
 **What it identifies:** Whether the SDK is actually connected, syncing, or has hit an error, before diving into logs.
@@ -167,136 +169,22 @@ See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes#err
 
 # Replication Lag Debugging (Postgres)
 
-Replication lag is the delay between a commit on a Postgres database and that change reaching PowerSync clients. A healthy instance shows < 1s. Spikes to minutes or hours have a small number of identifiable causes.
+**What it identifies:**
+- Sync rules deployment stuck in “processing” for many hours or days (e.g. 24–48+ hours)
+- Replication logs show: Replication slot powersync_* is not valid anymore. invalidation_reason: unknown
+- Slot version numbers keep increasing (e.g. _27_, _28_, _30_) as reprocessing restarts
+- Storage usage spikes during reprocessing (expected, but can trigger limit alerts)
+- Source DB is Supabase or another Postgres with default max_slot_wal_keep_size (often 4 GB)
 
-PowerSync uses Postgres logical replication (WAL streaming). Lag can originate at three points:
+**Why**:
+- `max_slot_wal_keep_size` limits how much WAL Postgres keeps for replication slots
+- During initial replication, WAL grows quickly because: (1) full snapshot of all tables in sync rules, (2) ongoing writes on the source DB
+- If replication lag exceeds `max_slot_wal_keep_size`, Postgres invalidates the slot (`wal_status = 'lost'`)
+- PowerSync detects the invalid slot, creates a new one, and restarts reprocessing
+- With the same limit, the new slot is invalidated again, causing a loop
+- Supabase’s default 4 GB is often too small for large datasets (e.g. 9+ hour initial replication)
 
-```
-Postgres WAL → PowerSync WAL reader → Bucket storage writer → Client sync stream
-```
+**How**:
+Confirm the cause: Check replication slot status and lag.
 
-The Replication Lag metric measures how long it takes PowerSync to process a WAL event after it was committed. It does **not** include delivery time to connected clients.
-
-Where to observe replication lag:
-- Self-hosted: The `replication_lag_seconds` gauge. Requires setting the following in your PowerSync config:
-```
-telemetry:
-  prometheus_port: 9090
-```
-See [Metrics](https://docs.powersync.com/maintenance-ops/self-hosting/metrics) for more information on setting this up for a self-hosted instance.
-- PowerSync Cloud: Navigate to a PowerSync Cloud Instance and select the `Metrics` option. 
-
-
-## Quick Reference
-
-| Symptom | Likely Cause | Jump to |
-|---------|-------------|---------|
-| `Socket idle timeout` in logs | Firewall dropping idle TCP connection | [Network idle timeout](#network-idle-timeout) |
-| `postgres query late` in logs | Postgres overloaded or slow network | [Service logs](#service-logs) |
-| `No replicated commit in more than Xs` | PowerSync disconnected from Postgres | [Replication slot health](#replication-slot-health) |
-| Lag spikes on a schedule | Long-running query or autovacuum blocking WAL | [Postgres-side checks](#postgres-side-checks) |
-| "Processing" stuck for hours after deploy | Large bucket checksum calculation | [Initial sync bottleneck](#initial-sync-bottleneck) |
-| Compact job never finishes | Overlapping compacts or slow Postgres I/O | [Compact job overlap](#compact-job-overlap) |
-| Memory growing, periodic container restarts | Replication job memory leak | [Memory leak](#memory-leak) |
-| Lag only during initial sync | Normal backfill on large dataset | Wait; monitor `rows_replicated_total` |
-| Neon compute bill unexpectedly high | WAL sender prevents scale-to-zero | Expected — Neon can't suspend with an active replication connection |
-
-## Service Logs
-
-Check PowerSync service logs first. Key messages and their meaning:
-
-| Log message | Meaning |
-|-------------|---------|
-| `Error: postgres query late` | WAL stream query timed out — Postgres is slow or overloaded |
-| `Error: Socket idle timeout` | Network between PowerSync and Postgres dropped an idle TCP connection |
-| `No replicated commit in more than Xs` | No WAL commit processed for X seconds — PowerSync is disconnected, or Postgres has no writes |
-| `Replication error [PSYNC_S2403] Query timed out while reading checksums` | Checksum calculation is too slow — usually an oversized bucket or storage I/O bottleneck |
-| `Failed to compact: ...` | Compact job error — overlapping compacts on a large table can contend with replication I/O |
-
-## Postgres-Side Checks
-
-Run these on your Postgres instance to determine whether the lag originates there.
-
-**WAL sender status:**
-```sql
-SELECT application_name, state, write_lag, flush_lag, replay_lag,
-  pg_wal_lsn_diff(pg_current_wal_lsn(), sent_lsn) AS unsent_wal_bytes
-FROM pg_stat_replication;
-```
-- `state` should be `streaming`. `catchup` means the initial snapshot is still in progress.
-- Non-zero and growing `write_lag` / `flush_lag` means the network is the bottleneck.
-- Large `unsent_wal_bytes` means Postgres is producing WAL faster than it can send.
-
-**Active queries during a spike:**
-```sql
-SELECT pid, state, wait_event_type, wait_event, query_start, left(query, 100) AS query
-FROM pg_stat_activity
-WHERE state != 'idle'
-ORDER BY query_start;
-```
-Common blockers: long-running transactions, autovacuum locks on large tables, CPU/IO pressure from other workloads.
-
-## Replication Slot Health
-
-```sql
-SELECT slot_name, active, pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) AS wal_behind
-FROM pg_replication_slots
-WHERE plugin = 'pgoutput';
-```
-
-- `active = false` means PowerSync is not connected and WAL is accumulating on disk — a risk of unbounded disk growth if left unresolved.
-- If the slot is dropped (e.g. before a Supabase upgrade), PowerSync recreates it automatically on next startup and re-replicates from scratch.
-
-## Network Idle Timeout
-
-If lag spikes correlate with periods of low write activity, a firewall or load balancer is likely silently dropping idle TCP connections. The replication socket sits idle when Postgres has no new commits.
-
-**Fix:** Add TCP keepalives to the PowerSync connection config:
-```json
-{
-  "type": "postgresql",
-  "uri": "postgresql://...",
-  "keepalive": { "idle": 30, "interval": 10, "count": 3 }
-}
-```
-Or append `keepalives=1&keepalives_idle=30` to the connection string. Also raise the idle timeout on any load balancers or security groups in the path.
-
-## Initial Sync Bottleneck
-
-After a data snapshot completes, PowerSync pre-calculates checksums for every bucket. This is I/O intensive and can take hours on large datasets.
-
-**Symptom:** Logs show `Updated checksums for batch of 1 buckets in 200000ms+`. Dashboard stuck on "Processing."
-
-**Diagnose — find oversized buckets:**
-```sql
--- Postgres bucket storage
-SELECT bucket_name, COUNT(*) AS op_count
-FROM bucket_data
-GROUP BY bucket_name
-ORDER BY op_count DESC
-LIMIT 20;
-```
-On MongoDB: check Atlas Query Insights for slow `$group` + `$sort` aggregations on `bucket_data` during the checksum period. High IOWAIT and low IOPS (relative to instance capacity) indicate a storage tier bottleneck, not a CPU one.
-
-**Fixes:**
-
-| Cause | Fix |
-|-------|-----|
-| Oversized buckets (300k+ operations per user) | Restructure sync rules to distribute data across smaller buckets |
-| MongoDB I/O bottleneck | Scale up Atlas storage tier for higher IOPS |
-| Using Postgres bucket storage | Switch to MongoDB — Postgres storage lacks checksum pre-calculation optimizations |
-| `PSYNC_S2403` checksum timeout | Upgrade service — [PR #396](https://github.com/powersync-ja/powersync-service/pull/396) reduces batch sizes and retries on timeout |
-
-## Compact Job Overlap
-
-On large Postgres `bucket_data` tables, a single compact run could historically take days due to inefficient index usage (a `COLLATE "C"` issue in the compactor query). Running compact jobs daily without confirming the previous run finished causes them to pile up and contend with replication I/O.
-
-**Diagnose:**
-```sql
-SELECT pid, state, now() - query_start AS duration, left(query, 200)
-FROM pg_stat_activity
-WHERE query ILIKE '%bucket_data%' AND state != 'idle'
-ORDER BY duration DESC;
-```
-
-**Fix:** Upgrade to a service version with the compactor optimizations ([PR #442](https://github.com/powersync-ja/powersync-service/pull/442), [PR #474](https://github.com/powersync-ja/powersync-service/pull/474)).
+See [Production Readiness Best Practices](https://docs.powersync.com/maintenance-ops/production-readiness-guide.md#managing-&-monitoring-replication-lag) for the queries and guidance on how to resolve this.

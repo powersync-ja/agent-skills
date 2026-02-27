@@ -7,6 +7,18 @@ description: Agent Skills for developing applications using PowerSync.
 
 Best practices for building applications with PowerSync. Use this skill when implementing PowerSync in a project, configuring sync rules, troubleshooting sync or connectivity issues, or integrating a PowerSync client SDK. It covers correct patterns for schema design, client SDK usage, service configuration, and common debugging strategies.
 
+## When to Use
+
+Use the PowerSync Skill when:
+- Configuring PowerSync 
+- Connecting PowerSync to a source database
+- Writing client-side code that integrates with the PowerSync SDK
+- Debugging issues related to PowerSync
+- Implementing Sync Rules or Sync Streams
+- Migrating existing applications to PowerSync
+
+Make sure to follow provided links for when additional context or information is required.
+
 ## References 
 
 Contains references to specific components of PowerSync.

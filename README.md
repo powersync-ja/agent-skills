@@ -12,7 +12,7 @@ Agent skills that help developers build applications with [PowerSync](https://po
 
 ### Skills.sh
 ```
-npx skills add @powersync-community/agent-skills
+npx skills add @powersync-ja/agent-skills
 ```
 
 ### Claude Code

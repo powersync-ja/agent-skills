@@ -16,6 +16,7 @@ Use the PowerSync Skill when:
 - Debugging issues related to PowerSync
 - Implementing Sync Rules or Sync Streams
 - Migrating existing applications to PowerSync
+- Gain understanding of the PowerSync architecture
 
 Make sure to follow provided links for when additional context or information is required.
 
@@ -36,5 +37,5 @@ Contains references to specific components of PowerSync.
 
 | SDK | Description |
 |-----------|-------------|
-| [powersync-js](references/sdks/powersync-js.md) | Use this skills reference if you're working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for ORMs such as Kysely, Drizzle and TanStack DB |
-| [powersync-swift](references/sdks/powersync-swift.md) | Use this skills reference if you're working on Swift applications. It also includes information for ORM support using GRDB |
+| [powersync-js](references/sdks/powersync-js.md) | Apply this skill reference when working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for ORMs such as Kysely, Drizzle and TanStack DB |
+| [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB |

@@ -6,13 +6,11 @@ For source code see: [powersync-service](https://github.com/powersync-ja/powersy
 
 For debugging see: [powersync-debug.md](./powersync-debug.md).
 
-## Sync Rules
+## Sync Config
 
-[sync-rules.md](./sync-rules.md)
+The rules that instruct the PowerSync Service what data to download to client application.
 
-## Sync Streams
-
-[sync-streams.md](./sync-streams.md)
+See [sync-config.md] for detailed information.
 
 ## Service Configuration (Self-hosted)
 

@@ -8,6 +8,8 @@ Agent skills that help developers build applications with [PowerSync](https://po
 |----------------------|-----------------------|
 | PowerSync |Comprehensive best practices for PowerSync Agent Skills. It includes all of the necessary topics from the SDKs, Service and debugging|
 
+PowerSync skills follow the [Agent Skills](https://agentskills.io/) specification.
+
 ## Installation
 
 ### Skills.sh
@@ -41,4 +43,10 @@ Suggest sync streams based on my current schema, where the user should only sync
 Add an upload endpoint to my backend API that accepts write operations from client applications.
 ```
 
-These PowerSync skills follow the [Agent Skills](https://agentskills.io/) specification.
+# Supported SDKs
+
+[x] JS/TS
+[x] Swift (coming soon)
+[ ] Kotlin (coming soon)
+[ ] Dart (coming soon)
+[ ] .NET (coming soon)

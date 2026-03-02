@@ -30,12 +30,14 @@ Contains references to specific components of PowerSync.
 | [powersync-service.md](references/powersync-service.md) | Specific server configuration options and best practices for setting up the PowerSync service. |
 | [powersync-debug.md](references/powersync-debug.md) | Skills references for debugging and troubleshooting PowerSync applications. |
 | [powersync-overview.md](references/powersync-overview.md) | Skills references that provided information on the PowerSync architecture. |
-| [sync-rules.md](references/sync-rules.md) | Skills reference for Sync Rules. |
-| [sync-streams.md](references/sync-streams.md) | Skills reference for Sync Streams. Suggested default.  |
+| [sync-config.md](references/sync-config.md) | Skills reference for Sync Config (Sync Streams & Sync Rules(legacy)). |
 
-## SDK Mapping
+## SDK Specific References
 
 | SDK | Description |
 |-----------|-------------|
 | [powersync-js](references/sdks/powersync-js.md) | Apply this skill reference when working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for ORMs such as Kysely, Drizzle and TanStack DB |
 | [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB |
+| [powersync-kotlin](references/sdks/powersync-kotlin.md) | (Under construction) Apply this skill reference if you're working on Kotlin applications. |
+| [powersync-dart](references/sdks/powersync-dart.md) | (Under construction) Apply this skill reference if you're working on Flutter applications. |
+| [powersync-dotnet](references/sdks/powersync-dotnet.md) | (Under construction) Apply this skill reference if you're working on .NET applications. |

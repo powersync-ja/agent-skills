@@ -6,6 +6,7 @@ Best practices and guidance for building apps with the PowerSync JavaScript/Type
 |----------|-------------|
 | [JS/TS SDK Reference](http://localhost:3000/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
 | [React Native SDK Reference](http://localhost:3000/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
+| [Capacitor Reference](https://docs.powersync.com/client-sdks/reference/capacitor.md) | Full SDK documentation for Capacitor. |
 | [Node.js SDK Reference](http://localhost:3000/client-sdks/reference/node-js.md) | Full SDK documentation for Node.js. |
 | [Supported Platforms - JS SDK](http://localhost:3000/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features. |
 
@@ -253,6 +254,13 @@ const db = new PowerSyncDatabase({
 ```
 
 **Multi-tab behavior**: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
+
+#### VFS Options
+
+| VFS Option                | Description         | Reference URL                                                                                           |
+|---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
+| IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web#1-idbbatchatomicvfs-default)     |
+| OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web#2-opfs-based-alternatives)       |
 
 **Safari**: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](http://localhost:3000/client-sdks/reference/javascript-web.md) for full configuration options.
 

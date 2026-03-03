@@ -37,8 +37,8 @@ Contains references to specific components of PowerSync.
 | SDK | Description |
 |-----------|-------------|
 | [powersync-dart](references/sdks/powersync-dart.md) | Apply this skill reference when working on Dart/Flutter apps. It also includes references for Drift (ORM support) and Flutter Web specifics. |
-| [powersync-dotnet](references/sdks/powersync-dotnet.md) | (Under construction) Apply this skill reference if you're working on .NET applications. |
-| [powersync-kotlin](references/sdks/powersync-kotlin.md) | (Under construction) Apply this skill reference if you're working on Kotlin applications. |
+| [powersync-dotnet](references/sdks/powersync-dotnet.md) | Apply this skill reference if you're working on .NET applications (MAUI, WPF, Console). |
+| [powersync-kotlin](references/sdks/powersync-kotlin.md) | Apply this skill reference if you're working on Kotlin Multiplatform applications (Android, JVM, iOS, macOS, watchOS, tvOS). |
 | [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB. |
 
 ### JavaScript / TypeScript SDK References

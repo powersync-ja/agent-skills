@@ -36,9 +36,20 @@ config:
 
 streams:
   <stream_name>:
-    query: SELECT ... FROM ... WHERE ...
-    # optional:
-    # auto_subscribe: true
+    # CTEs (optional) - define with block inside each stream
+    with:
+      <cte_name>: SELECT ... FROM ...
+
+    # Behavior options (place above query/queries)
+    auto_subscribe: true    # Auto-subscribe clients on connect (default: false)
+    priority: 1             # Sync priority (optional). Lower number -> higher priority
+    accept_potentially_dangerous_queries: true  # Silence security warnings (default: false)
+
+    # Query options (use one)
+    query: SELECT * FROM <table> WHERE ...         # Single query
+    queries:                                       # Multiple queries
+      - SELECT * FROM <table_a> WHERE ...
+      - SELECT * FROM <table_b> WHERE ...
 ```
 
 ## Basic Query

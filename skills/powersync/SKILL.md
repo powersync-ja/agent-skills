@@ -38,6 +38,18 @@ Contains references to specific components of PowerSync.
 |-----------|-------------|
 | [powersync-dart](references/sdks/powersync-dart.md) | Apply this skill reference when working on Dart/Flutter apps. It also includes references for Drift (ORM support) and Flutter Web specifics. |
 | [powersync-dotnet](references/sdks/powersync-dotnet.md) | (Under construction) Apply this skill reference if you're working on .NET applications. |
-| [powersync-js](references/sdks/powersync-js.md) | Apply this skill reference when working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for supported ORMs (Kysely, Drizzle and TanStack DB.) |
 | [powersync-kotlin](references/sdks/powersync-kotlin.md) | (Under construction) Apply this skill reference if you're working on Kotlin applications. |
 | [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB. |
+
+### JavaScript / TypeScript SDK References
+
+Always load `powersync-js.md` as the foundation for any JS/TS project, then load the applicable framework file(s) alongside it.
+
+| SDK File | Load when... |
+|----------|-------------|
+| [powersync-js](references/sdks/powersync-js.md) | Any JS/TS project — always load as the foundation. Covers schema, connector, transactions, sync status, raw tables, ORMs, debugging and internals. |
+| [powersync-js-react](references/sdks/powersync-js-react.md) | React web app or Next.js. Covers `PowerSyncContext.Provider`, `useSuspenseQuery`, sync stream hooks, and Next.js-specific setup. |
+| [powersync-js-react-native](references/sdks/powersync-js-react-native.md) | React Native, Expo, or Expo Go. Covers native SQLite adapters, Expo managed workflow, and the `@powersync/adapter-sql-js` Expo Go fallback. |
+| [powersync-js-vue](references/sdks/powersync-js-vue.md) | Vue or Nuxt. Covers `@powersync/vue` composables, `@powersync/nuxt` module setup, Kysely composable, and the diagnostics panel. |
+| [powersync-js-node](references/sdks/powersync-js-node.md) | Node.js CLI/server or Electron. Covers `@powersync/node` setup and the Electron renderer/main process split. |
+| [powersync-js-tanstack](references/sdks/powersync-js-tanstack.md) | TanStack Query or TanStack DB (any framework). Covers `@powersync/tanstack-react-query` and `@tanstack/powersync-db-collection`. |

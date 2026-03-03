@@ -1,14 +1,28 @@
 # PowerSync JavaScript/TypeScript SDK
 
-Best practices and guidance for building apps with the PowerSync JavaScript/TypeScript SDK. Use this reference when setting up PowerSync in a JS/TS project, selecting the right package for a target platform (web, React Native, Node.js, Capacitor, Vue), configuring the client, defining schemas, writing queries, or handling sync lifecycle events.
+Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets. Use this reference for any JS/TS project — it covers schema design, the backend connector, database initialization, transactions, imperative queries, sync status, raw tables, and debugging. Always load this file as the foundation, then load the applicable framework-specific file alongside it.
 
 | Resource | Description |
 |----------|-------------|
-| [JS/TS SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
-| [React Native SDK Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
+| [JS/TS Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
+| [Web SDK API Reference](https://powersync-ja.github.io/powersync-js/web-sdk) | API reference for `@powersync/web`. |
+| [React Native Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
+| [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | API reference for `@powersync/react-native`. |
 | [Capacitor Reference](https://docs.powersync.com/client-sdks/reference/capacitor.md) | Full SDK documentation for Capacitor. |
-| [Node.js SDK Reference](https://docs.powersync.com/client-sdks/reference/node-js.md) | Full SDK documentation for Node.js. |
+| [Capacitor SDK API Reference](https://powersync-ja.github.io/powersync-js/capacitor-sdk) | API reference for `@powersync/capacitor`. |
+| [Node.js Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js. |
+| [Node.js SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | API reference for `@powersync/node`. |
 | [Supported Platforms - JS SDK](https://docs.powersync.com/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features. |
+
+**Framework-specific files** (load alongside this file):
+
+| File | Use when... |
+|------|-------------|
+| `powersync-js-react.md` | React web app or Next.js |
+| `powersync-js-react-native.md` | React Native, Expo, or Expo Go |
+| `powersync-js-vue.md` | Vue or Nuxt |
+| `powersync-js-node.md` | Node.js CLI/server or Electron |
+| `powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
 
 ## Package Coverage
 
@@ -20,6 +34,9 @@ Best practices and guidance for building apps with the PowerSync JavaScript/Type
 | Capacitor | `@powersync/capacitor` |
 | React hooks | `@powersync/react` |
 | Vue composables | `@powersync/vue` |
+| Nuxt module | `@powersync/nuxt` |
+| TanStack Query (React) | `@powersync/tanstack-react-query` |
+| TanStack DB (multi-framework) | `@tanstack/powersync-db-collection` |
 | ORM | `@powersync/drizzle-driver` or `@powersync/kysely-driver` |
 
 ## Quick Setup
@@ -44,7 +61,18 @@ npm install @powersync/react
 
 # Vue
 npm install @powersync/vue
+
+# Nuxt (includes @powersync/vue — npm v7+ installs peers automatically)
+npm install @powersync/nuxt
+
+# TanStack Query (React)
+npm install @powersync/tanstack-react-query
+
+# TanStack DB
+npm install @tanstack/powersync-db-collection
 ```
+
+See the framework-specific files for full setup instructions per target.
 
 ### 2. Define Schema
 
@@ -221,21 +249,9 @@ await db.waitForFirstSync();
 
 `connect()` does not block — sync happens in the background. Do NOT `await connect()` thinking data is ready after it returns.
 
-### 5. Provider Setup (React)
+### 5. Provider / Plugin Setup
 
-```tsx
-import { PowerSyncContext } from '@powersync/react'; // or @powersync/react-native
-
-export function App() {
-  return (
-    <PowerSyncContext.Provider value={db}>
-      <YourApp />
-    </PowerSyncContext.Provider>
-  );
-}
-```
-
-All hooks (`useQuery`, `useSuspenseQuery`, `useStatus`) read from this context via `usePowerSync()`. If the provider is missing, `useQuery` returns `{ isLoading: false, error: Error('PowerSync not configured.') }`, and `useSuspenseQuery` throws.
+Framework-specific setup (React `PowerSyncContext.Provider`, Vue plugin, Nuxt plugin) is covered in the framework files. See `powersync-js-react.md`, `powersync-js-vue.md`, etc.
 
 ### Web-Specific Options
 
@@ -323,26 +339,6 @@ const { data } = useQuery('SELECT * FROM lists', [], {
   streams: [{ name: 'lists', parameters: { userId }, waitForStream: true }]
 });
 // Returns isLoading: true until the 'lists' stream has synced
-```
-
-### useSuspenseQuery
-
-```ts
-useSuspenseQuery<RowType>(
-  query: string | CompilableQuery<RowType>,
-  parameters?: any[],
-  options?: { rowComparator?, reportFetching?, throttleMs?, runQueryOnce? }
-): { data, isFetching }  // no isLoading — always has data when it returns
-```
-
-Must be used inside a `<Suspense>` boundary. Throws an error boundary-catchable error if the query errors. Always pair with an `<ErrorBoundary>`:
-
-```tsx
-<ErrorBoundary fallback={<ErrorUI />}>
-  <Suspense fallback={<Loading />}>
-    <DataComponent />  {/* calls useSuspenseQuery */}
-  </Suspense>
-</ErrorBoundary>
 ```
 
 ### Compiling Queries (CompilableQuery)
@@ -591,65 +587,11 @@ const entries = db.currentStatus.priorityStatusEntries();
 
 ### Sync Streams
 
-Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-streams.md](../sync-streams.md) for server-side configuration (YAML definitions, parameters, CTEs).
+Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-config.md](../sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs).
 
-Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks) for more information.
+Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for more information.
 
-#### React Hooks
-
-```tsx
-import { useSyncStream, useSuspenseSyncStream } from '@powersync/react';
-
-// Non-suspense — returns null while subscription is being established
-function ListsScreen() {
-  const streamStatus = useSyncStream({
-    name: 'lists',
-    parameters: { userId: currentUser.id },
-    priority: 1,  // optional, 0-3
-    ttl: 3600,    // optional, seconds to keep alive after unsubscribe
-  });
-
-  if (!streamStatus) return <Loading />;  // subscription not yet ready
-  if (!streamStatus.subscription.hasSynced) return <Loading />;
-
-  return <ListsComponent />;
-}
-
-// Suspense version — never returns null, suspends instead
-function ListsScreen() {
-  const streamStatus = useSuspenseSyncStream({
-    name: 'lists',
-    parameters: { userId: currentUser.id },
-  });
-  // streamStatus.subscription.hasSynced is guaranteed true here
-  return <ListsComponent />;
-}
-```
-
-**Automatic cleanup**: Both hooks unsubscribe when the component unmounts. The TTL keeps data active for the specified duration after unsubscribe.
-
-#### SyncStreamStatus Fields
-
-```ts
-interface SyncStreamStatus {
-  subscription: {
-    name: string;
-    parameters: Record<string, any> | null;
-    active: boolean;         // currently receiving data
-    isDefault: boolean;      // was configured as a default stream on the server
-    hasExplicitSubscription: boolean;
-    expiresAt: Date | null;  // when TTL expires
-    hasSynced: boolean;      // has completed at least one full sync
-    lastSyncedAt: Date | null;
-  };
-  progress: {
-    downloadedFraction: number;  // 0.0-1.0
-    downloadedOperations: number;
-    totalOperations: number;
-  } | null;
-  priority: number | null;
-}
-```
+The `streams` option in `useQuery` (see below) and the imperative API work across all JS/TS frameworks. Framework-specific Sync Stream hooks are covered in the respective framework files where available — for example, `useSyncStream` and `useSuspenseSyncStream` in `powersync-js-react.md`.
 
 #### Streams in useQuery
 
@@ -1051,23 +993,11 @@ const todos = new Table({ description: column.text });
 
 If `transaction.complete()` is never called, `getNextCrudTransaction()` returns the same transaction forever. The upload queue stalls permanently. Always call `complete()`, even on partial failure if you want to skip a bad transaction.
 
-### 5. Suspense requires ErrorBoundary
-
-`useSuspenseQuery` throws query errors upward — they go to the nearest `<ErrorBoundary>`, not `<Suspense>`. Without an ErrorBoundary, query errors crash the component tree silently.
-
-```tsx
-<ErrorBoundary fallback={<ErrorUI />}>
-  <Suspense fallback={<Loading />}>
-    <DataComponent />
-  </Suspense>
-</ErrorBoundary>
-```
-
-### 6. Web: SQLite library conflicts
+### 5. Web: SQLite library conflicts
 
 If another SQLite package exists in the project (`sql.js`, `better-sqlite3`, etc.), it can conflict with PowerSync's SQLite engine. Remove all other SQLite libraries. Symptom: "Could not load extension" error.
 
-### 7. useQuery data seems stale / not updating
+### 6. useQuery data seems stale / not updating
 
 - Verify the table name in SQL exactly matches the schema key (case-sensitive)
 - Writes must go through `db.execute()` or `writeTransaction()` — writes via raw SQLite connections bypass PowerSync's change tracking

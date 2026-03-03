@@ -10,7 +10,7 @@ For debugging see: [powersync-debug.md](./powersync-debug.md).
 
 The rules that instruct the PowerSync Service what data to replicate and download to client application.
 
-See [sync-config.md] for detailed information.
+See [sync-config.md](sync-config.md) for detailed information.
 
 ## Service Configuration (Self-hosted)
 

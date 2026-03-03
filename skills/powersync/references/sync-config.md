@@ -317,20 +317,6 @@ bucket_definitions:
       - SELECT * FROM app_config WHERE bucket.scope = 'global'
 ```
 
-### Team-Based Access
-
-```yaml
-bucket_definitions:
-  team_data:
-    parameters: |
-      SELECT team_id
-      FROM team_members
-      WHERE user_id = request.user_id()
-    data:
-      - SELECT * FROM projects WHERE team_id = bucket.team_id
-      - SELECT * FROM tasks WHERE team_id = bucket.team_id
-```
-
 ### Multi-Tenant Organization
 
 ```yaml
@@ -352,34 +338,6 @@ bucket_definitions:
       WHERE id = request.user_id()
     data:
       - SELECT * FROM drafts WHERE org_id = bucket.org_id AND author_id = bucket.user_id
-```
-
-### Role-Based Access
-
-```yaml
-bucket_definitions:
-  admin_data:
-    parameters: |
-      SELECT 1 AS is_admin
-      FROM users
-      WHERE id = request.user_id() AND role = 'admin'
-    data:
-      - SELECT * FROM audit_logs WHERE bucket.is_admin = 1
-      - SELECT * FROM system_settings WHERE bucket.is_admin = 1
-
-  user_data:
-    parameters: SELECT request.user_id() AS user_id
-    data:
-      - SELECT * FROM user_documents WHERE user_id = bucket.user_id
-```
-
-### Global Data (All Users)
-
-```yaml
-bucket_definitions:
-  global:
-    - SELECT * FROM app_config 
-    - SELECT * FROM categories
 ```
 
 ### JWT Claims

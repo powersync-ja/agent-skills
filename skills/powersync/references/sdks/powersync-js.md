@@ -923,6 +923,8 @@ console.log(db.currentStatus);
 
 ## Internals
 
+> Load this section only when debugging QueryStore eviction behaviour, investigating sync client implementation differences, or working with internal op types. Not needed for typical integration, setup, or feature work.
+
 ### Sync Client Implementations
 
 The Rust-based sync client is now the default:

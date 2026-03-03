@@ -4,7 +4,43 @@ Guidance for understanding all the moving components of PowerSync. For informati
 
 ## Architecture
 
-See [Architecture Overview](https://docs.powersync.com/architecture/architecture-overview.md) which contains a diagram of the high-level PowerSync architecture.
+```mermaid
+flowchart LR
+
+  %% ── YOUR BACKEND ──────────────────────────────────────
+  subgraph BACKEND["Your Backend"]
+    direction TB
+    DB["Backend Database\n(Postgres | MongoDB | MySQL | Supabase | …)"]
+    API["Backend API\n(Your server / cloud functions)"]
+    API -- "Applies writes" --> DB
+  end
+
+  %% ── POWERSYNC SERVICE (cloud / self-hosted) ──────────
+  subgraph PS_SERVICE["PowerSync Service"]
+    direction TB
+    SYNC["Partial Sync\n(sync rules filter data per user)"]
+  end
+
+  %% ── YOUR APP (client) ────────────────────────────────
+  subgraph APP["Your App"]
+    direction TB
+    SDK["PowerSync SDK"]
+    SQLITE["In-app SQLite\n(local replica — reads are instant)"]
+    QUEUE["Upload Queue\n(offline write buffer)"]
+    UI["UI"]
+    SDK --- SQLITE
+    SDK --- QUEUE
+    SQLITE <--> UI
+    QUEUE <--> UI
+  end
+
+  %% ── DATA FLOW ────────────────────────────────────────
+  DB -- "Replicates changes\n(CDC / logical replication)" --> PS_SERVICE
+  PS_SERVICE -- "Streams changes\n(real-time sync)" --> SDK
+  QUEUE -- "Uploads writes\n(when connectivity resumes)" --> API
+```
+
+See [Architecture Overview](https://docs.powersync.com/architecture/architecture-overview.md) for more details on the overall architecture
 
 The list below lists each component, what it is and where to find detailed information about each of them.
 

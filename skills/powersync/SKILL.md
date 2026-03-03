@@ -28,7 +28,7 @@ Contains references to specific components of PowerSync.
 |-----------|-------------|
 | [sdks](references/sdks/) | Skills references for each supported PowerSync Client SDK. |
 | [powersync-service.md](references/powersync-service.md) | Specific server configuration options and best practices for setting up the PowerSync service. |
-| [powersync-debug.md](references/powersync-debug.md) | Skills references for debugging and troubleshooting PowerSync applications. |
+| [powersync-debug.md](references/powersync-debug.md) | Skills references for debugging and troubleshooting PowerSync related issues across your application stack. |
 | [powersync-overview.md](references/powersync-overview.md) | Skills references that provided information on the PowerSync architecture. |
 | [sync-config.md](references/sync-config.md) | Skills reference for Sync Config (Sync Streams & Sync Rules(legacy)). |
 

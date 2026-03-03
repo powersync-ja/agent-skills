@@ -8,12 +8,12 @@ Expert guidance on Sync Config. Sync config is divided into two sections:
 
 Sync Streams define exactly which data is synced to each client by using named, SQL-like queries and subscription parameters.
 
-For a full overview, see [Sync Streams Overview](http://localhost:3000/sync/streams/overview)
+For a full overview, see [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview)
 
 ## Requirements 
 
 ### PowerSync Service
-- Self-hosted: v1.15.0+ 
+- Self-hosted: v1.20.0+ 
 - Cloud: Already met
 
 ### Sync Config
@@ -24,7 +24,7 @@ config:
 ```
 
 ### PowerSync SDKs
-There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](http://localhost:3000/sync/streams/migration#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
+There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
 
 **IMPORTANT**
 Client applications using a lower version than the `Rust Client Default` should make sure to enable the Rust Sync Client to use Sync Streams. 
@@ -58,31 +58,29 @@ streams:
 
 There are different ways you can use Sync Streams to query data in your applications. 
 
-[Global Data](http://localhost:3000/sync/streams/overview#global-data)
+[Global Data](https://docs.powersync.com/sync/streams/overview#global-data)
 
-[Filtering By User](http://localhost:3000/sync/streams/overview#filtering-data-by-user)
+[Filtering By User](https://docs.powersync.com/sync/streams/overview#filtering-data-by-user)
 
-[Auto-Subscribe](http://localhost:3000/sync/streams/overview#using-auto-subscribe)
-
-For more information about how to perform advanced queries using [JOIN](http://localhost:3000/sync/streams/queries#using-joins), [Subqueries](http://localhost:3000/sync/streams/queries#using-subqueries) or [multiple queries per Stream](http://localhost:3000/sync/streams/queries#multiple-queries-per-stream) see [Queries](http://localhost:3000/sync/streams/queries). 
+For more information about how to perform advanced queries using [JOIN](https://docs.powersync.com/sync/streams/queries#using-joins), [Subqueries](https://docs.powersync.com/sync/streams/queries#using-subqueries) or [multiple queries per Stream](https://docs.powersync.com/sync/streams/queries#multiple-queries-per-stream) see [Queries](https://docs.powersync.com/sync/streams/queries). 
 
 ## Query Parameters
 
 Query parameters allow you filter data in your Sync Streams. There are three different kinds of query parameters:
 
-**Subscription parameters** are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
-
-Examples can be found [here](http://localhost:3000/sync/streams/parameters#subscription-parameters).
-
 **Auth parameters** are the most secure option. Use them when you need to filter data based on who the user is. Since these values come from the signed JWT, they can’t be tampered with by the client.
 
-Examples can be found [here](http://localhost:3000/sync/streams/parameters#auth-parameters).
+Examples can be found [here](https://docs.powersync.com/sync/streams/parameters#auth-parameters).
+
+**Subscription parameters** are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
+
+Examples can be found [here](https://docs.powersync.com/sync/streams/parameters#subscription-parameters).
 
 **Connection parameters** apply globally across all streams for the session. Use them for values that rarely change, like environment flags or feature toggles. Keep in mind that changing them requires reconnecting.
 
-Examples can be found [here](http://localhost:3000/sync/streams/parameters#connection-parameters).
+Examples can be found [here](https://docs.powersync.com/sync/streams/parameters#connection-parameters).
 
-See [Sync Streams Parameters](http://localhost:3000/sync/streams/parameters) for more information beyond this.
+See [Sync Streams Parameters](https://docs.powersync.com/sync/streams/parameters) for more information beyond this.
 
 ## Common Table Expressions (CTEs)
 
@@ -129,15 +127,15 @@ with:
 
 ```
 
-For a full breakdown, see [Limitations](http://localhost:3000/sync/streams/ctes#limitations).
+For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/ctes#limitations).
 
 ## Common Examples and Patterns
 
-Common patterns, use case examples, and demo Sync Streams. See [Examples](http://localhost:3000/sync/streams/examples).
+Common patterns, use case examples, and demo Sync Streams. See [Examples](https://docs.powersync.com/sync/streams/examples).
 
 ## Migration
 
-There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](http://localhost:3000/sync/streams/migration) for information such as:
+There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](https://docs.powersync.com/sync/streams/migration) for information such as:
 - How to migrate
 - The tools that can make it easier 
 - Understanding the difference between Sync Rules and Sync Streams
@@ -145,7 +143,7 @@ There are big differences between Sync Rules and Sync Streams, consider the foll
 
 ## Client Usage
 
-Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](http://localhost:3000/sync/streams/client-usage) Usage for a full breakdown.
+Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](https://docs.powersync.com/sync/streams/client-usage) Usage for a full breakdown.
 This covers topics such as:
 - Initializing a subscription
 - Inspect the sync status of a subscription
@@ -157,17 +155,17 @@ There are examples available for each PowerSync Client SDK.
 
 | SDK                  | Client Usage Reference URL                                                                                         |
 |----------------------|-------------------------------------------------------------------------------------------------------------------|
-| TypeScript/JavaScript| [Client Usage](http://localhost:3000/sync/streams/client-usage.md#typescript%2Fjavascript)                           |
-| Dart                 | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#dart)                                              |
-| Kotlin               | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#kotlin)                                            |
-| Swift                | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#swift)                                             |
-| .NET                 | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#net)                                               |
+| TypeScript/JavaScript| [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#typescript%2Fjavascript)                           |
+| Dart                 | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#dart)                                              |
+| Kotlin               | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#kotlin)                                            |
+| Swift                | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#swift)                                             |
+| .NET                 | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#net)                                               |
 
 ### Frameworks 
 
 | Framework                 | Client Usage Reference URL                                                                                         |
 |---------------------------|--------------------------------------------------------------------------------------------------------------------|
-| React                     | [Client Usage](http://localhost:3000/sync/streams/client-usage.md#react-hooks)                                        |
+| React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
 
 # Sync Rules
 
@@ -177,7 +175,7 @@ Sync rules define how data is partitioned into buckets and distributed to client
 
 ```yaml
 bucket_definitions:
-  bucket_name:
+  <bucket_name>:
     parameters: SELECT ...   # Which buckets user can access
     data:                    # What data goes in each bucket
       - SELECT ... WHERE column = bucket.parameter

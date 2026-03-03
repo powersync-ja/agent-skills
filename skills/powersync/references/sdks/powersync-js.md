@@ -4,11 +4,11 @@ Best practices and guidance for building apps with the PowerSync JavaScript/Type
 
 | Resource | Description |
 |----------|-------------|
-| [JS/TS SDK Reference](http://localhost:3000/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
-| [React Native SDK Reference](http://localhost:3000/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
+| [JS/TS SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
+| [React Native SDK Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
 | [Capacitor Reference](https://docs.powersync.com/client-sdks/reference/capacitor.md) | Full SDK documentation for Capacitor. |
-| [Node.js SDK Reference](http://localhost:3000/client-sdks/reference/node-js.md) | Full SDK documentation for Node.js. |
-| [Supported Platforms - JS SDK](http://localhost:3000/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features. |
+| [Node.js SDK Reference](https://docs.powersync.com/client-sdks/reference/node-js.md) | Full SDK documentation for Node.js. |
+| [Supported Platforms - JS SDK](https://docs.powersync.com/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features. |
 
 ## Package Coverage
 
@@ -71,11 +71,11 @@ export type Todo = Database['todos']; // Auto-generated row type
 
 **Column types**: only `column.text`, `column.integer`, `column.real`. No boolean, no date, no JSON native type — store those as text/integer.
 
-**No migrations** — schema changes apply automatically on next open. Removed columns become inaccessible (data still in DB). New columns start null. Renaming = adding new + removing old (data loss). See [Define the Client-Side Schema](http://localhost:3000/client-sdks/reference/javascript-web.md#1-define-the-client-side-schema) for more information.
+**No migrations** — schema changes apply automatically on next open. Removed columns become inaccessible (data still in DB). New columns start null. Renaming = adding new + removing old (data loss). See [Define the Client-Side Schema](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-define-the-client-side-schema) for more information.
 
 ### Special Table Types
 
-See [Local-Only Tables](http://localhost:3000/usage/use-case-examples/local-only-tables.md) and [Insert-Only Tables](http://localhost:3000/usage/use-case-examples/insert-only-tables.md) for more information.
+See [Local-Only Tables](https://docs.powersync.com/usage/use-case-examples/local-only-tables.md) and [Insert-Only Tables](https://docs.powersync.com/usage/use-case-examples/insert-only-tables.md) for more information.
 
 ```ts
 // Local-only — not synced from server, not uploaded, persists across restarts
@@ -103,7 +103,7 @@ const tasks = new Table(
 
 ### 3. Create Backend Connector
 
-See [Integrate with your Backend](http://localhost:3000/client-sdks/reference/javascript-web.md#3-integrate-with-your-backend) and [Client-Side Integration](http://localhost:3000/configuration/app-backend/client-side-integration.md) for more information.
+See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-integrate-with-your-backend) and [Client-Side Integration](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) for more information.
 
 ```ts
 async fetchCredentials(): Promise<PowerSyncCredentials> {
@@ -117,11 +117,11 @@ async fetchCredentials(): Promise<PowerSyncCredentials> {
 
 `fetchCredentials` is called automatically every few minutes when the sync stream reconnects. Must always return fresh credentials — do not return stale cached tokens.
 
-`PowerSyncCredentials` interface: `{ endpoint: string; token: string; expiresAt?: Date }`. See [Authentication Setup](http://localhost:3000/configuration/auth/overview.md) for configuring JWT authentication.
+`PowerSyncCredentials` interface: `{ endpoint: string; token: string; expiresAt?: Date }`. See [Authentication Setup](https://docs.powersync.com/configuration/auth/overview.md) for configuring JWT authentication.
 
 ### uploadData
 
-Called automatically whenever local writes are pending. **Must be synchronous with the actual backend write** — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](http://localhost:3000/usage/writing-client-side-changes-to-your-backend.md) for more information.
+Called automatically whenever local writes are pending. **Must be synchronous with the actual backend write** — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
 
 ```ts
 async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
@@ -206,7 +206,7 @@ interface CrudEntry {
 
 ### 4. Initialize Database and Connect
 
-See [Instantiate the PowerSync Database](http://localhost:3000/client-sdks/reference/javascript-web.md#2-instantiate-the-powersync-database) for more information.
+See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-instantiate-the-powersync-database) for more information.
 
 ```ts
 // 1. Instantiate — schema applied at construction, no migrations
@@ -262,11 +262,11 @@ const db = new PowerSyncDatabase({
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web#2-opfs-based-alternatives)       |
 
-**Safari**: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](http://localhost:3000/client-sdks/reference/javascript-web.md) for full configuration options.
+**Safari**: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 
 ## Query Patterns
 
-See [Using PowerSync: CRUD functions](http://localhost:3000/client-sdks/reference/javascript-web.md#using-powersync-crud-functions) for the full API reference.
+See [Using PowerSync: CRUD functions](https://docs.powersync.com/client-sdks/reference/javascript-web.md#using-powersync-crud-functions) for the full API reference.
 
 ### useQuery
 
@@ -347,7 +347,7 @@ Must be used inside a `<Suspense>` boundary. Throws an error boundary-catchable 
 
 ### Compiling Queries (CompilableQuery)
 
-Both hooks accept a `CompilableQuery` object in addition to a plain SQL string. This is useful when using [Drizzle](http://localhost:3000/client-sdks/orms/javascript-web/drizzle.md) or [Kysely](http://localhost:3000/client-sdks/orms/javascript-web/kysely.md) integrations:
+Both hooks accept a `CompilableQuery` object in addition to a plain SQL string. This is useful when using [Drizzle](https://docs.powersync.com/client-sdks/orms/javascript-web/drizzle.md) or [Kysely](https://docs.powersync.com/client-sdks/orms/javascript-web/kysely.md) integrations:
 
 ```ts
 // With Drizzle
@@ -540,7 +540,7 @@ await db.waitForFirstSync(controller.signal);
 
 ### Sync Priorities
 
-Streams (or buckets in legacy Sync Rules) can be assigned priorities (0-3). Lower numbers = higher priority. Higher-priority data syncs first, allowing partial data to appear before the full sync completes. See [Prioritized Sync](http://localhost:3000/usage/use-case-examples/prioritized-sync.md) for more information.
+Streams (or buckets in legacy Sync Rules) can be assigned priorities (0-3). Lower numbers = higher priority. Higher-priority data syncs first, allowing partial data to appear before the full sync completes. See [Prioritized Sync](https://docs.powersync.com/usage/use-case-examples/prioritized-sync.md) for more information.
 
 **Priority 0** is special: it syncs regardless of pending uploads — use carefully as it can cause temporary inconsistencies.
 
@@ -593,7 +593,7 @@ const entries = db.currentStatus.priorityStatusEntries();
 
 Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-streams.md](../sync-streams.md) for server-side configuration (YAML definitions, parameters, CTEs).
 
-Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](http://localhost:3000/sync/streams/overview.md) and [Client-Side Usage](http://localhost:3000/sync/streams/client-usage.md#react-hooks) for more information.
+Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks) for more information.
 
 #### React Hooks
 
@@ -698,7 +698,7 @@ subscription.unsubscribe();
 
 ## Raw Tables
 
-Raw tables let PowerSync sync data directly into native SQLite tables you define, instead of storing data as JSON in `ps_data__<table>` and exposing it via views. This gives full SQLite control and better query performance. See [Raw Tables](http://localhost:3000/usage/use-case-examples/raw-tables.md) for more information.
+Raw tables let PowerSync sync data directly into native SQLite tables you define, instead of storing data as JSON in `ps_data__<table>` and exposing it via views. This gives full SQLite control and better query performance. See [Raw Tables](https://docs.powersync.com/usage/use-case-examples/raw-tables.md) for more information.
 
 **Requires**: The Rust sync client (now the default). Will not work with the legacy JavaScript client.
 
@@ -823,7 +823,7 @@ Not needed if the raw table definition was present from the very first `connect(
 
 ## Drizzle ORM Integration
 
-See [Drizzle ORM Setup](http://localhost:3000/client-sdks/orms/javascript-web/drizzle.md) for full setup instructions.
+See [Drizzle ORM Setup](https://docs.powersync.com/client-sdks/orms/javascript-web/drizzle.md) for full setup instructions.
 
 ```ts
 import { drizzle } from '@powersync/drizzle-driver';
@@ -850,7 +850,7 @@ const activeTodos = await drizzleDb
 
 ## Debugging
 
-See [Debugging Overview](http://localhost:3000/debugging/tools-and-techniques.md) for the full list of tools and techniques.
+See [Debugging Overview](https://docs.powersync.com/debugging/tools-and-techniques.md) for the full list of tools and techniques.
 
 ### Diagnostics App
 
@@ -1006,7 +1006,7 @@ These are separate enumerations. Don't confuse the sync-level `REMOVE` with the 
 
 ## Common Pitfalls
 
-See also [Error Codes Reference](http://localhost:3000/debugging/error-codes.md#error-codes-reference) for PowerSync service error codes.
+See also [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for PowerSync service error codes.
 
 ### 1. All children re-render on every table change
 

@@ -1,6 +1,6 @@
 # PowerSync Service
 
-Guidance for configuring PowerSync Service, sync rules, and database replication.
+Guidance for configuring PowerSync Service, sync config, and database replication.
 
 For source code see: [powersync-service](https://github.com/powersync-ja/powersync-service/)
 
@@ -8,7 +8,7 @@ For debugging see: [powersync-debug.md](./powersync-debug.md).
 
 ## Sync Config
 
-The rules that instruct the PowerSync Service what data to download to client application.
+The rules that instruct the PowerSync Service what data to replicate and download to client application.
 
 See [sync-config.md] for detailed information.
 

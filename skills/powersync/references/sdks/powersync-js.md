@@ -1,14 +1,28 @@
 # PowerSync JavaScript/TypeScript SDK
 
-Best practices and guidance for building apps with the PowerSync JavaScript/TypeScript SDK. Use this reference when setting up PowerSync in a JS/TS project, selecting the right package for a target platform (web, React Native, Node.js, Capacitor, Vue), configuring the client, defining schemas, writing queries, or handling sync lifecycle events.
+Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets. Use this reference for any JS/TS project — it covers schema design, the backend connector, database initialization, transactions, imperative queries, sync status, raw tables, and debugging. Always load this file as the foundation, then load the applicable framework-specific file alongside it.
 
 | Resource | Description |
 |----------|-------------|
-| [JS/TS SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
-| [React Native SDK Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
+| [JS/TS Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
+| [Web SDK API Reference](https://powersync-ja.github.io/powersync-js/web-sdk) | API reference for `@powersync/web`. |
+| [React Native Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
+| [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | API reference for `@powersync/react-native`. |
 | [Capacitor Reference](https://docs.powersync.com/client-sdks/reference/capacitor.md) | Full SDK documentation for Capacitor. |
-| [Node.js SDK Reference](https://docs.powersync.com/client-sdks/reference/node-js.md) | Full SDK documentation for Node.js. |
+| [Capacitor SDK API Reference](https://powersync-ja.github.io/powersync-js/capacitor-sdk) | API reference for `@powersync/capacitor`. |
+| [Node.js Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js. |
+| [Node.js SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | API reference for `@powersync/node`. |
 | [Supported Platforms - JS SDK](https://docs.powersync.com/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features. |
+
+Framework-specific files (load alongside this file):
+
+| File | Use when... |
+|------|-------------|
+| `powersync-js-react.md` | React web app or Next.js |
+| `powersync-js-react-native.md` | React Native, Expo, or Expo Go |
+| `powersync-js-vue.md` | Vue or Nuxt |
+| `powersync-js-node.md` | Node.js CLI/server or Electron |
+| `powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
 
 ## Package Coverage
 
@@ -20,6 +34,9 @@ Best practices and guidance for building apps with the PowerSync JavaScript/Type
 | Capacitor | `@powersync/capacitor` |
 | React hooks | `@powersync/react` |
 | Vue composables | `@powersync/vue` |
+| Nuxt module | `@powersync/nuxt` |
+| TanStack Query (React) | `@powersync/tanstack-react-query` |
+| TanStack DB (multi-framework) | `@tanstack/powersync-db-collection` |
 | ORM | `@powersync/drizzle-driver` or `@powersync/kysely-driver` |
 
 ## Quick Setup
@@ -44,7 +61,18 @@ npm install @powersync/react
 
 # Vue
 npm install @powersync/vue
+
+# Nuxt (includes @powersync/vue — npm v7+ installs peers automatically)
+npm install @powersync/nuxt
+
+# TanStack Query (React)
+npm install @powersync/tanstack-react-query
+
+# TanStack DB
+npm install @tanstack/powersync-db-collection
 ```
+
+See the framework-specific files for full setup instructions per target.
 
 ### 2. Define Schema
 
@@ -69,9 +97,9 @@ export type Database = (typeof AppSchema)['types'];
 export type Todo = Database['todos']; // Auto-generated row type
 ```
 
-**Column types**: only `column.text`, `column.integer`, `column.real`. No boolean, no date, no JSON native type — store those as text/integer.
+Column types: only `column.text`, `column.integer`, `column.real`. No boolean, no date, no JSON native type — store those as text/integer.
 
-**No migrations** — schema changes apply automatically on next open. Removed columns become inaccessible (data still in DB). New columns start null. Renaming = adding new + removing old (data loss). See [Define the Client-Side Schema](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-define-the-client-side-schema) for more information.
+No migrations — schema changes apply automatically on next open. Removed columns become inaccessible (data still in DB). New columns start null. Renaming = adding new + removing old (data loss). See [Define the Client-Side Schema](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-define-the-client-side-schema) for more information.
 
 ### Special Table Types
 
@@ -121,7 +149,7 @@ async fetchCredentials(): Promise<PowerSyncCredentials> {
 
 ### uploadData
 
-Called automatically whenever local writes are pending. **Must be synchronous with the actual backend write** — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
+Called automatically whenever local writes are pending. Must be synchronous with the actual backend write — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
 
 ```ts
 async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
@@ -151,12 +179,12 @@ async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
 }
 ```
 
-**If `transaction.complete()` is never called**, `getNextCrudTransaction()` returns the same transaction forever — the upload queue stalls permanently.
+If `transaction.complete()` is never called, `getNextCrudTransaction()` returns the same transaction forever — the upload queue stalls permanently.
 
 #### HTTP Status Code Handling
 
-- Return **2xx** from backend even for validation errors — a 4xx blocks the upload queue permanently
-- **5xx** → PowerSync retries automatically with backoff
+- Return 2xx from backend even for validation errors — a 4xx blocks the upload queue permanently
+- 5xx → PowerSync retries automatically with backoff
 - Surface validation errors by writing them to a local-only table and showing in the UI — never let them block the queue
 
 #### getCrudBatch vs getNextCrudTransaction
@@ -197,7 +225,7 @@ interface CrudEntry {
 }
 ```
 
-**Op types** (`UpdateType` enum):
+Op types (`UpdateType` enum):
 - `PUT` — full insert or replace (new row, or complete overwrite)
 - `PATCH` — partial update (`opData` contains only the changed columns)
 - `DELETE` — deletion (`opData` is undefined)
@@ -221,21 +249,9 @@ await db.waitForFirstSync();
 
 `connect()` does not block — sync happens in the background. Do NOT `await connect()` thinking data is ready after it returns.
 
-### 5. Provider Setup (React)
+### 5. Provider / Plugin Setup
 
-```tsx
-import { PowerSyncContext } from '@powersync/react'; // or @powersync/react-native
-
-export function App() {
-  return (
-    <PowerSyncContext.Provider value={db}>
-      <YourApp />
-    </PowerSyncContext.Provider>
-  );
-}
-```
-
-All hooks (`useQuery`, `useSuspenseQuery`, `useStatus`) read from this context via `usePowerSync()`. If the provider is missing, `useQuery` returns `{ isLoading: false, error: Error('PowerSync not configured.') }`, and `useSuspenseQuery` throws.
+Framework-specific setup (React `PowerSyncContext.Provider`, Vue plugin, Nuxt plugin) is covered in the framework files. See `powersync-js-react.md`, `powersync-js-vue.md`, etc.
 
 ### Web-Specific Options
 
@@ -253,7 +269,7 @@ const db = new PowerSyncDatabase({
 });
 ```
 
-**Multi-tab behavior**: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
+Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
 
 #### VFS Options
 
@@ -262,7 +278,7 @@ const db = new PowerSyncDatabase({
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
 
-**Safari**: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 
 ## Query Patterns
 
@@ -286,7 +302,7 @@ useQuery<RowType>(
 
 Parameters are compared by `JSON.stringify` value, not by reference — so `[userId]` across renders are considered equal even as different array instances.
 
-**Pitfall**: Avoid passing objects that serialize differently between renders (e.g. objects with changing key order).
+Pitfall: Avoid passing objects that serialize differently between renders (e.g. objects with changing key order).
 
 #### rowComparator — Differential Mode
 
@@ -323,26 +339,6 @@ const { data } = useQuery('SELECT * FROM lists', [], {
   streams: [{ name: 'lists', parameters: { userId }, waitForStream: true }]
 });
 // Returns isLoading: true until the 'lists' stream has synced
-```
-
-### useSuspenseQuery
-
-```ts
-useSuspenseQuery<RowType>(
-  query: string | CompilableQuery<RowType>,
-  parameters?: any[],
-  options?: { rowComparator?, reportFetching?, throttleMs?, runQueryOnce? }
-): { data, isFetching }  // no isLoading — always has data when it returns
-```
-
-Must be used inside a `<Suspense>` boundary. Throws an error boundary-catchable error if the query errors. Always pair with an `<ErrorBoundary>`:
-
-```tsx
-<ErrorBoundary fallback={<ErrorUI />}>
-  <Suspense fallback={<Loading />}>
-    <DataComponent />  {/* calls useSuspenseQuery */}
-  </Suspense>
-</ErrorBoundary>
 ```
 
 ### Compiling Queries (CompilableQuery)
@@ -419,12 +415,12 @@ await db.writeTransaction(async (tx) => {
 });
 ```
 
-**When to use `writeTransaction`**:
+When to use `writeTransaction`:
 - Multiple operations that must succeed or fail together
 - Cascading deletes, multi-table updates
 - Any situation where partial completion would leave data inconsistent
 
-**When NOT to use**:
+When NOT to use:
 - Single operations — `db.execute()` is simpler and faster
 - Read-only queries — use `readTransaction` or `getAll`/`get`
 
@@ -485,8 +481,8 @@ const status = useStatus();
 
 `status.dataFlowStatus.uploadError` and `status.dataFlowStatus.downloadError` are the primary way to surface sync failures to users or logging systems.
 
-- **`uploadError`** — set when an exception occurs during the CRUD upload loop. Cleared automatically on the next successful upload.
-- **`downloadError`** — set when an exception occurs during the streaming sync (including connection failures). Cleared on the next successful data download or checkpoint completion.
+- `uploadError` — set when an exception occurs during the CRUD upload loop. Cleared automatically on the next successful upload.
+- `downloadError` — set when an exception occurs during the streaming sync (including connection failures). Cleared on the next successful data download or checkpoint completion.
 
 ```tsx
 const status = useStatus();
@@ -542,9 +538,9 @@ await db.waitForFirstSync(controller.signal);
 
 Streams (or buckets in legacy Sync Rules) can be assigned priorities (0-3). Lower numbers = higher priority. Higher-priority data syncs first, allowing partial data to appear before the full sync completes. See [Prioritized Sync](https://docs.powersync.com/usage/use-case-examples/prioritized-sync.md) for more information.
 
-**Priority 0** is special: it syncs regardless of pending uploads — use carefully as it can cause temporary inconsistencies.
+Priority 0 is special: it syncs regardless of pending uploads — use carefully as it can cause temporary inconsistencies.
 
-**Consistency caveat**: Full PowerSync consistency guarantees (including deletes) only apply once ALL buckets at all priorities have synced. Higher-priority partial syncs may have stale deletes until lower-priority buckets complete.
+Consistency caveat: Full PowerSync consistency guarantees (including deletes) only apply once ALL buckets at all priorities have synced. Higher-priority partial syncs may have stale deletes until lower-priority buckets complete.
 
 #### waitForFirstSync with Priority
 
@@ -591,65 +587,11 @@ const entries = db.currentStatus.priorityStatusEntries();
 
 ### Sync Streams
 
-Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-streams.md](../sync-streams.md) for server-side configuration (YAML definitions, parameters, CTEs).
+Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-config.md](../sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs).
 
-Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks) for more information.
+Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for more information.
 
-#### React Hooks
-
-```tsx
-import { useSyncStream, useSuspenseSyncStream } from '@powersync/react';
-
-// Non-suspense — returns null while subscription is being established
-function ListsScreen() {
-  const streamStatus = useSyncStream({
-    name: 'lists',
-    parameters: { userId: currentUser.id },
-    priority: 1,  // optional, 0-3
-    ttl: 3600,    // optional, seconds to keep alive after unsubscribe
-  });
-
-  if (!streamStatus) return <Loading />;  // subscription not yet ready
-  if (!streamStatus.subscription.hasSynced) return <Loading />;
-
-  return <ListsComponent />;
-}
-
-// Suspense version — never returns null, suspends instead
-function ListsScreen() {
-  const streamStatus = useSuspenseSyncStream({
-    name: 'lists',
-    parameters: { userId: currentUser.id },
-  });
-  // streamStatus.subscription.hasSynced is guaranteed true here
-  return <ListsComponent />;
-}
-```
-
-**Automatic cleanup**: Both hooks unsubscribe when the component unmounts. The TTL keeps data active for the specified duration after unsubscribe.
-
-#### SyncStreamStatus Fields
-
-```ts
-interface SyncStreamStatus {
-  subscription: {
-    name: string;
-    parameters: Record<string, any> | null;
-    active: boolean;         // currently receiving data
-    isDefault: boolean;      // was configured as a default stream on the server
-    hasExplicitSubscription: boolean;
-    expiresAt: Date | null;  // when TTL expires
-    hasSynced: boolean;      // has completed at least one full sync
-    lastSyncedAt: Date | null;
-  };
-  progress: {
-    downloadedFraction: number;  // 0.0-1.0
-    downloadedOperations: number;
-    totalOperations: number;
-  } | null;
-  priority: number | null;
-}
-```
+The `streams` option in `useQuery` (see below) and the imperative API work across all JS/TS frameworks. Framework-specific Sync Stream hooks are covered in the respective framework files where available — for example, `useSyncStream` and `useSuspenseSyncStream` in `powersync-js-react.md`.
 
 #### Streams in useQuery
 
@@ -691,18 +633,18 @@ subscription.unsubscribe();
 
 #### Stream Gotchas
 
-- **Parameters as identity**: same stream name with different parameters = separate subscriptions
-- **Partial checkpoints**: only the Rust sync client supports partial checkpoints (priority-level consistency)
-- **Default streams**: server may configure streams as default — these subscribe automatically without a client call
-- **TTL eviction**: after TTL expires with no active subscriber, the stream's data may be removed from the local DB
+- Parameters as identity: same stream name with different parameters = separate subscriptions
+- Partial checkpoints: only the Rust sync client supports partial checkpoints (priority-level consistency)
+- Default streams: server may configure streams as default — these subscribe automatically without a client call
+- TTL eviction: after TTL expires with no active subscriber, the stream's data may be removed from the local DB
 
 ## Raw Tables
 
 Raw tables let PowerSync sync data directly into native SQLite tables you define, instead of storing data as JSON in `ps_data__<table>` and exposing it via views. This gives full SQLite control and better query performance. See [Raw Tables](https://docs.powersync.com/usage/use-case-examples/raw-tables.md) for more information.
 
-**Requires**: The Rust sync client (now the default). Will not work with the legacy JavaScript client.
+Requires: The Rust sync client (now the default). Will not work with the legacy JavaScript client.
 
-**Status**: Experimental — not covered by semver stability guarantees.
+Status: Experimental — not covered by semver stability guarantees.
 
 ### When to Use Raw Tables
 
@@ -736,7 +678,7 @@ schema.withRawTables({
 });
 ```
 
-**Parameter types**:
+Parameter types:
 - `'Id'` — replaced with the object ID from the sync service
 - `{ Column: 'fieldName' }` — replaced with the value of that column from the synced row data
 - For `delete` statements, only `'Id'` is supported
@@ -815,11 +757,11 @@ Not needed if the raw table definition was present from the very first `connect(
 
 ### Raw Table Caveats
 
-- **Rust client only** — the JavaScript sync client logs a warning and ignores raw tables
-- **No automatic column migration** — adding columns requires deleting all data and resyncing, or a manual workaround
-- **Foreign keys** — must use `DEFERRABLE INITIALLY DEFERRED`; enable with `PRAGMA foreign_keys = ON`; avoid FK references from high-priority to lower-priority raw tables (priorities sync in separate transactions)
-- **`disconnectAndClear()` won't clear raw tables** by default — add a `clear` statement to `RawTable` if needed
-- **The `name` property** matches the backend table name, not the local SQLite table name — `put`/`delete` can target any local table
+- Rust client only — the JavaScript sync client logs a warning and ignores raw tables
+- No automatic column migration — adding columns requires deleting all data and resyncing, or a manual workaround
+- Foreign keys — must use `DEFERRABLE INITIALLY DEFERRED`; enable with `PRAGMA foreign_keys = ON`; avoid FK references from high-priority to lower-priority raw tables (priorities sync in separate transactions)
+- `disconnectAndClear()` won't clear raw tables by default — add a `clear` statement to `RawTable` if needed
+- The `name` property matches the backend table name, not the local SQLite table name — `put`/`delete` can target any local table
 
 ## Drizzle ORM Integration
 
@@ -854,12 +796,12 @@ See [Debugging Overview](https://docs.powersync.com/debugging/tools-and-techniqu
 
 ### Diagnostics App
 
-**https://diagnostics-app.powersync.com**
+https://diagnostics-app.powersync.com
 
 Connect this to a running PowerSync instance to inspect tables, rows, sync buckets, and run arbitrary SQL against the local database. This is the fastest way to isolate whether a problem is in the PowerSync service or in the client:
 
-- If the diagnostics app shows the **correct data** → the service is syncing correctly → the issue is in your client code (query, schema, rendering)
-- If the diagnostics app shows **incorrect or missing data** → the issue is in the PowerSync service configuration (sync rules, backend connector, permissions)
+- If the diagnostics app shows the correct data → the service is syncing correctly → the issue is in your client code (query, schema, rendering)
+- If the diagnostics app shows incorrect or missing data → the issue is in the PowerSync service configuration (sync rules, backend connector, permissions)
 
 ### Enable SDK Logging (Development)
 
@@ -934,7 +876,7 @@ db.registerListener({
 });
 ```
 
-**Context to include in logs**: user/session ID, SDK version (`db.sdkVersion`), `lastSyncedAt`, `connected` status. Avoid logging sensitive row data.
+Context to include in logs: user/session ID, SDK version (`db.sdkVersion`), `lastSyncedAt`, `connected` status. Avoid logging sensitive row data.
 
 ### Web: SQL Logging to Chrome Performance Timeline
 
@@ -957,7 +899,7 @@ console.log(db.currentStatus);
 
 ### Sync Client Implementations
 
-The Rust-based sync client is now the **default**:
+The Rust-based sync client is now the default:
 
 ```ts
 // Default — Rust client (no config needed)
@@ -978,7 +920,7 @@ The Rust client:
 - Stores sync data in a slightly different format than the old JS client
 - Auto-migrates from JS format on first use
 
-**Do not downgrade the SDK after using the Rust client** — older SDK versions using the JS client can't read the Rust format.
+Do not downgrade the SDK after using the Rust client — older SDK versions using the JS client can't read the Rust format.
 
 The legacy JS client (`SyncClientImplementation.JAVASCRIPT`) is deprecated and will be removed in a future version.
 
@@ -992,14 +934,14 @@ The legacy JS client (`SyncClientImplementation.JAVASCRIPT`) is deprecated and w
 
 A query is evicted (closed) when the count of `ON_DATA + ON_STATE_CHANGE + ON_ERROR` listeners reaches 0.
 
-**Implication**: `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`. If one component unmounts but another with the same query is still mounted, the query stays alive and is not re-fetched.
+Implication: `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`. If one component unmounts but another with the same query is still mounted, the query stays alive and is not re-fetched.
 
 ### Op Types (Internal Sync vs CRUD)
 
-**Internal bucket ops** (`OpTypeEnum`) — used inside sync protocol, not exposed to userland:
+Internal bucket ops (`OpTypeEnum`) — used inside sync protocol, not exposed to userland:
 - `CLEAR=1`, `MOVE=2`, `PUT=3`, `REMOVE=4`
 
-**CRUD upload ops** (`UpdateType`) — what you see in `uploadData`:
+CRUD upload ops (`UpdateType`) — what you see in `uploadData`:
 - `PUT`, `PATCH`, `DELETE`
 
 These are separate enumerations. Don't confuse the sync-level `REMOVE` with the CRUD-level `DELETE`.
@@ -1051,23 +993,11 @@ const todos = new Table({ description: column.text });
 
 If `transaction.complete()` is never called, `getNextCrudTransaction()` returns the same transaction forever. The upload queue stalls permanently. Always call `complete()`, even on partial failure if you want to skip a bad transaction.
 
-### 5. Suspense requires ErrorBoundary
-
-`useSuspenseQuery` throws query errors upward — they go to the nearest `<ErrorBoundary>`, not `<Suspense>`. Without an ErrorBoundary, query errors crash the component tree silently.
-
-```tsx
-<ErrorBoundary fallback={<ErrorUI />}>
-  <Suspense fallback={<Loading />}>
-    <DataComponent />
-  </Suspense>
-</ErrorBoundary>
-```
-
-### 6. Web: SQLite library conflicts
+### 5. Web: SQLite library conflicts
 
 If another SQLite package exists in the project (`sql.js`, `better-sqlite3`, etc.), it can conflict with PowerSync's SQLite engine. Remove all other SQLite libraries. Symptom: "Could not load extension" error.
 
-### 7. useQuery data seems stale / not updating
+### 6. useQuery data seems stale / not updating
 
 - Verify the table name in SQL exactly matches the schema key (case-sensitive)
 - Writes must go through `db.execute()` or `writeTransaction()` — writes via raw SQLite connections bypass PowerSync's change tracking

@@ -11,8 +11,8 @@ Vue-specific integration for the PowerSync JavaScript SDK. Use this reference al
 
 | Resource | Description |
 |----------|-------------|
-| [Vue Composables Reference](https://docs.powersync.com/client-sdks/frameworks/vue.md) | Vue composables overview. |
-| [Vue SDK API Reference](https://powersync-ja.github.io/powersync-js/vue-sdk) | API reference for `@powersync/vue`. |
+| [Vue Composables Reference](https://docs.powersync.com/client-sdks/frameworks/vue.md) | Full Vue composables guide, consult for details beyond the inline examples. |
+| [Vue SDK API Reference](https://powersync-ja.github.io/powersync-js/vue-sdk) | Full API reference for `@powersync/vue`, consult only when the inline examples don't cover your case. |
 | [Nuxt Integration Guide](https://docs.powersync.com/client-sdks/frameworks/nuxt.md) | Full Nuxt setup guide. |
 | [Nuxt Module API Reference](https://powersync-ja.github.io/powersync-js/nuxt-sdk) | API reference for `@powersync/nuxt`. |
 

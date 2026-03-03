@@ -11,15 +11,15 @@ Core patterns and guidance shared across all PowerSync JavaScript/TypeScript tar
 
 | Resource | Description |
 |----------|-------------|
-| [JS/TS Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web. |
-| [Web SDK API Reference](https://powersync-ja.github.io/powersync-js/web-sdk) | API reference for `@powersync/web`. |
-| [React Native Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native. |
-| [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | API reference for `@powersync/react-native`. |
-| [Capacitor Reference](https://docs.powersync.com/client-sdks/reference/capacitor.md) | Full SDK documentation for Capacitor. |
-| [Capacitor SDK API Reference](https://powersync-ja.github.io/powersync-js/capacitor-sdk) | API reference for `@powersync/capacitor`. |
-| [Node.js Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js. |
-| [Node.js SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | API reference for `@powersync/node`. |
-| [Supported Platforms - JS SDK](https://docs.powersync.com/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features. |
+| [JS/TS Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) | Full SDK documentation for Web, consult for details beyond the inline examples. |
+| [Web SDK API Reference](https://powersync-ja.github.io/powersync-js/web-sdk) | Full API reference for `@powersync/web`, consult only when the inline examples don't cover your case. |
+| [React Native Reference](https://docs.powersync.com/client-sdks/reference/react-native.md) | Full SDK documentation for React Native, consult for details beyond the inline examples. |
+| [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | Full API reference for `@powersync/react-native`, consult only when the inline examples don't cover your case. |
+| [Capacitor Reference](https://docs.powersync.com/client-sdks/reference/capacitor.md) | Full SDK documentation for Capacitor, consult for details beyond the inline examples. |
+| [Capacitor SDK API Reference](https://powersync-ja.github.io/powersync-js/capacitor-sdk) | Full API reference for `@powersync/capacitor`, consult only when the inline examples don't cover your case. |
+| [Node.js Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js, consult for details beyond the inline examples. |
+| [Node.js SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | Full API reference for `@powersync/node`, consult only when the inline examples don't cover your case. |
+| [Supported Platforms - JS SDK](https://docs.powersync.com/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features, consult for compatibility details. |
 
 Framework-specific files (load alongside this file):
 

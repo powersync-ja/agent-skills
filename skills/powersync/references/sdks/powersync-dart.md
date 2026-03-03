@@ -7,20 +7,12 @@ metadata:
 
 # PowerSync Dart SDK
 
-Best practices and guidance for building Flutter apps with the PowerSync Dart SDK. Use this reference when setting up PowerSync in a Flutter project, configuring the client, defining schemas, writing queries, ORM support and Dart/Flutter Web support.
+Best practices and guidance for building Flutter apps with the PowerSync Dart SDK.
 
-| Resource                                    | Description                                                    |
-|----------------------------------------------|----------------------------------------------------------------|
-| [Dart API reference](https://pub.dev/documentation/powersync/latest/powersync/) | View all available APIs for PowerSync Dart.                   |
-
-## Example Projects
-
-To see example implementations of the PowerSync Dart SDK, see the projects listed below:
-
-| Example Project            | Link                                                                                                                 |
-|---------------------------|----------------------------------------------------------------------------------------------------------------------|
-| PowerSync + Supabase      | [supabase-todolist](https://github.com/powersync-ja/powersync.dart/tree/main/demos/supabase-todolist)                 |
-| PowerSync + Supabase Drift Demo   | [supabase-todolist-drift](https://github.com/powersync-ja/powersync.dart/tree/main/demos/supabase-todolist-drift)                                 |
+| Resource | Description |
+|----------|-------------|
+| [Dart API reference](https://pub.dev/documentation/powersync/latest/powersync/) | Full API reference, consult only when the inline examples don't cover your case. |
+| [Supported Platforms](https://docs.powersync.com/resources/supported-platform.md#flutter-sdk) | Supported platforms and features, consult for compatibility details. |
 
 ## Installation
 
@@ -28,152 +20,103 @@ To see example implementations of the PowerSync Dart SDK, see the projects liste
 flutter pub add powersync
 ```
 
-## Upgrading 
-```bash
-flutter pub upgrade powersync
-```
-
 ## Setup
 
-### Define App Schema
+### 1. Define Schema
 
 ```dart
 import 'package:powersync/powersync.dart';
 
-const schema = Schema(([
+const schema = Schema([
   Table('todos', [
     Column.text('list_id'),
+    Column.text('description'),
+    Column.integer('completed'), // 0 or 1
     Column.text('created_at'),
     Column.text('completed_at'),
-    Column.text('description'),
-    Column.integer('completed'),
     Column.text('created_by'),
     Column.text('completed_by'),
   ], indexes: [
-    // Index to allow efficient lookup within a list
     Index('list', [IndexedColumn('list_id')])
   ]),
   Table('lists', [
     Column.text('created_at'),
     Column.text('name'),
-    Column.text('owner_id')
-  ])
-]));
+    Column.text('owner_id'),
+  ]),
+]);
 ```
 
 See [Define the Client-Side Schema](https://docs.powersync.com/client-sdks/reference/flutter.md#1-define-the-client-side-schema) for more information.
 
-### Create Backend Connector
+### 2. Create Backend Connector
 
 ```dart
 import 'package:powersync/powersync.dart';
 
 class MyBackendConnector extends PowerSyncBackendConnector {
-  PowerSyncDatabase db;
-
-  MyBackendConnector(this.db);
   @override
   Future<PowerSyncCredentials?> fetchCredentials() async {
-
+    final token = await myAuthService.getPowerSyncToken();
     return PowerSyncCredentials(
-      endpoint: 'https://xxxxxx.powersync.journeyapps.com',
-      token: 'An authentication token'
+      endpoint: 'https://your-instance.powersync.journeyapps.com',
+      token: token,
     );
   }
 
   @override
   Future<void> uploadData(PowerSyncDatabase database) async {
     final transaction = await database.getNextCrudTransaction();
-    if (transaction == null) {
-      return;
-    }
+    if (transaction == null) return;
 
-    for (var op in transaction.crud) {
-      switch (op.op) {
-        case UpdateType.put:
-          // TODO: Instruct your backend API to CREATE a record
-        case UpdateType.patch:
-          // TODO: Instruct your backend API to PATCH a record
-        case UpdateType.delete:
-        //TODO: Instruct your backend API to DELETE a record
+    try {
+      for (final op in transaction.crud) {
+        switch (op.op) {
+          case UpdateType.put:
+            await apiClient.upsert(table: op.table, id: op.id, data: {...?op.opData, 'id': op.id});
+          case UpdateType.patch:
+            await apiClient.update(table: op.table, id: op.id, data: op.opData ?? {});
+          case UpdateType.delete:
+            await apiClient.delete(table: op.table, id: op.id);
+        }
       }
+      await transaction.complete();
+    } catch (e) {
+      rethrow;
     }
-
-    await transaction.complete();
   }
 }
 ```
+
+Use `getCrudBatch` instead of `getNextCrudTransaction` when uploading large numbers of mutations in bulk.
 
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/flutter.md#3-integrate-with-your-backend) for more information.
 
-Note use `getCrudBatch` when handling large numbers of mutations that need to be uploaded in bulk to the backend API.
+### 3. Instantiate and Connect
 
-### Instantiate the Database and Connect
-
-1. Initialize `PowerSyncDatabase` and call `initialize()`
-
-``` dart
+```dart
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
-import '../main.dart';
-import '../models/schema.dart';
-
-openDatabase() async {
-  final dir = await getApplicationSupportDirectory();
-  final path = join(dir.path, 'powersync-dart.db');
-
-  // Set up the database
-  // Inject the Schema you defined in the previous step and a file path
-  db = PowerSyncDatabase(schema: schema, path: path);
-  await db.initialize();
-}
-```
-
-2. Connect to the PowerSync Service
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:powersync/powersync.dart';
-
-import 'powersync/powersync.dart';
 
 late PowerSyncDatabase db;
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> openDatabase() async {
+  final dir = await getApplicationSupportDirectory();
+  final path = join(dir.path, 'powersync-dart.db');
 
-  await openDatabase();
-  runApp(const DemoApp());
+  db = PowerSyncDatabase(schema: schema, path: path);
+  await db.initialize();
 }
 
-class DemoApp extends StatefulWidget {
-  const DemoApp({super.key});
-
-  @override
-  State<DemoApp> createState() => _DemoAppState();
+// Call after the user authenticates
+Future<void> connect() async {
+  await db.connect(connector: MyBackendConnector());
 }
 
-class _DemoAppState extends State<DemoApp> {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-        title: 'Demo',
-        home: // TODO: Implement your own UI here.
-        // You could listen for authentication state changes to connect or disconnect from PowerSync
-        StreamBuilder(
-            stream: // TODO: some stream,
-            builder: (ctx, snapshot) {,
-              // TODO: implement your own condition here
-              if ( ... ) {
-                // Uses the backend connector that will be created in the next step
-                db.connect(connector: MyBackendConnector());
-                // TODO: implement your own UI here
-              }
-            },
-        )
-    );
-  }
+// Call on logout
+Future<void> disconnect() async {
+  await db.disconnectAndClear();
 }
 ```
 
@@ -181,84 +124,69 @@ See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/
 
 ## Sync Streams
 
-See [Client Usage](/skills/powersync/references/sync-config.md) for information on how to subscribe to Sync Streams if `auto_subscribe` is not set to `true` in the `sync_config` on the PowerSync Service instance config.
+See [sync-config.md](../sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
 
 ## Query Patterns
 
-There are various functions that you can use to query data in the SQLite database. Each sub-section below covers how they work.
-
-See [Using PowerSync: CRUD](https://docs.powersync.com/client-sdks/reference/flutter.md#using-powersync-crud-functions) functions for more information.
-
-### Define a model class
-
-```dart
-class TodoList {
-  final int id;
-  final String name;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  TodoList({
-    required this.id,
-    required this.name,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory TodoList.fromRow(Map<String, dynamic> row) {
-    return TodoList(
-      id: row['id'],
-      name: row['name'],
-      createdAt: DateTime.parse(row['created_at']),
-      updatedAt: DateTime.parse(row['updated_at']),
-    );
-  }
-}
-```
+See [Using PowerSync: CRUD](https://docs.powersync.com/client-sdks/reference/flutter.md#using-powersync-crud-functions) for the full API reference.
 
 ### One-Time Queries
 
-Use the following queries for once-off queries when reading data from the SQLite database.
+```dart
+// Fetch all matching rows
+final results = await db.getAll('SELECT * FROM todos WHERE list_id = ?', [listId]);
 
-| Query Type                                                                                                    | Example Code                                                                                     | Description                        |
-|--------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|------------------------------------|
-| [Get all](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteReadContext/getAll.html)        | `ResultSet results = await db.getAll('SELECT id FROM lists WHERE id IS NOT NULL');` | Fetch all matching results.         |
-| [Get single](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteReadContext/get.html)     | `final result = await db.get('SELECT * FROM lists WHERE id = ?', [id]);`             | Fetch a single row, throws if not found. |
-| [Get optional](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteReadContext/getOptional.html)   | `final result = await db.getOptional('SELECT * FROM lists WHERE id = ?', [id]);`     | Execute a read-only (SELECT) query and return a single optional result. |
+// Fetch single row — throws if not found
+final todo = await db.get('SELECT * FROM todos WHERE id = ?', [id]);
+
+// Fetch single row — returns null if not found
+final todo = await db.getOptional('SELECT * FROM todos WHERE id = ?', [id]);
+```
 
 ### Reactive Queries
 
-Use the `watch` function to listen to changes whenever tables change.
-
 ```dart
 StreamBuilder(
-  stream: db.watch('SELECT * FROM lists WHERE state = ?', ['pending']),
+  stream: db.watch('SELECT * FROM todos WHERE list_id = ?', parameters: [listId]),
   builder: (context, snapshot) {
-    if (snapshot.hasData) {
-      // TODO: implement your own UI here based on the result set
-      return ...;
-    } else {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (!snapshot.hasData) return const CircularProgressIndicator();
+    final todos = snapshot.data!;
+    // build UI from todos
   },
 )
 ```
 
-See the [API reference](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteQueries/watch.html) for the exact specification.
-
 ### Writing Data
 
-See the functions below when needed to mutate data in the SQLite database.
+```dart
+// Single mutation
+await db.execute(
+  'INSERT INTO todos (id, list_id, description, completed) VALUES (uuid(), ?, ?, ?)',
+  [listId, 'Buy milk', 0],
+);
 
-| Query Type                                                                                                    | Example Code                                                                                     | Description                        |
-|--------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|------------------------------------|
-| [Execute](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteQueries/execute.html)        | `await db.execute('INSERT INTO lists(id, created_at, name, owner_id) VALUES(uuid(), datetime(), ?, ?)', ['name', '123']);` | Execute INSERT, UPDATE or DELETE statements. Best used for single mutations.         |
-| [Write transaction](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteWriteContext/writeTransaction.html) | `await db.writeTransaction((tx) async { await tx.execute('INSERT INTO lists (id, name) VALUES (?, ?)', [listId, 'Shopping']); });` | Executes a write transaction against the database. Used when you need to perform multiple related operations as a single unit. Transactions help maintain consistency and can improve performance for bulk operations. |
+// Multiple related mutations as a single unit
+await db.writeTransaction((tx) async {
+  await tx.execute('INSERT INTO lists (id, name) VALUES (uuid(), ?)', ['Shopping']);
+  await tx.execute('INSERT INTO todos (id, list_id, description) VALUES (uuid(), ?, ?)', [listId, 'Milk']);
+});
+```
 
-## ORM
+### Row Mapping
 
-PowerSync has ORM support using [Drift](https://pub.dev/packages/drift). See the [drift_sqlite_async](https://pub.dev/packages/drift_sqlite_async) for usage examples and how to set this up in a Dart/Flutter application.
+```dart
+factory Todo.fromRow(Map<String, dynamic> row) => Todo(
+  id: row['id'] as String,
+  description: row['description'] as String,
+  completed: row['completed'] == 1,
+  createdAt: DateTime.parse(row['created_at'] as String),
+);
+```
 
-## Web Support
+## ORM — Drift
 
-PowerSync has support for Flutter Web in `powersync` version ^1.9.0. See [Dart/Flutter Web](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for detailed information such as additional configuration requirements, OPFS(origin private file system) for improved performance and limitations that developers should be aware of. 
+PowerSync supports [Drift](https://pub.dev/packages/drift) as an ORM via [drift_sqlite_async](https://pub.dev/packages/drift_sqlite_async). See the package for setup instructions and usage examples.
+
+## Flutter Web
+
+Supported in `powersync` v1.9.0+. See [Flutter Web Support](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for configuration requirements, OPFS setup for improved performance, and known limitations.

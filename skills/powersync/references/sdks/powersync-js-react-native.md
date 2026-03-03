@@ -13,9 +13,9 @@ The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`
 
 | Resource | Description |
 |----------|-------------|
-| [React Native & Expo SDK](https://docs.powersync.com/client-sdks/reference/react-native-and-expo.md) | Full SDK documentation for React Native. |
-| [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | API reference for `@powersync/react-native`. |
-| [Expo Go Support](https://docs.powersync.com/client-sdks/frameworks/expo-go-support.md) | Expo Go adapter guide. |
+| [React Native & Expo SDK](https://docs.powersync.com/client-sdks/reference/react-native-and-expo.md) | Full SDK documentation for React Native, consult for details beyond the inline examples. |
+| [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | Full API reference for `@powersync/react-native`, consult only when the inline examples don't cover your case. |
+| [Expo Go Support](https://docs.powersync.com/client-sdks/frameworks/expo-go-support.md) | Expo Go adapter guide, consult for details beyond the inline examples. |
 
 ## Install
 

@@ -11,8 +11,8 @@ Best practices and guidance for building apps with the PowerSync Swift SDK.
 
 | Resource | Description |
 |----------|-------------|
-| [Swift API reference](https://powersync-ja.github.io/powersync-swift/documentation/powersync/) | All available APIs for PowerSync Swift. |
-| [Supported Platforms](https://docs.powersync.com/resources/supported-platform.md#swift-sdk) | Supported platforms and features. |
+| [Swift API reference](https://powersync-ja.github.io/powersync-swift/documentation/powersync/) | Full API reference, consult only when the inline examples don't cover your case. |
+| [Supported Platforms](https://docs.powersync.com/resources/supported-platform.md#swift-sdk) | Supported platforms and features, consult for compatibility details. |
 
 ## Installation
 

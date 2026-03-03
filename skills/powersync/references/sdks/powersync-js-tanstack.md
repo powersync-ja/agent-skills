@@ -11,8 +11,8 @@ TanStack-specific integrations for the PowerSync JavaScript SDK. Use this refere
 
 | Resource | Description |
 |----------|-------------|
-| [TanStack Query & TanStack DB](https://docs.powersync.com/client-sdks/frameworks/tanstack.md) | Overview of TanStack integrations. |
-| [TanStack React Query API Reference](https://powersync-ja.github.io/powersync-js/tanstack-react-query-sdk) | Full API reference for `@powersync/tanstack-react-query`. |
+| [TanStack Query & TanStack DB](https://docs.powersync.com/client-sdks/frameworks/tanstack.md) | Full TanStack integrations guide, consult for details beyond the inline examples. |
+| [TanStack React Query API Reference](https://powersync-ja.github.io/powersync-js/tanstack-react-query-sdk) | Full API reference for `@powersync/tanstack-react-query`, consult only when the inline examples don't cover your case. |
 | [PowerSync Collection — TanStack DB Docs](https://tanstack.com/db/latest/docs/collections/powersync-collection) | Full TanStack DB collection reference. |
 | [TanStack DB API Reference](https://tanstack.com/db/latest/docs/reference/powersync-db-collection/index) | TanStack DB collection API reference. |
 

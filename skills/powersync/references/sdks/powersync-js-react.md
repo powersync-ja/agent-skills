@@ -11,9 +11,9 @@ React-specific integration for the PowerSync JavaScript SDK. Use this reference 
 
 | Resource | Description |
 |----------|-------------|
-| [React Integration Guide](https://docs.powersync.com/client-sdks/frameworks/react.md) | Full React setup guide. |
-| [Next.js Integration Guide](https://docs.powersync.com/client-sdks/frameworks/next-js.md) | Full Next.js setup guide. |
-| [React SDK API Reference](https://powersync-ja.github.io/powersync-js/react-sdk) | Full API reference for `@powersync/react`. |
+| [React Integration Guide](https://docs.powersync.com/client-sdks/frameworks/react.md) | Full React setup guide, consult for details beyond the inline examples. |
+| [Next.js Integration Guide](https://docs.powersync.com/client-sdks/frameworks/next-js.md) | Full Next.js setup guide, consult for details beyond the inline examples. |
+| [React SDK API Reference](https://powersync-ja.github.io/powersync-js/react-sdk) | Full API reference for `@powersync/react`, consult only when the inline examples don't cover your case. |
 
 ## Provider Setup
 

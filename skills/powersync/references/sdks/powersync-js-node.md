@@ -11,8 +11,8 @@ Node.js-specific integration for the PowerSync JavaScript SDK. Use this referenc
 
 | Resource | Description |
 |----------|-------------|
-| [Node.js SDK Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js. |
-| [Node SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | API reference for `@powersync/node`. |
+| [Node.js SDK Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js, consult for details beyond the inline examples. |
+| [Node SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | Full API reference for `@powersync/node`, consult only when the inline examples don't cover your case. |
 
 ## Node.js
 

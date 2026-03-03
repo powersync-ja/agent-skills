@@ -26,7 +26,7 @@ config:
 ### PowerSync SDKs
 There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration.md#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
 
-**IMPORTANT**
+IMPORTANT
 Client applications using a lower version than the `Rust Client Default` should make sure to enable the Rust Sync Client to use Sync Streams. 
 
 ## Structure
@@ -79,15 +79,15 @@ For more information about how to perform advanced queries using [JOIN](https://
 
 Query parameters allow you filter data in your Sync Streams. There are three different kinds of query parameters:
 
-**Auth parameters** are the most secure option. Use them when you need to filter data based on who the user is. Since these values come from the signed JWT, they can’t be tampered with by the client.
+Auth parameters are the most secure option. Use them when you need to filter data based on who the user is. Since these values come from the signed JWT, they can’t be tampered with by the client.
 
 Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters).
 
-**Subscription parameters** are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
+Subscription parameters are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
 
 Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters).
 
-**Connection parameters** apply globally across all streams for the session. Use them for values that rarely change, like environment flags or feature toggles. Keep in mind that changing them requires reconnecting.
+Connection parameters apply globally across all streams for the session. Use them for values that rarely change, like environment flags or feature toggles. Keep in mind that changing them requires reconnecting.
 
 Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters).
 
@@ -97,7 +97,7 @@ See [Sync Streams Parameters](https://docs.powersync.com/sync/streams/parameters
 
 Reusable query patterns for your Sync Streams. You can create Global and Scoped CTEs. 
 
-**Global** 
+Global 
 ```yaml
 with:
   user_orgs: SELECT org_id FROM org_members WHERE user_id = auth.user_id()
@@ -113,7 +113,7 @@ streams:
     query: SELECT * FROM settings WHERE org_id IN user_orgs
 ```
 
-**Scoped** 
+Scoped 
 ```yaml
 streams:
   project_data:
@@ -129,7 +129,7 @@ streams:
 
 ### CTE Limitations
 
-**This won't work**
+This won't work
 ```yaml
 # This won't work - cte2 cannot reference cte1
 with:

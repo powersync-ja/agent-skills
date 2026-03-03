@@ -104,7 +104,7 @@ await powersync.value.execute(
 
 ### Setup Context Requirement
 
-`usePowerSync`, `useQuery`, and `useStatus` all rely on Vue's `inject()` internally and **must be called at the top level of a `<script setup>` block** (or the synchronous `setup()` function). They must not be called inside nested functions, async functions, event handlers, or lifecycle hooks.
+`usePowerSync`, `useQuery`, and `useStatus` all rely on Vue's `inject()` internally and must be called at the top level of a `<script setup>` block (or the synchronous `setup()` function). They must not be called inside nested functions, async functions, event handlers, or lifecycle hooks.
 
 ```vue
 <script setup>
@@ -154,7 +154,7 @@ const status = useStatus();
 
 ## Nuxt
 
-> **Alpha**: `@powersync/nuxt` is currently in Alpha. APIs and behavior may change.
+> Alpha: `@powersync/nuxt` is currently in Alpha. APIs and behavior may change.
 
 `@powersync/nuxt` is a Nuxt module that wraps `@powersync/vue` and re-exports all its composables. It also adds a Nuxt Devtools integration with a PowerSync diagnostics panel.
 
@@ -298,8 +298,8 @@ export default defineNuxtConfig({
 When `useDiagnostics: true` is set, `NuxtPowerSyncDatabase` automatically extends the schema with the diagnostics schema, sets up recording and logging, and stores the connector internally. No changes to the plugin file are needed.
 
 Access the inspector:
-- **Nuxt Devtools**: open browser Devtools and look for the PowerSync tab
-- **Direct URL**: navigate to `http://localhost:3000/__powersync-inspector`
+- Nuxt Devtools: open browser Devtools and look for the PowerSync tab
+- Direct URL: navigate to `http://localhost:3000/__powersync-inspector`
 
 ### Known Issues
 

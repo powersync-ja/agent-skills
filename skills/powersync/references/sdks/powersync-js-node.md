@@ -76,9 +76,9 @@ await db.writeTransaction(async (tx) => {
 
 ### Use Cases
 
-- **CLI tools**: Sync data from a PowerSync service for offline-capable scripts
-- **Background sync jobs**: Keep a local SQLite database up to date with server data for reporting or ETL
-- **Server-side scripts**: Read/write to a local PowerSync-managed SQLite database without a browser
+- CLI tools: Sync data from a PowerSync service for offline-capable scripts
+- Background sync jobs: Keep a local SQLite database up to date with server data for reporting or ETL
+- Server-side scripts: Read/write to a local PowerSync-managed SQLite database without a browser
 
 ### Sync Status
 
@@ -96,7 +96,7 @@ db.registerListener({
 
 ## Electron
 
-Electron apps have two distinct environments — the **renderer process** (a Chromium browser window) and the **main process** (Node.js). PowerSync has a different SDK for each.
+Electron apps have two distinct environments — the renderer process (a Chromium browser window) and the main process (Node.js). PowerSync has a different SDK for each.
 
 ### Architecture
 

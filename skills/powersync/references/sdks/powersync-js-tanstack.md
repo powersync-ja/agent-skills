@@ -15,13 +15,13 @@ TanStack-specific integrations for the PowerSync JavaScript SDK. Use this refere
 
 `@powersync/tanstack-react-query` wraps TanStack Query's `useQuery` and `useSuspenseQuery` hooks, bringing TanStack's advanced async state management to PowerSync web and React Native applications.
 
-**Use TanStack Query when you need:**
+Use TanStack Query when you need:
 - Query caching by key — subsequent instances of the same query don't refire
 - Flicker mitigation on navigation — stale cached data shows instantly while fresh data loads
 - Pagination support via TanStack's built-in paginated query patterns
 - React Suspense with navigation blocking via `v7_startTransition`
 
-**Use `@powersync/react` hooks (from `powersync-js-react.md`) when:**
+Use `@powersync/react` hooks (from `powersync-js-react.md`) when:
 - You don't need TanStack's query cache
 - You want a simpler API with fewer dependencies
 
@@ -70,19 +70,19 @@ For full usage examples and configuration options, see the [package README](http
 
 When navigating to or refreshing a page, a brief UI flicker (10–50ms) can occur as queries rerun. TanStack Query addresses this:
 
-- **First load**: use `isLoading` / a Suspense fallback
-- **Subsequent loads**: TanStack's query cache serves stale data instantly, then updates in the background — no flicker
-- **Block navigation**: combine `useSuspenseQuery` with `<Suspense>` and React Router's [`v7_startTransition`](https://reactrouter.com/en/main/upgrading/future#v7_starttransition) flag to ensure page B is fully loaded before navigating away from page A
+- First load: use `isLoading` / a Suspense fallback
+- Subsequent loads: TanStack's query cache serves stale data instantly, then updates in the background — no flicker
+- Block navigation: combine `useSuspenseQuery` with `<Suspense>` and React Router's [`v7_startTransition`](https://reactrouter.com/en/main/upgrading/future#v7_starttransition) flag to ensure page B is fully loaded before navigating away from page A
 
 ---
 
 ## TanStack DB
 
-> **Alpha**: The PowerSync TanStack DB collection is currently in an [Alpha](https://docs.powersync.com/resources/feature-status) release.
+> Alpha: The PowerSync TanStack DB collection is currently in an [Alpha](https://docs.powersync.com/resources/feature-status) release.
 
 `@tanstack/powersync-db-collection` lets you use TanStack DB collections backed by PowerSync. In-memory collections stay in sync with PowerSync's SQLite database, providing offline-first reactive data with optimistic mutations.
 
-**TanStack DB is different from TanStack Query**: TanStack DB uses differential data flow for in-memory queries that update incrementally, rather than re-running full SQL queries. It's more suitable for complex, highly interactive UIs that need cross-collection joins and optimistic updates.
+TanStack DB is different from TanStack Query: TanStack DB uses differential data flow for in-memory queries that update incrementally, rather than re-running full SQL queries. It's more suitable for complex, highly interactive UIs that need cross-collection joins and optimistic updates.
 
 ### Install
 
@@ -139,13 +139,13 @@ const documentsCollection = createCollection(
 
 ### Features
 
-- **Differential in-memory queries** — live queries update incrementally instead of re-running entire SQL queries; stays fast even for complex queries across multiple collections
-- **Reactive data flow** — components re-render only when their specific data changes
-- **Optimistic mutations** — mutations apply to local state immediately; TanStack DB keeps optimistic state on top of synced data and rolls back automatically if the server request fails
-- **Cross-collection queries** — live queries can join across collections, including mixing PowerSync collections with other TanStack DB collections
-- **Schema validation and rich types** — use Zod (or any schema library) to validate mutations and transform SQLite types into rich JavaScript types (`Date`, boolean, JSON); supports separate deserialization schemas for synced vs. written data
-- **Metadata tracking** — attach custom metadata to insert/update/delete operations; PowerSync persists it and exposes it in `CrudEntry.metadata` during `uploadData`
-- **Advanced transactions** — batch multiple operations with `PowerSyncTransactor` and `createTransaction`; control commit timing and wait for persistence
+- Differential in-memory queries — live queries update incrementally instead of re-running entire SQL queries; stays fast even for complex queries across multiple collections
+- Reactive data flow — components re-render only when their specific data changes
+- Optimistic mutations — mutations apply to local state immediately; TanStack DB keeps optimistic state on top of synced data and rolls back automatically if the server request fails
+- Cross-collection queries — live queries can join across collections, including mixing PowerSync collections with other TanStack DB collections
+- Schema validation and rich types — use Zod (or any schema library) to validate mutations and transform SQLite types into rich JavaScript types (`Date`, boolean, JSON); supports separate deserialization schemas for synced vs. written data
+- Metadata tracking — attach custom metadata to insert/update/delete operations; PowerSync persists it and exposes it in `CrudEntry.metadata` during `uploadData`
+- Advanced transactions — batch multiple operations with `PowerSyncTransactor` and `createTransaction`; control commit timing and wait for persistence
 
 ### Configuration Options
 

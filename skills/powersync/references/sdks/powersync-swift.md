@@ -134,7 +134,7 @@ final class MyConnector: PowerSyncBackendConnectorProtocol {
 
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
 
-**Note** use `getCrudBatch` when handling large numbers of mutations that need to be uploaded in bulk to the backend API.
+Note use `getCrudBatch` when handling large numbers of mutations that need to be uploaded in bulk to the backend API.
 
 ### Instantiate the Database and Connect
 

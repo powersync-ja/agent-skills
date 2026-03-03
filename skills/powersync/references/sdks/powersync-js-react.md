@@ -85,7 +85,7 @@ function ListsScreen() {
 }
 ```
 
-**Automatic cleanup**: Both hooks unsubscribe when the component unmounts. The TTL keeps data active for the specified duration after unsubscribe.
+Automatic cleanup: Both hooks unsubscribe when the component unmounts. The TTL keeps data active for the specified duration after unsubscribe.
 
 ### SyncStreamStatus Fields
 

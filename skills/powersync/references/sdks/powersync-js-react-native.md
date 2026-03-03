@@ -72,7 +72,7 @@ By default, `@powersync/react-native` uses OP-SQLite if installed, falling back 
 
 ### Managed Workflow
 
-PowerSync works with Expo managed workflow. You must use a **development build** (not Expo Go) because PowerSync requires native modules.
+PowerSync works with Expo managed workflow. You must use a development build (not Expo Go) because PowerSync requires native modules.
 
 ```bash
 npx expo install @powersync/react-native @powersync/op-sqlite
@@ -90,11 +90,11 @@ Same as standard React Native above. Run `npx react-native run-ios` / `run-andro
 
 Expo Go is a sandbox that does not support native modules. To run PowerSync in Expo Go, use the JavaScript-only adapter `@powersync/adapter-sql-js`.
 
-> **Alpha**: `@powersync/adapter-sql-js` is in alpha. Do not use in production.
+> Alpha: `@powersync/adapter-sql-js` is in alpha. Do not use in production.
 
 ### Limitations
 
-- **No SQLite consistency guarantees** — every write triggers a full rewrite of the entire database file; the app may end up with missing data or a corrupted file if killed mid-write
+- No SQLite consistency guarantees — every write triggers a full rewrite of the entire database file; the app may end up with missing data or a corrupted file if killed mid-write
 - Significantly slower than native adapters
 - Default mode is in-memory; persistence requires a custom `persister` option
 
@@ -141,8 +141,8 @@ export const powerSync = new PowerSyncDatabase({
 
 When moving to development builds or production, switch to a native adapter:
 
-- **OP-SQLite** (`@powersync/op-sqlite`) — recommended; encryption support, New Architecture compatible
-- **React Native Quick SQLite** (`@journeyapps/react-native-quick-sqlite`) — original adapter
+- OP-SQLite (`@powersync/op-sqlite`) — recommended; encryption support, New Architecture compatible
+- React Native Quick SQLite (`@journeyapps/react-native-quick-sqlite`) — original adapter
 
 These require native compilation and cannot run inside Expo Go's prebuilt container.
 

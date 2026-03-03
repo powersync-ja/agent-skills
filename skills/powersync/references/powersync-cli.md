@@ -2,7 +2,7 @@
 name: powersync-cli
 description: PowerSync CLI — managing and deploying PowerSync instances from the command line for Cloud and self-hosted setups
 metadata:
-  tags: cli, powersync, cloud, self-hosted, deploy, sync-config, schema, token, devops
+  tags: cli, powersync, cloud, self-hosted, deploy, sync-config, schema, token, devops, docker, docker-compose
 ---
 
 # PowerSync CLI
@@ -197,3 +197,81 @@ Contents of `powersync/`:
 - `cli.yaml` — link file (instance identifiers, written by `powersync link`)
 - `service.yaml` — service configuration (name, region, replication connection, auth)
 - `sync-config.yaml` — sync rules / sync streams config
+
+## Docker (Self-Hosted Local Stack)
+
+`powersync docker` runs a self-hosted PowerSync stack with Docker Compose. Use it for local development and testing.
+
+**Prerequisites:** a `service.yaml` in your config directory (run `powersync init self-hosted` if needed), Docker, and Docker Compose V2 (2.20.3+).
+
+### Workflow
+
+#### 1. Configure
+
+```bash
+powersync docker configure --database postgres --storage postgres
+```
+
+`--database` options: `postgres` (managed Postgres in the stack), `external` (existing DB — set `PS_DATA_SOURCE_URI` in `docker/.env`).
+
+`--storage` options: `postgres` (managed Postgres for bucket metadata), `external` (set `PS_STORAGE_SOURCE_URI` in `docker/.env`).
+
+This creates `powersync/docker/` containing:
+- `docker-compose.yaml` — main compose file; mounts `service.yaml` and `sync-config.yaml`
+- `.env` — default values for DB credentials, URIs, port, etc.
+- `modules/` — database and storage compose partials and init scripts
+
+It also merges replication and storage config into `powersync/service.yaml` (using `!env` so the PowerSync container resolves values from `docker/.env` at runtime) and writes `plugins.docker.project_name` to `cli.yaml`.
+
+If `docker/` already exists, remove it before re-running configure.
+
+#### 2. Start
+
+```bash
+powersync docker start
+```
+
+Runs `docker compose up -d --wait` and waits for all services to be healthy. No `.env` edits needed for default setups.
+
+#### 3. Stop and Reset
+
+```bash
+powersync docker stop                    # stop containers, keep them (can restart)
+powersync docker stop --remove           # stop and remove containers
+powersync docker stop --remove-volumes   # stop, remove containers and named volumes (implies --remove)
+powersync docker reset                   # full teardown then start (docker compose down + up --wait)
+```
+
+Use `--remove-volumes` when you need init scripts to re-run on the next start (e.g. "Publication 'powersync' does not exist" error). Then run `powersync docker reset` to bring the stack back up clean.
+
+Use `powersync status` to debug a running instance.
+
+### Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `powersync docker configure` | Create `docker/` layout with chosen modules, merge config into `service.yaml`, write `cli.yaml`. Remove existing `docker/` first to re-run. |
+| `powersync docker start` | `docker compose up -d --wait`. Use after configure or after stop. |
+| `powersync docker reset` | `docker compose down` then `docker compose up -d --wait`. Use after config changes or to clear a bad state. |
+| `powersync docker stop` | Stop stack. Add `--remove` to remove containers, `--remove-volumes` to also remove volumes. |
+
+### Flags
+
+| Flag | Applies to | Description |
+|------|-----------|-------------|
+| `--directory` | configure, start, reset | Config directory (default: `powersync/`). Compose dir is `<directory>/docker/`. |
+| `--database` | configure | `postgres` (default) or `external` |
+| `--storage` | configure | `postgres` (default) or `external` |
+| `--project-name` | stop | Docker Compose project name. If omitted, reads from `cli.yaml`. Use to stop a specific project from any directory. |
+| `--remove` | stop | Remove containers after stopping (`docker compose down`). |
+| `--remove-volumes` | stop | Remove containers and named volumes (`docker compose down -v`). Implies `--remove`. |
+
+### After Configure — Running Other CLI Commands
+
+`configure` sets `api_url` and `api_key` in `cli.yaml` so other commands work against the local stack without extra flags:
+
+```bash
+powersync status
+powersync validate
+powersync generate schema --output=ts --output-path=./schema.ts
+```

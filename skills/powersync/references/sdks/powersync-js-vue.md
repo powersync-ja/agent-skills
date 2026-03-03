@@ -18,7 +18,7 @@ Vue-specific integration for the PowerSync JavaScript SDK. Use this reference al
 
 ## Vue
 
-### Install
+### 1. Install
 
 ```bash
 # npm (v7+ installs peer dependencies automatically)
@@ -28,7 +28,7 @@ npm install @powersync/vue
 pnpm add @powersync/vue @powersync/web @journeyapps/wa-sqlite
 ```
 
-### Plugin Setup
+### 2. Plugin Setup
 
 ```ts
 import { createPowerSyncPlugin } from '@powersync/vue';
@@ -167,7 +167,7 @@ const status = useStatus();
 
 PowerSync is tailored for client-side applications. Nuxt evaluates plugins server-side unless you use the `.client.ts` suffix. The PowerSync Web SDK requires browser APIs not available in Node.js — it performs no-ops in Node.js rather than throwing errors, but no data is available during SSR. Always create your PowerSync plugin as `plugins/powersync.client.ts`.
 
-### Install
+### 1. Install
 
 ```bash
 # npm (v7+ installs peer dependencies automatically)
@@ -177,7 +177,7 @@ npm install @powersync/nuxt
 pnpm add @powersync/nuxt @powersync/vue @powersync/web
 ```
 
-### `nuxt.config.ts`
+### 2. `nuxt.config.ts`
 
 Add `@powersync/nuxt` to the `modules` array and include the required Vite configuration:
 
@@ -195,7 +195,7 @@ export default defineNuxtConfig({
 });
 ```
 
-### Create the Plugin
+### 3. Create the Plugin
 
 Create `plugins/powersync.client.ts`. The `.client.ts` suffix ensures this only runs in the browser.
 

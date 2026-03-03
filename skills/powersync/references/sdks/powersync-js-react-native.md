@@ -17,7 +17,7 @@ The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`
 | [React Native SDK API Reference](https://powersync-ja.github.io/powersync-js/react-native-sdk) | Full API reference for `@powersync/react-native`, consult only when the inline examples don't cover your case. |
 | [Expo Go Support](https://docs.powersync.com/client-sdks/frameworks/expo-go-support.md) | Expo Go adapter guide, consult for details beyond the inline examples. |
 
-## Install
+## 1. Install
 
 ### Standard React Native (Recommended)
 
@@ -43,7 +43,7 @@ npx expo prebuild   # Expo managed/bare
 npx react-native run-ios / run-android
 ```
 
-## Provider Setup
+## 2. Provider Setup
 
 The provider pattern is identical to React web. Import from `@powersync/react-native`:
 
@@ -59,7 +59,7 @@ export function App() {
 }
 ```
 
-## Database Initialization
+## 3. Database Initialization
 
 ```ts
 import { PowerSyncDatabase } from '@powersync/react-native';

@@ -16,7 +16,7 @@ Node.js-specific integration for the PowerSync JavaScript SDK. Use this referenc
 
 ## Node.js
 
-### Install
+### 1. Install
 
 ```bash
 npm install @powersync/node
@@ -39,7 +39,7 @@ npm install --save-dev @types/better-sqlite3
 | UI framework hooks | `@powersync/react`, `@powersync/vue` | None — use imperative API |
 | Environment | Browser | Node.js 18+ |
 
-### Setup
+### 2. Setup
 
 ```ts
 import { PowerSyncDatabase } from '@powersync/node';

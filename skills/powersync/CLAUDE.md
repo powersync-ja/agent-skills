@@ -46,6 +46,7 @@ Key rule: **client writes never go through PowerSync** — they go directly from
 | Debugging sync / connection issues | `powersync-debug.md` |
 | Writing or migrating sync config | `sync-config.md` |
 | Configuring the service / self-hosting | `powersync-service.md` |
+| Using the PowerSync CLI | `powersync-cli.md` |
 | Understanding the overall architecture | This file is sufficient; see `powersync-overview.md` for deep links |
 
 ## SDK Reference Files
@@ -73,6 +74,7 @@ Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS pr
 
 ## Key Rules to Apply Without Being Asked
 
+- **Use the CLI for instance operations** — when deploying config, generating schemas, generating dev tokens, checking status, or managing Cloud/self-hosted instances, use `powersync` CLI commands. See `references/powersync-cli.md` for usage.
 - **Sync Streams over Sync Rules** — new projects must use Sync Streams (edition 3 config). Sync Rules are legacy; only use them when an existing project already has them.
 - **`id` column** — never define `id` in a PowerSync table schema; it is created automatically as `TEXT PRIMARY KEY`.
 - **No boolean/date column types** — use `column.integer` (0/1) for booleans and `column.text` (ISO string) for dates.

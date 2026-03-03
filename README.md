@@ -42,11 +42,3 @@ Suggest sync streams based on my current schema, where the user should only sync
 ```
 Add an upload endpoint to my backend API that accepts write operations from client applications.
 ```
-
-# Supported SDKs
-
-[x] JS/TS
-[x] Swift (coming soon)
-[ ] Kotlin (coming soon)
-[ ] Dart (coming soon)
-[ ] .NET (coming soon)

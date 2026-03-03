@@ -1,55 +1,87 @@
 ---
 name: powersync
-description: Agent Skills for developing applications using PowerSync. 
+description: Best practices for building applications with PowerSync — schema design, client SDK usage, sync configuration, service setup, and debugging.
 ---
 
-# PowerSync
+# PowerSync Skills
 
-Best practices for building applications with PowerSync. Use this skill when implementing PowerSync in a project, configuring sync rules, troubleshooting sync or connectivity issues, or integrating a PowerSync client SDK. It covers correct patterns for schema design, client SDK usage, service configuration, and common debugging strategies.
+Best practices and expertise for building applications with PowerSync.
 
-## When to Use
+## Architecture
 
-Use the PowerSync Skill when:
-- Configuring PowerSync 
-- Connecting PowerSync to a source database
-- Writing client-side code that integrates with the PowerSync SDK
-- Debugging issues related to PowerSync
-- Implementing Sync Rules or Sync Streams
-- Migrating existing applications to PowerSync
-- Gain understanding of the PowerSync architecture
+```mermaid
+flowchart LR
 
-Make sure to follow provided links for when additional context or information is required.
+  subgraph BACKEND["Your Backend"]
+    direction TB
+    DB["Backend Database (Postgres | MongoDB | MySQL | Supabase | …)"]
+    API["Backend API (Your server / cloud functions)"]
+    API -- "Applies writes" --> DB
+  end
 
-## References 
+  subgraph PS_SERVICE["PowerSync Service"]
+    direction TB
+    SYNC["Partial Sync (sync rules filter data per user)"]
+  end
 
-Contains references to specific components of PowerSync.
+  subgraph APP["Your App"]
+    direction TB
+    SDK["PowerSync SDK"]
+    SQLITE["In-app SQLite (local replica — reads are instant)"]
+    QUEUE["Upload Queue (offline write buffer)"]
+    UI["UI"]
+    SDK --- SQLITE
+    SDK --- QUEUE
+    SQLITE <--> UI
+    QUEUE <--> UI
+  end
 
-| Reference | Description |
-|-----------|-------------|
-| [sdks](references/sdks/) | Skills references for each supported PowerSync Client SDK. |
-| [powersync-service.md](references/powersync-service.md) | Specific server configuration options and best practices for setting up the PowerSync service. |
-| [powersync-debug.md](references/powersync-debug.md) | Skills references for debugging and troubleshooting PowerSync related issues across your application stack. |
-| [powersync-overview.md](references/powersync-overview.md) | Skills references that provided information on the PowerSync architecture. |
-| [sync-config.md](references/sync-config.md) | Skills reference for Sync Config (Sync Streams & Sync Rules(legacy)). |
+  DB -- "Replicates changes (CDC / logical replication)" --> PS_SERVICE
+  PS_SERVICE -- "Streams changes (real-time sync)" --> SDK
+  QUEUE -- "Uploads writes (when connectivity resumes)" --> API
+```
 
-## SDK Specific References
+Key rule: **client writes never go through PowerSync** — they go directly from the app's upload queue to your backend API. PowerSync only handles the read/sync path.
 
-| SDK | Description |
-|-----------|-------------|
-| [powersync-dart](references/sdks/powersync-dart.md) | Apply this skill reference when working on Dart/Flutter apps. It also includes references for Drift (ORM support) and Flutter Web specifics. |
-| [powersync-dotnet](references/sdks/powersync-dotnet.md) | Apply this skill reference if you're working on .NET applications (MAUI, WPF, Console). |
-| [powersync-kotlin](references/sdks/powersync-kotlin.md) | Apply this skill reference if you're working on Kotlin Multiplatform applications (Android, JVM, iOS, macOS, watchOS, tvOS). |
-| [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB. |
+## What to Load for Your Task
 
-### JavaScript / TypeScript SDK References
+| Task | Load these files |
+|------|-----------------|
+| New project setup | See SDK Reference Files below for your platform |
+| Debugging sync / connection issues | `powersync-debug.md` |
+| Writing or migrating sync config | `sync-config.md` |
+| Configuring the service / self-hosting | `powersync-service.md` |
+| Understanding the overall architecture | This file is sufficient; see `powersync-overview.md` for deep links |
 
-Always load `powersync-js.md` as the foundation for any JS/TS project, then load the applicable framework file(s) alongside it.
+## SDK Reference Files
 
-| SDK File | Load when... |
-|----------|-------------|
-| [powersync-js](references/sdks/powersync-js.md) | Any JS/TS project — always load as the foundation. Covers schema, connector, transactions, sync status, raw tables, ORMs, debugging and internals. |
-| [powersync-js-react](references/sdks/powersync-js-react.md) | React web app or Next.js. Covers `PowerSyncContext.Provider`, `useSuspenseQuery`, sync stream hooks, and Next.js-specific setup. |
-| [powersync-js-react-native](references/sdks/powersync-js-react-native.md) | React Native, Expo, or Expo Go. Covers native SQLite adapters, Expo managed workflow, and the `@powersync/adapter-sql-js` Expo Go fallback. |
-| [powersync-js-vue](references/sdks/powersync-js-vue.md) | Vue or Nuxt. Covers `@powersync/vue` composables, `@powersync/nuxt` module setup, Kysely composable, and the diagnostics panel. |
-| [powersync-js-node](references/sdks/powersync-js-node.md) | Node.js CLI/server or Electron. Covers `@powersync/node` setup and the Electron renderer/main process split. |
-| [powersync-js-tanstack](references/sdks/powersync-js-tanstack.md) | TanStack Query or TanStack DB (any framework). Covers `@powersync/tanstack-react-query` and `@tanstack/powersync-db-collection`. |
+### JavaScript / TypeScript
+
+Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS project, then load the applicable framework file alongside it.
+
+| Framework file | Load when… |
+|----------------|-----------|
+| `powersync-js-react.md` | React web app or Next.js |
+| `powersync-js-react-native.md` | React Native, Expo, or Expo Go |
+| `powersync-js-vue.md` | Vue or Nuxt |
+| `powersync-js-node.md` | Node.js CLI/server or Electron |
+| `powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
+
+### Other SDKs
+
+| File | Use when… |
+|------|----------|
+| `powersync-dart.md` | Dart / Flutter (includes Drift ORM + Flutter Web) |
+| `powersync-dotnet.md` | .NET (MAUI, WPF, Console) |
+| `powersync-kotlin.md` | Kotlin Multiplatform (Android, JVM, iOS, macOS, watchOS, tvOS) |
+| `powersync-swift.md` | Swift / iOS / macOS (includes GRDB ORM) |
+
+## Key Rules to Apply Without Being Asked
+
+- **Sync Streams over Sync Rules** — new projects must use Sync Streams (edition 3 config). Sync Rules are legacy; only use them when an existing project already has them.
+- **`id` column** — never define `id` in a PowerSync table schema; it is created automatically as `TEXT PRIMARY KEY`.
+- **No boolean/date column types** — use `column.integer` (0/1) for booleans and `column.text` (ISO string) for dates.
+- **`connect()` is fire-and-forget** — do not `await connect()` expecting data to be ready. Use `waitForFirstSync()` if you need to wait.
+- **`transaction.complete()` is mandatory** — if it is never called, the upload queue stalls permanently.
+- **`disconnectAndClear()` on logout** — `disconnect()` keeps local data; `disconnectAndClear()` wipes it. Always use `disconnectAndClear()` when switching users.
+- **Backend must return 2xx for validation errors** — a 4xx response from `uploadData` blocks the upload queue permanently.

@@ -36,8 +36,8 @@ Contains references to specific components of PowerSync.
 
 | SDK | Description |
 |-----------|-------------|
-| [powersync-js](references/sdks/powersync-js.md) | Apply this skill reference when working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for ORMs such as Kysely, Drizzle and TanStack DB |
-| [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB |
-| [powersync-kotlin](references/sdks/powersync-kotlin.md) | (Under construction) Apply this skill reference if you're working on Kotlin applications. |
-| [powersync-dart](references/sdks/powersync-dart.md) | (Under construction) Apply this skill reference if you're working on Flutter applications. |
+| [powersync-dart](references/sdks/powersync-dart.md) | Apply this skill reference when working on Dart/Flutter apps. It also includes references for Drift (ORM support) and Flutter Web specifics. |
 | [powersync-dotnet](references/sdks/powersync-dotnet.md) | (Under construction) Apply this skill reference if you're working on .NET applications. |
+| [powersync-js](references/sdks/powersync-js.md) | Apply this skill reference when working on a TypeScript/JavaScript apps that use React, Vue, Capacitor, Node.js or React Native. It also includes references for supported ORMs (Kysely, Drizzle and TanStack DB.) |
+| [powersync-kotlin](references/sdks/powersync-kotlin.md) | (Under construction) Apply this skill reference if you're working on Kotlin applications. |
+| [powersync-swift](references/sdks/powersync-swift.md) | Apply this skill reference if you're working on Swift applications. It also includes information for ORM support using GRDB. |

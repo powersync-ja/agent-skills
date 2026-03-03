@@ -14,24 +14,16 @@ powersync/
     ├── powersync-overview.md
     ├── powersync-service.md
     ├── sdks/                       # Detailed SDK references
+    │   ├── powersync-dart.md
+    │   ├── powersync-dotnet.md
     │   ├── powersync-js.md
-    │   └── powersync-swift.md
-    ├── sync-rules.md
-    └── sync-streams.md
+    │   ├── powersync-kotlin.md
+    │   ├── powersync-swift.md
+    ├── sync-config.md
 ```
 
 ## Usage
 
-1. Read `SKILL.md` first.
-2. Use `references/` when looking for detailed information on specific topics. Use the `references/sdks` when looking for client-side specific topics.
-
-## When to Use
-
-Use the PowerSync Skill when:
-- Configuring PowerSync 
-- Connecting PowerSync to a source database
-- Writing client-side code that integrates with the PowerSync SDK
-- Debugging issues related to PowerSync
-- Implementing Sync Rules or Sync Streams
-- Migrating existing applications to PowerSync
-- Gain understanding of the PowerSync architecture
+1. Read [SKILL.md](SKILL.md) first.
+2. Use `references/` when looking for detailed information on specific topics such as the common debugging scenarios, architecture overview to gain an overall understanding of PowerSync, the PowerSync Service or sync config (Sync Streams and Sync Rules). 
+3. Use the `references/sdks` when looking for client-side specific topics for each of the supported SDKs.

@@ -180,7 +180,7 @@ See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/
 
 ## Sync Streams
 
-See [Client Usage](/skills/powersync-best-practices/references/sync-streams.md) for information on how to use Sync Streams.
+See [Client Usage](/skills/powersync/references/sync-config.md) for information on how to subscribe to Sync Streams if `auto_subscribe` is not set to `true` in the `sync_config` on the PowerSync Service instance config.
 
 ## Query Patterns
 

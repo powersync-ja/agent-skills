@@ -1,3 +1,3 @@
-# PowerSync Kotlin SDK
+# PowerSync Dart SDK
 
-Under construction, coming soon.
+Under construction, coming Soon.

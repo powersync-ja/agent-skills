@@ -37,7 +37,7 @@ There are three configuration methods available:
 
 | Resource                        | Description                                                                                                             |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [Configuration File Structure](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#configuration-file-structure) | Outline of all possible configuration options                                   |
+| [Configuration File Structure](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#configuration-file-structure) | Outline of all possible configuration options                                   |
 | [Config Schema](https://unpkg.com/@powersync/service-schema@1.20.0/json-schema/powersync-config.json)                | JSON schema reference for PowerSync Service config                               |
 | [self-host-demo](https://github.com/powersync-ja/self-host-demo) repo                                            | Example configurations for local development                                     |
 
@@ -59,12 +59,12 @@ This is required by PowerSync and can be configured in two different ways. This 
 
 | Storage Database | Configuration Reference                                                                                   |
 |-----------------|--------------------------------------------------------------------------------------------------------------|
-| MongoDB         | [MongoDB Storage](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#mongodb-storage) |
-| Postgres        | [Postgres Storage](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#postgres-storage) |
+| MongoDB         | [MongoDB Storage](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#mongodb-storage) |
+| Postgres        | [Postgres Storage](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#postgres-storage) |
 
 ### Client Authentication
 
-There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#client-authentication) for more information on the options. The options include: JWKS URI, inline JWKs, Supabase Auth, Shared Secrets. Prefer asymmetric keys (RS256, EdDSA, ECDSA) over shared secrets (HS256).
+There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#client-authentication) for more information on the options. The options include: JWKS URI, inline JWKs, Supabase Auth, Shared Secrets. Prefer asymmetric keys (RS256, EdDSA, ECDSA) over shared secrets (HS256).
 
 
 ## PowerSync Cloud Setup

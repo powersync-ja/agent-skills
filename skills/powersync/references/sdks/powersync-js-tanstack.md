@@ -1,3 +1,10 @@
+---
+name: powersync-js-tanstack
+description: PowerSync TanStack integrations — TanStack Query caching, TanStack DB collections, optimistic mutations, and schema validation
+metadata:
+  tags: tanstack, tanstack-query, tanstack-db, react, javascript, typescript, offline-first
+---
+
 # PowerSync TanStack Integrations
 
 TanStack-specific integrations for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when using TanStack Query (React) or TanStack DB (multi-framework) with PowerSync.

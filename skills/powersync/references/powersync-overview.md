@@ -1,3 +1,10 @@
+---
+name: powersync-overview
+description: PowerSync architecture overview — components, data flow, and links to detailed architecture documentation
+metadata:
+  tags: architecture, overview, replication, powersync-service, client-sdk
+---
+
 # PowerSync Architecture Overview
 
 Guidance for understanding all the moving components of PowerSync. For information about the vision of PowerSync, see [PowerSync Philosophy](https://docs.powersync.com/intro/powersync-philosophy.md)

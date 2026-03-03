@@ -1,3 +1,10 @@
+---
+name: powersync-service
+description: PowerSync Service configuration — self-hosting, Docker, source database setup, bucket storage, authentication, and PowerSync Cloud
+metadata:
+  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, authentication, jwt, replication, configuration
+---
+
 # PowerSync Service
 
 Guidance for configuring PowerSync Service, sync config, and database replication.

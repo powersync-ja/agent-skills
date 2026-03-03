@@ -1,3 +1,10 @@
+---
+name: powersync-js-vue
+description: PowerSync Vue and Nuxt integration — composables, plugin setup, Kysely ORM, and diagnostics panel
+metadata:
+  tags: vue, nuxt, composables, useQuery, javascript, typescript, offline-first
+---
+
 # PowerSync Vue & Nuxt
 
 Vue-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building Vue apps or Nuxt apps.

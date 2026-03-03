@@ -1,3 +1,10 @@
+---
+name: powersync-js
+description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, raw tables, Drizzle/Kysely ORM, and debugging
+metadata:
+  tags: javascript, typescript, web, sqlite, offline-first, drizzle, kysely
+---
+
 # PowerSync JavaScript/TypeScript SDK
 
 Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets. Use this reference for any JS/TS project — it covers schema design, the backend connector, database initialization, transactions, imperative queries, sync status, raw tables, and debugging. Always load this file as the foundation, then load the applicable framework-specific file alongside it.

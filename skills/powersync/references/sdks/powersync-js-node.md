@@ -1,3 +1,10 @@
+---
+name: powersync-js-node
+description: PowerSync Node.js and Electron integration — CLI setup, background sync, ETL pipelines, and Electron renderer/main process split
+metadata:
+  tags: nodejs, electron, cli, javascript, typescript, better-sqlite3, offline-first
+---
+
 # PowerSync Node.js & Electron
 
 Node.js-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building Node.js CLI tools, background sync processes, ETL pipelines, or Electron desktop apps.

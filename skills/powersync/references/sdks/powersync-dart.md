@@ -1,3 +1,10 @@
+---
+name: powersync-dart
+description: PowerSync Dart SDK — schema, queries, sync lifecycle, backend connectors, Drift ORM, and Flutter Web support
+metadata:
+  tags: dart, flutter, flutter-web, drift, orm, sqlite
+---
+
 # PowerSync Dart SDK
 
 Best practices and guidance for building Flutter apps with the PowerSync Dart SDK. Use this reference when setting up PowerSync in a Flutter project, configuring the client, defining schemas, writing queries, ORM support and Dart/Flutter Web support.

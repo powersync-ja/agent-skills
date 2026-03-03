@@ -1,6 +1,8 @@
 ---
 name: powersync
 description: Best practices for building applications with PowerSync — schema design, client SDK usage, sync configuration, service setup, and debugging.
+metadata:
+  tags: powersync, offline-first, local-first, sync-rules, sync-streams, sqlite, backend-connector, uploadData, fetchCredentials, replication
 ---
 
 # PowerSync Skills

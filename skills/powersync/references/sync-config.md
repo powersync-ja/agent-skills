@@ -1,3 +1,10 @@
+---
+name: sync-config
+description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
+metadata:
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration
+---
+
 # Sync Config
 
 Expert guidance on Sync Config. Sync config is divided into two sections:

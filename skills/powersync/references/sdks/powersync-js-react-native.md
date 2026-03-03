@@ -1,3 +1,10 @@
+---
+name: powersync-js-react-native
+description: PowerSync React Native, Expo, and Expo Go integration — native SQLite adapters, managed workflow setup, and Expo Go sql-js fallback
+metadata:
+  tags: react-native, expo, expo-go, mobile, op-sqlite, javascript, typescript, offline-first
+---
+
 # PowerSync React Native, Expo & Expo Go
 
 React Native-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building React Native apps, Expo apps (managed or bare workflow), or Expo Go sandboxes.

@@ -1,3 +1,10 @@
+---
+name: powersync-swift
+description: PowerSync Swift SDK — schema, queries, sync lifecycle, backend connectors, and GRDB ORM support
+metadata:
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first
+---
+
 # PowerSync Swift SDK
 
 Best practices and guidance for building apps with the PowerSync Swift SDK. Use this reference when setting up PowerSync in a Swift project.

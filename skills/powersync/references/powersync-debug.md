@@ -1,3 +1,10 @@
+---
+name: powersync-debug
+description: PowerSync debugging and troubleshooting — sync status, JWT verification, PSYNC error codes, replication lag, and diagnostics tools
+metadata:
+  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics
+---
+
 # PowerSync Debug
 
 These are debugging steps most frequently recommended by PowerSync, with an explanation of what problem each step helps identify and why it works.

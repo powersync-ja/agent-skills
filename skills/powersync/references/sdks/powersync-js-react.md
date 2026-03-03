@@ -1,3 +1,10 @@
+---
+name: powersync-js-react
+description: PowerSync React and Next.js integration — PowerSyncContext, useSuspenseQuery, useQuery, sync stream hooks, and Next.js/Vite setup
+metadata:
+  tags: react, nextjs, vite, hooks, useSuspenseQuery, useQuery, PowerSyncContext, javascript, typescript
+---
+
 # PowerSync React & Next.js
 
 React-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building React web apps, Next.js apps, or when using the React hooks from `@powersync/react` or `@powersync/react-native`.

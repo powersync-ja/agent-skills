@@ -134,6 +134,7 @@ const tasks = new Table(
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-integrate-with-your-backend) and [Client-Side Integration](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) for more information.
 
 ```ts
+import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
 async fetchCredentials(): Promise<PowerSyncCredentials> {
   return {
     endpoint: 'https://your-instance.powersync.journeyapps.com',
@@ -152,6 +153,9 @@ async fetchCredentials(): Promise<PowerSyncCredentials> {
 Called automatically whenever local writes are pending. Must be synchronous with the actual backend write — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
 
 ```ts
+import { AbstractPowerSyncDatabase, UpdateType } from '@powersync/web'
+import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
+
 async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
   const transaction = await database.getNextCrudTransaction();
   if (!transaction) return;
@@ -180,6 +184,8 @@ async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
 ```
 
 If `transaction.complete()` is never called, `getNextCrudTransaction()` returns the same transaction forever — the upload queue stalls permanently.
+
+Note: When uploading to backends with native boolean columns (e.g. PostgreSQL via Supabase or MongoDB), op.opData will contain 0/1. Convert before writing.
 
 #### HTTP Status Code Handling
 
@@ -277,6 +283,19 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
+
+```ts
+// Recommended — more reliable across browsers including Safari
+import { WASQLiteOpenFactory, WASQLiteVFS } from '@powersync/web'
+
+const db = new PowerSyncDatabase({
+  schema,
+  database: new WASQLiteOpenFactory({
+    dbFilename: 'app.db',
+    vfs: WASQLiteVFS.OPFSCoopSyncVFS, // default: IDBBatchAtomicVFS
+  }),
+})
+```
 
 Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 

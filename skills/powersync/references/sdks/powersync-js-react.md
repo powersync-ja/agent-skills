@@ -257,6 +257,24 @@ export default function Page() {
 
 All components that use PowerSync hooks must have `'use client'` at the top. PowerSync hooks are not compatible with React Server Components.
 
+## Vite Setup
+
+Vite requires `vite-plugin-wasm` + `vite-plugin-top-level-await` to handle the WASM SQLite engine.
+
+```bash
+npm install -D vite-plugin-wasm vite-plugin-top-level-await
+```
+
+```ts
+// vite.config.ts
+import wasm from 'vite-plugin-wasm'
+import topLevelAwait from 'vite-plugin-top-level-await'
+
+export default defineConfig({
+  plugins: [react(), wasm(), topLevelAwait()],
+})
+```
+
 ## Common Pitfalls
 
 ### Suspense requires ErrorBoundary

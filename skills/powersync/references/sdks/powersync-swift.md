@@ -5,7 +5,7 @@ Best practices and guidance for building apps with the PowerSync Swift SDK. Use 
 | Resource                                    | Description                                                    |
 |----------------------------------------------|----------------------------------------------------------------|
 | [Swift API reference](https://powersync-ja.github.io/powersync-swift/documentation/powersync/) | View all available APIs for PowerSync Swift.                   |
-| [Supported Platforms - Swift SDK](http:///docs.powersync.com/resources/supported-platform.md#swift-sdk) | See supported platforms and features for the Swift SDK.         |
+| [Supported Platforms - Swift SDK](https://docs.powersync.com/resources/supported-platform.md#swift-sdk) | See supported platforms and features for the Swift SDK.         |
 
 ## Example Projects
 
@@ -132,7 +132,7 @@ final class MyConnector: PowerSyncBackendConnectorProtocol {
 }
 ```
 
-See [Integrate with your Backend](http://docs.powersync.com/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
+See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
 
 **Note** use `getCrudBatch` when handling large numbers of mutations that need to be uploaded in bulk to the backend API.
 
@@ -217,14 +217,14 @@ See the functions below when needed to mutate data in the SQLite database.
 
 ## ORM
 
-PowerSync supports GRDB for ORM integration in the PowerSync Swift SDK. See [Architecture](http://docs.powersync.com/client-sdks/orms/swift/grdb#architecture) to gain an understanding of the overall architecture of the PowerSync Swift SDK GRDB integration.
+PowerSync supports GRDB for ORM integration in the PowerSync Swift SDK. See [Architecture](https://docs.powersync.com/client-sdks/orms/swift/grdb.md#architecture) to gain an understanding of the overall architecture of the PowerSync Swift SDK GRDB integration.
 
 ### Requirements 
 - PowerSync Swift v1.9.0
 
 ### Setup
 
-Using GRDB requires a `DatabasePool` with PowerSync config. See [Setup](http:/docs.powersync.com/client-sdks/orms/swift/grdb.md#setup) for instructions.
+Using GRDB requires a `DatabasePool` with PowerSync config. See [Setup](https://docs.powersync.com/client-sdks/orms/swift/grdb.md#setup) for instructions.
 
 ### Usage
 

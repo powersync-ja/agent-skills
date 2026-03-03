@@ -108,7 +108,7 @@ SELECT * FROM ps_crud ORDER BY id
 EXPLAIN QUERY PLAN SELECT ...
 ```
 
-**What to look for:** `SCAN TABLE <name>` (bad / no index used) vs. `SEARCH TABLE <name> USING INDEX` (good). If your PowerSync tables show a SCAN, switch to [raw tables](https://docs.powersync.com/usage/use-case-examples/raw-tables). If your non-PowerSync tables show a SCAN, add an index on the join column.
+**What to look for:** `SCAN TABLE <name>` (bad / no index used) vs. `SEARCH TABLE <name> USING INDEX` (good). If your PowerSync tables show a SCAN, switch to [raw tables](https://docs.powersync.com/usage/use-case-examples/raw-tables.md). If your non-PowerSync tables show a SCAN, add an index on the join column.
 
 ## Check Package Versions and Duplicate Dependencies
 
@@ -134,7 +134,7 @@ npm ls @powersync/op-sqlite
 
 **What it identifies:** Whether your JWT contains the expected `sub`, `aud`, `iss`, `exp`, `kid`, and custom claims that PowerSync uses for auth and parameter queries.
 
-**Why:** JWT issues are the most common connection failure cause. The PowerSync Service validates the `kid` (key ID) against its configured keystore. A mismatch gives `PSYNC_S2101` (See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes#error-codes-reference)). It also enforces `exp` ≤ 86400s (`PSYNC_S2104`). Custom claims used in parameter queries (e.g. `app_metadata`) must be present and structured exactly as the sync rules expect.
+**Why:** JWT issues are the most common connection failure cause. The PowerSync Service validates the `kid` (key ID) against its configured keystore. A mismatch gives `PSYNC_S2101` (See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference)). It also enforces `exp` ≤ 86400s (`PSYNC_S2104`). Custom claims used in parameter queries (e.g. `app_metadata`) must be present and structured exactly as the sync rules expect.
 
 **How:** Paste your JWT into [jwt.io](https://jwt.io) or decode it in your debugger.
 
@@ -165,7 +165,7 @@ These error codes are prefixed with `PSYNC_`, indicating a specific PowerSync re
 
 Use them to help drill into specific errors to help debug an issue.
 
-See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes#error-codes-reference) for more information.
+See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 
 # Replication Lag Debugging (Postgres)
 

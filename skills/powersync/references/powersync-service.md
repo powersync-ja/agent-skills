@@ -1,6 +1,6 @@
 # PowerSync Service
 
-Guidance for configuring PowerSync Service, sync rules, and database replication.
+Guidance for configuring PowerSync Service, sync config, and database replication.
 
 For source code see: [powersync-service](https://github.com/powersync-ja/powersync-service/)
 
@@ -8,9 +8,9 @@ For debugging see: [powersync-debug.md](./powersync-debug.md).
 
 ## Sync Config
 
-The rules that instruct the PowerSync Service what data to download to client application.
+The rules that instruct the PowerSync Service what data to replicate and download to client application.
 
-See [sync-config.md] for detailed information.
+See [sync-config.md](sync-config.md) for detailed information.
 
 ## Service Configuration (Self-hosted)
 
@@ -37,7 +37,7 @@ There are three configuration methods available:
 
 | Resource                        | Description                                                                                                             |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [Configuration File Structure](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#configuration-file-structure) | Outline of all possible configuration options                                   |
+| [Configuration File Structure](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#configuration-file-structure) | Outline of all possible configuration options                                   |
 | [Config Schema](https://unpkg.com/@powersync/service-schema@1.20.0/json-schema/powersync-config.json)                | JSON schema reference for PowerSync Service config                               |
 | [self-host-demo](https://github.com/powersync-ja/self-host-demo) repo                                            | Example configurations for local development                                     |
 
@@ -59,17 +59,17 @@ This is required by PowerSync and can be configured in two different ways. This 
 
 | Storage Database | Configuration Reference                                                                                   |
 |-----------------|--------------------------------------------------------------------------------------------------------------|
-| MongoDB         | [MongoDB Storage](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#mongodb-storage) |
-| Postgres        | [Postgres Storage](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#postgres-storage) |
+| MongoDB         | [MongoDB Storage](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#mongodb-storage) |
+| Postgres        | [Postgres Storage](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#postgres-storage) |
 
 ### Client Authentication
 
-There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](http://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#client-authentication) for more information on the options. The options include: JWKS URI, inline JWKs, Supabase Auth, Shared Secrets. Prefer asymmetric keys (RS256, EdDSA, ECDSA) over shared secrets (HS256).
+There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#client-authentication) for more information on the options. The options include: JWKS URI, inline JWKs, Supabase Auth, Shared Secrets. Prefer asymmetric keys (RS256, EdDSA, ECDSA) over shared secrets (HS256).
 
 
 ## PowerSync Cloud Setup
 
-See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersync-service/cloud-instances) for step-by-step instructions on how to configure PowerSync Cloud instance on the [PowerSync Dashboard](httts://dashboard.powersync.com).
+See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersync-service/cloud-instances.md) for step-by-step instructions on how to configure PowerSync Cloud instance on the [PowerSync Dashboard](httts://dashboard.powersync.com).
 
 ## Source Database Setup
 
@@ -215,6 +215,6 @@ PowerSync can also integrate with Auth providers, with official guides for the f
 
 | Provider   | Resource Link                                                                 |
 |------------|-----------------------------------------------------------------------------------|
-| Supabase   | [Supabase](https://docs.powersync.com/configuration/auth/supabase-auth)            |
-| Firebase   | [Firebase](https://docs.powersync.com/configuration/auth/firebase-auth)            |
-| Auth0      | [Auth0](https://docs.powersync.com/configuration/auth/firebase-auth)               |
+| Supabase   | [Supabase](https://docs.powersync.com/configuration/auth/supabase-auth.md)            |
+| Firebase   | [Firebase](https://docs.powersync.com/configuration/auth/firebase-auth.md)            |
+| Auth0      | [Auth0](https://docs.powersync.com/configuration/auth/firebase-auth.md)               |

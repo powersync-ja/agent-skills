@@ -254,4 +254,4 @@ PowerSync has ORM support using [Drift](https://pub.dev/packages/drift). See the
 
 ## Web Support
 
-PowerSync has support for Flutter Web in `powersync` version ^1.9.0. See [Dart/Flutter Web](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support) for detailed information such as additional configuration requirements, OPFS(origin private file system) for improved performance and limitations that developers should be aware of. 
+PowerSync has support for Flutter Web in `powersync` version ^1.9.0. See [Dart/Flutter Web](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for detailed information such as additional configuration requirements, OPFS(origin private file system) for improved performance and limitations that developers should be aware of. 

@@ -8,7 +8,7 @@ Expert guidance on Sync Config. Sync config is divided into two sections:
 
 Sync Streams define exactly which data is synced to each client by using named, SQL-like queries and subscription parameters.
 
-For a full overview, see [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview)
+For a full overview, see [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md)
 
 ## Requirements 
 
@@ -24,7 +24,7 @@ config:
 ```
 
 ### PowerSync SDKs
-There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
+There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration.md#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
 
 **IMPORTANT**
 Client applications using a lower version than the `Rust Client Default` should make sure to enable the Rust Sync Client to use Sync Streams. 
@@ -58,11 +58,11 @@ streams:
 
 There are different ways you can use Sync Streams to query data in your applications. 
 
-[Global Data](https://docs.powersync.com/sync/streams/overview#global-data)
+[Global Data](https://docs.powersync.com/sync/streams/overview.md#global-data)
 
-[Filtering By User](https://docs.powersync.com/sync/streams/overview#filtering-data-by-user)
+[Filtering By User](https://docs.powersync.com/sync/streams/overview.md#filtering-data-by-user)
 
-For more information about how to perform advanced queries using [JOIN](https://docs.powersync.com/sync/streams/queries#using-joins), [Subqueries](https://docs.powersync.com/sync/streams/queries#using-subqueries) or [multiple queries per Stream](https://docs.powersync.com/sync/streams/queries#multiple-queries-per-stream) see [Queries](https://docs.powersync.com/sync/streams/queries). 
+For more information about how to perform advanced queries using [JOIN](https://docs.powersync.com/sync/streams/queries.md#using-joins), [Subqueries](https://docs.powersync.com/sync/streams/queries.md#using-subqueries) or [multiple queries per Stream](https://docs.powersync.com/sync/streams/queries.md#multiple-queries-per-stream) see [Queries](https://docs.powersync.com/sync/streams/queries.md). 
 
 ## Query Parameters
 
@@ -70,17 +70,17 @@ Query parameters allow you filter data in your Sync Streams. There are three dif
 
 **Auth parameters** are the most secure option. Use them when you need to filter data based on who the user is. Since these values come from the signed JWT, they can’t be tampered with by the client.
 
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters#auth-parameters).
+Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters).
 
 **Subscription parameters** are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
 
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters#subscription-parameters).
+Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters).
 
 **Connection parameters** apply globally across all streams for the session. Use them for values that rarely change, like environment flags or feature toggles. Keep in mind that changing them requires reconnecting.
 
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters#connection-parameters).
+Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters).
 
-See [Sync Streams Parameters](https://docs.powersync.com/sync/streams/parameters) for more information beyond this.
+See [Sync Streams Parameters](https://docs.powersync.com/sync/streams/parameters.md) for more information beyond this.
 
 ## Common Table Expressions (CTEs)
 
@@ -127,15 +127,15 @@ with:
 
 ```
 
-For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/ctes#limitations).
+For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/ctes.md#limitations).
 
 ## Common Examples and Patterns
 
-Common patterns, use case examples, and demo Sync Streams. See [Examples](https://docs.powersync.com/sync/streams/examples).
+Common patterns, use case examples, and demo Sync Streams. See [Examples](https://docs.powersync.com/sync/streams/examples.md).
 
 ## Migration
 
-There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](https://docs.powersync.com/sync/streams/migration) for information such as:
+There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](https://docs.powersync.com/sync/streams/migration.md) for information such as:
 - How to migrate
 - The tools that can make it easier 
 - Understanding the difference between Sync Rules and Sync Streams
@@ -143,7 +143,7 @@ There are big differences between Sync Rules and Sync Streams, consider the foll
 
 ## Client Usage
 
-Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](https://docs.powersync.com/sync/streams/client-usage) Usage for a full breakdown.
+Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](https://docs.powersync.com/sync/streams/client-usage.md) Usage for a full breakdown.
 This covers topics such as:
 - Initializing a subscription
 - Inspect the sync status of a subscription

@@ -259,8 +259,8 @@ const db = new PowerSyncDatabase({
 
 | VFS Option                | Description         | Reference URL                                                                                           |
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
-| IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web#1-idbbatchatomicvfs-default)     |
-| OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web#2-opfs-based-alternatives)       |
+| IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
+| OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
 
 **Safari**: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 

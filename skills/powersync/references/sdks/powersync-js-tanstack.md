@@ -91,6 +91,18 @@ When navigating to or refreshing a page, a brief UI flicker (10–50ms) can occu
 
 TanStack DB is different from TanStack Query: TanStack DB uses differential data flow for in-memory queries that update incrementally, rather than re-running full SQL queries. It's more suitable for complex, highly interactive UIs that need cross-collection joins and optimistic updates.
 
+Use TanStack DB when:
+- Mutations need to feel synchronous — TanStack DB applies optimistic state in-memory immediately; PowerSync's `execute()` is async, which is fast but not instantaneous
+- Your app renders many simultaneous live queries — PowerSync live queries each hold a SQLite connection from a bounded pool; if many views watch queries at once, that pool becomes a snappiness bottleneck; TanStack DB's in-memory queries bypass it entirely
+- You have complex dependent queries that benefit from differential invalidation — PowerSync re-runs the full SQL query and diffs results on every table change; TanStack DB invalidates only the queries whose specific inputs changed
+- You need to join a PowerSync (offline) collection with a non-PowerSync TanStack DB collection (e.g. an online store)
+
+Use plain PowerSync (`.watch()` / `usePowerSyncQuery`) when:
+- Async SQLite write latency is acceptable for your use case
+- Your app has a modest number of simultaneous live queries
+- Your queries are simple and don't benefit from differential invalidation
+- You are not mixing offline and online collections
+
 ### Install
 
 ```bash

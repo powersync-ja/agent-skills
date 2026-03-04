@@ -79,6 +79,8 @@ npm install @powersync/tanstack-react-query
 npm install @tanstack/powersync-db-collection
 ```
 
+Always install packages by running these commands rather than writing versions into `package.json` manually. Using `"latest"` as a version string in `package.json` is incorrect — it bypasses the lockfile and can pull in breaking changes at any install.
+
 See the framework-specific files for full setup instructions per target.
 
 ### 2. Define Schema

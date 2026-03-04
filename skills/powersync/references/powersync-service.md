@@ -91,7 +91,7 @@ Both PowerSync Cloud and Self-hosted require the same base source database setup
 ### PostgreSQL Quick Start
 
 ```sql
--- 1. Enable logical replication
+-- 1. Enable logical replication (skip this step for Supabase — it is already enabled)
 ALTER SYSTEM SET wal_level = 'logical';
 -- Restart PostgreSQL after this
 
@@ -102,11 +102,11 @@ CREATE USER powersync_replication WITH REPLICATION PASSWORD 'YOUR_GENERATED_PASS
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO powersync_replication;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO powersync_replication;
 
--- 4. Create publication for all tables
-CREATE PUBLICATION powersync FOR ALL TABLES;
-
--- OR for specific tables:
+-- 4. Create publication (list every table PowerSync should replicate)
 CREATE PUBLICATION powersync FOR TABLE users, todos, lists;
+
+-- OR to replicate all current and future tables automatically:
+CREATE PUBLICATION powersync FOR ALL TABLES;
 ```
 
 ### MongoDB Quick Start

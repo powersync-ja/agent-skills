@@ -19,14 +19,9 @@ Run this in the Supabase SQL Editor **after creating your tables**:
 -- Create the PowerSync publication (required)
 -- List every table PowerSync should replicate
 CREATE PUBLICATION powersync FOR TABLE lists, todos;
-
--- REPLICA IDENTITY FULL is required on each replicated table
--- so that DELETE operations include enough data for PowerSync to sync them
-ALTER TABLE lists REPLICA IDENTITY FULL;
-ALTER TABLE todos REPLICA IDENTITY FULL;
 ```
 
-When you add a new table that PowerSync should replicate, run both statements for that table. To replicate all current and future tables automatically (simpler but less precise):
+When you add a new table that PowerSync should replicate, add it to the publication. To replicate all current and future tables automatically (simpler but less precise):
 
 ```sql
 CREATE PUBLICATION powersync FOR ALL TABLES;

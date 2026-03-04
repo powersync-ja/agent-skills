@@ -7,9 +7,9 @@ metadata:
 
 # PowerSync React Native, Expo & Expo Go
 
-React Native-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building React Native apps, Expo apps (managed or bare workflow), or Expo Go sandboxes.
+React Native-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building React Native apps, Expo apps (managed or bare workflow), or Expo Go sandboxes.
 
-The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`) from `@powersync/react-native` is identical to `@powersync/react` — see `powersync-js.md` for full hook patterns and `powersync-js-react.md` for `useSuspenseQuery` and sync stream hooks.
+The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`) from `@powersync/react-native` is identical to `@powersync/react` — see `references/sdks/powersync-js.md` for full hook patterns and `references/sdks/powersync-js-react.md` for `useSuspenseQuery` and sync stream hooks.
 
 | Resource | Description |
 |----------|-------------|

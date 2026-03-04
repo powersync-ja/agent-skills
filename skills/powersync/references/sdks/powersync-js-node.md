@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync Node.js & Electron
 
-Node.js-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building Node.js CLI tools, background sync processes, ETL pipelines, or Electron desktop apps.
+Node.js-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building Node.js CLI tools, background sync processes, ETL pipelines, or Electron desktop apps.
 
 | Resource | Description |
 |----------|-------------|
@@ -61,7 +61,7 @@ await db.connect(connector);
 
 ### Querying
 
-No UI hooks are available in Node.js. Use the imperative API from `powersync-js.md` directly:
+No UI hooks are available in Node.js. Use the imperative API from `references/sdks/powersync-js.md` directly:
 
 ```ts
 // One-time queries
@@ -111,7 +111,7 @@ Electron apps have two distinct environments — the renderer process (a Chromiu
 Electron App
 ├── Renderer Process (Chromium)
 │   └── Use @powersync/web + @powersync/react or @powersync/vue
-│       → See powersync-js-react.md or powersync-js-vue.md
+│       → See references/sdks/powersync-js-react.md or references/sdks/powersync-js-vue.md
 │
 └── Main Process (Node.js)
     └── Use @powersync/node + better-sqlite3
@@ -126,7 +126,7 @@ The renderer process is a full browser environment. Set it up exactly like any o
 npm install @powersync/web @journeyapps/wa-sqlite @powersync/react
 ```
 
-Use `PowerSyncContext.Provider` and `useQuery`/`useStatus` hooks as documented in `powersync-js-react.md`. The Web-Specific Options section in `powersync-js.md` (VFS options, multi-tab, `debugMode`) also applies to the renderer process.
+Use `PowerSyncContext.Provider` and `useQuery`/`useStatus` hooks as documented in `references/sdks/powersync-js-react.md`. The Web-Specific Options section in `references/sdks/powersync-js.md` (VFS options, multi-tab, `debugMode`) also applies to the renderer process.
 
 ### Main Process
 

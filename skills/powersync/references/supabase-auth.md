@@ -1,13 +1,36 @@
 ---
 name: supabase-auth
-description: Configuring PowerSync authentication with Supabase — JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
+description: Configuring PowerSync with Supabase — database publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
 metadata:
-  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256
+  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256, publication, replica-identity
 ---
 
 # PowerSync + Supabase Auth
 
 PowerSync verifies Supabase JWTs directly when connected to a Supabase-hosted Postgres database. This file covers everything needed to configure authentication end-to-end.
+
+## Supabase Database Setup
+
+Supabase already has logical replication enabled at the WAL level. You still need to create a publication so PowerSync knows which tables to replicate, and set `REPLICA IDENTITY FULL` on each table so that DELETE operations include the full row (required for PowerSync to sync deletes to clients).
+
+Run this in the Supabase SQL Editor **after creating your tables**:
+
+```sql
+-- Create the PowerSync publication (required)
+-- List every table PowerSync should replicate
+CREATE PUBLICATION powersync FOR TABLE lists, todos;
+
+-- REPLICA IDENTITY FULL is required on each replicated table
+-- so that DELETE operations include enough data for PowerSync to sync them
+ALTER TABLE lists REPLICA IDENTITY FULL;
+ALTER TABLE todos REPLICA IDENTITY FULL;
+```
+
+When you add a new table that PowerSync should replicate, run both statements for that table. To replicate all current and future tables automatically (simpler but less precise):
+
+```sql
+CREATE PUBLICATION powersync FOR ALL TABLES;
+```
 
 ## JWT Signing Key Types
 

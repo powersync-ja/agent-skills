@@ -134,46 +134,130 @@ streams:
 
 The inner `AND` clause is what makes this safe — it prevents a client from requesting data outside their own workspaces.
 
-## Basic Query
+## Common Patterns
+
+### Global data
+
+No filter — same data for all users. Use `auto_subscribe: true` so clients receive it automatically on connect.
+
+```yaml
+streams:
+  categories:
+    auto_subscribe: true
+    query: SELECT * FROM categories
+
+  products:
+    auto_subscribe: true
+    query: SELECT * FROM products WHERE active = true
+```
+
+### Personal data
+
+Filter by the authenticated user using `auth.user_id()`.
+
+```yaml
+streams:
+  my_notes:
+    auto_subscribe: true
+    query: SELECT * FROM notes WHERE owner_id = auth.user_id()
+
+  my_orders:
+    auto_subscribe: true
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+```
+
+### JOIN
+
+Use `INNER JOIN` to filter rows via a related table (e.g. a membership table):
+
+```yaml
+streams:
+  team_projects:
+    query: |
+      SELECT p.*
+      FROM projects p
+      INNER JOIN team_members tm ON tm.team_id = p.team_id
+      WHERE tm.user_id = auth.user_id()
+```
+
+### Subquery
+
+Use `WHERE id IN (SELECT ...)` for indirect access through a related table:
+
+```yaml
+streams:
+  org_documents:
+    query: |
+      SELECT * FROM documents
+      WHERE org_id IN (
+        SELECT org_id FROM org_members WHERE user_id = auth.user_id()
+      )
+```
+
+### On-demand with subscription parameter
+
+Client subscribes to a specific resource at runtime. Always include an auth guard.
+
+```yaml
+streams:
+  list_todos:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM todos
+      WHERE list_id = subscription.parameter('list_id')
+        AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
+```
+
+See [Writing Queries](https://docs.powersync.com/sync/streams/queries.md) for JOIN, subquery, and multiple queries per stream details.
+See [Examples & Demos](https://docs.powersync.com/sync/streams/examples.md) for complete working app patterns.
+
+## Query Parameters
+
+There are three kinds of query parameters. Choose based on where the value comes from and how often it changes.
+
+### Auth parameters
+
+Values from the signed JWT — the most secure option. Use when filtering by who the user is. These cannot be tampered with by the client.
+
 ```yaml
 streams:
   my_orders:
     query: SELECT * FROM orders WHERE user_id = auth.user_id()
 
+  tenant_data:
+    query: SELECT * FROM records WHERE tenant_id = auth.jwt() ->> 'tenant_id'
+```
+
+See [Auth Parameters](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters) for all available JWT claims.
+
+### Subscription parameters
+
+The client chooses what to sync at runtime. Each subscription is independent — a user can have multiple subscriptions to the same stream with different values. Always scope with an auth guard to prevent a client from accessing data they don't own.
+
+```yaml
+streams:
   list_todos:
+    accept_potentially_dangerous_queries: true
     query: |
       SELECT * FROM todos
       WHERE list_id = subscription.parameter('list_id')
+        AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
 ```
 
+See [Subscription Parameters](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters) for full reference.
 
-## How to Query Data
+### Connection parameters
 
-There are different ways you can use Sync Streams to query data in your applications. 
+Apply globally across all streams for the session. Use for values that rarely change, like environment flags or feature toggles. Changing them requires reconnecting.
 
-[Global Data](https://docs.powersync.com/sync/streams/overview.md#global-data)
+```yaml
+streams:
+  config:
+    auto_subscribe: true
+    query: SELECT * FROM config WHERE env = connection.parameter('environment')
+```
 
-[Filtering By User](https://docs.powersync.com/sync/streams/overview.md#filtering-data-by-user)
-
-For more information about how to perform advanced queries using [JOIN](https://docs.powersync.com/sync/streams/queries.md#using-joins), [Subqueries](https://docs.powersync.com/sync/streams/queries.md#using-subqueries) or [multiple queries per Stream](https://docs.powersync.com/sync/streams/queries.md#multiple-queries-per-stream) see [Queries](https://docs.powersync.com/sync/streams/queries.md). 
-
-## Query Parameters
-
-Query parameters allow you filter data in your Sync Streams. There are three different kinds of query parameters:
-
-Auth parameters are the most secure option. Use them when you need to filter data based on who the user is. Since these values come from the signed JWT, they can’t be tampered with by the client.
-
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters).
-
-Subscription parameters are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
-
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters).
-
-Connection parameters apply globally across all streams for the session. Use them for values that rarely change, like environment flags or feature toggles. Keep in mind that changing them requires reconnecting.
-
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters).
-
-See [Sync Streams Parameters](https://docs.powersync.com/sync/streams/parameters.md) for more information beyond this.
+See [Connection Parameters](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters) for full reference.
 
 ## Common Table Expressions (CTEs)
 
@@ -221,10 +305,6 @@ with:
 ```
 
 For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/ctes.md#limitations).
-
-## Common Examples and Patterns
-
-Common patterns, use case examples, and demo Sync Streams. See [Examples](https://docs.powersync.com/sync/streams/examples.md).
 
 ## Migration
 

@@ -44,11 +44,11 @@ Key rule: **client writes never go through PowerSync** — they go directly from
 |------|-----------------|
 | New project setup | See SDK Reference Files below for your platform |
 | Handling file uploads / attachments | `references/attachments.md` |
-| Debugging sync / connection issues | `powersync-debug.md` |
-| Writing or migrating sync config | `sync-config.md` |
-| Configuring the service / self-hosting | `powersync-service.md` |
-| Using the PowerSync CLI | `powersync-cli.md` |
-| Understanding the overall architecture | This file is sufficient; see `powersync-overview.md` for deep links |
+| Debugging sync / connection issues | `references/powersync-debug.md` |
+| Writing or migrating sync config | `references/sync-config.md` |
+| Configuring the service / self-hosting | `references/powersync-service.md` |
+| Using the PowerSync CLI | `references/powersync-cli.md` |
+| Understanding the overall architecture | This file is sufficient; see `references/powersync-overview.md` for deep links |
 
 ## SDK Reference Files
 
@@ -58,20 +58,20 @@ Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS pr
 
 | Framework file | Load when… |
 |----------------|-----------|
-| `powersync-js-react.md` | React web app or Next.js |
-| `powersync-js-react-native.md` | React Native, Expo, or Expo Go |
-| `powersync-js-vue.md` | Vue or Nuxt |
-| `powersync-js-node.md` | Node.js CLI/server or Electron |
-| `powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
+| `references/sdks/powersync-js-react.md` | React web app or Next.js |
+| `references/sdks/powersync-js-react-native.md` | React Native, Expo, or Expo Go |
+| `references/sdks/powersync-js-vue.md` | Vue or Nuxt |
+| `references/sdks/powersync-js-node.md` | Node.js CLI/server or Electron |
+| `references/sdks/powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
 
 ### Other SDKs
 
 | File | Use when… |
 |------|----------|
-| `powersync-dart.md` | Dart / Flutter (includes Drift ORM + Flutter Web) |
-| `powersync-dotnet.md` | .NET (MAUI, WPF, Console) |
-| `powersync-kotlin.md` | Kotlin Multiplatform (Android, JVM, iOS, macOS, watchOS, tvOS) |
-| `powersync-swift.md` | Swift / iOS / macOS (includes GRDB ORM) |
+| `references/sdks/powersync-dart.md` | Dart / Flutter (includes Drift ORM + Flutter Web) |
+| `references/sdks/powersync-dotnet.md` | .NET (MAUI, WPF, Console) |
+| `references/sdks/powersync-kotlin.md` | Kotlin Multiplatform (Android, JVM, iOS, macOS, watchOS, tvOS) |
+| `references/sdks/powersync-swift.md` | Swift / iOS / macOS (includes GRDB ORM) |
 
 ## Key Rules to Apply Without Being Asked
 

@@ -362,6 +362,19 @@ There are examples available for each PowerSync Client SDK.
 |---------------------------|--------------------------------------------------------------------------------------------------------------------|
 | React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
 
+## Advanced Topics
+
+Reference these when the standard patterns don't cover your use case:
+
+| Topic | When to use |
+|-------|-------------|
+| [Client ID](https://docs.powersync.com/sync/advanced/client-id.md) | Filter or scope data by which specific client device is syncing |
+| [Sync Data by Time](https://docs.powersync.com/sync/advanced/sync-data-by-time.md) | Limit sync to a rolling time window (e.g. last 30 days) |
+| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Source data from multiple database schemas or connections |
+| [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
+| [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
+| [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
+
 # Sync Rules
 
 Sync rules define how data is partitioned into buckets and distributed to clients. This is considered legacy, however will still be supported. For the best experience use [sync-streams](./sync-streams.md).

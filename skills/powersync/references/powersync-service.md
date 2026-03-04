@@ -73,6 +73,8 @@ This is required by PowerSync and can be configured in two different ways. This 
 
 There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#client-authentication) for more information on the options. The options include: JWKS URI, inline JWKs, Supabase Auth, Shared Secrets. Prefer asymmetric keys (RS256, EdDSA, ECDSA) over shared secrets (HS256).
 
+**Important:** There is no `dev: true` auth type in the `client_auth` config schema. It does not exist. For development tokens on self-hosted, configure a real signing key first, then use `powersync generate token`. On PowerSync Cloud, users need to enable development tokens via the dashboard in the Client Auth section of the instance. 
+
 
 ## PowerSync Cloud Setup
 

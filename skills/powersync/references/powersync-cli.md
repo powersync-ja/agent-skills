@@ -353,11 +353,26 @@ powersync deploy sync-config
 | `powersync fetch config` | Print linked Cloud instance config (YAML/JSON) |
 | `powersync status` | Instance diagnostics (connections, replication); Cloud and self-hosted |
 | `powersync generate schema --output=ts --output-path=schema.ts` | Generate client-side schema |
-| `powersync generate token --subject=user-123` | Generate a development JWT |
+| `powersync generate token --subject=user-123` | Generate a development JWT (see Development Tokens below) |
 | `powersync destroy --confirm=yes` | [Cloud only] Permanently destroy the linked instance |
 | `powersync stop --confirm=yes` | [Cloud only] Stop the linked instance (restart with deploy) |
 
 For full usage and flags, run `powersync --help` or `powersync <command> --help`.
+
+## Development Tokens
+
+`powersync generate token --subject=<user-id>` generates a short-lived JWT for local development and testing.
+
+**Cloud:** The instance manages signing keys automatically. `generate token` works immediately after `powersync deploy` with no additional `client_auth` configuration needed.
+
+**Self-hosted:** The instance must have `client_auth` configured in `service.yaml` with a real signing key (JWKS URI, inline JWKs, Supabase Auth, or shared secret) before `generate token` will work. There is no `dev: true` auth type — that does not exist in the config schema.
+
+```bash
+powersync generate token --subject=user-test-1
+# Copy the token output and use it as the JWT in fetchCredentials()
+```
+
+Dev tokens are for development only. In production, `fetchCredentials()` must return a real JWT from your auth provider.
 
 ## Migrating from the Previous CLI (0.8.0 → 0.9.0)
 

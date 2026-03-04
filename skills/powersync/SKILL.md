@@ -56,6 +56,7 @@ Key rule: **client writes never go through PowerSync** — they go directly from
 |------|-----------------|
 | New project setup | See SDK Reference Files below for your platform |
 | Handling file uploads / attachments | `references/attachments.md` |
+| Configuring Supabase authentication | `references/supabase-auth.md` |
 | Debugging sync / connection issues | `references/powersync-debug.md` |
 | Writing or migrating sync config | `references/sync-config.md` |
 | Configuring the service / self-hosting | `references/powersync-service.md` |

@@ -21,7 +21,8 @@ npx skills add powersync-ja/agent-skills
 
 ### Claude Code
 ```
-/plugin marketplace add powersync/skills
+/plugin marketplace add powersync-ja/agent-skills
+/plugin install powersync-skills
 ```
 
 ## Usage

@@ -82,7 +82,7 @@ Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS pr
 |----------|-----------|------|
 | Dart / Flutter | Dart / Flutter (includes Drift ORM + Flutter Web) | `references/sdks/powersync-dart.md` |
 | .NET | .NET (MAUI, WPF, Console) | `references/sdks/powersync-dotnet.md` |
-| Kotlin | Kotlin Multiplatform (Android, JVM, iOS, macOS, watchOS, tvOS) | `references/sdks/powersync-kotlin.md` |
+| Kotlin | Kotlin (Android, JVM, iOS, macOS, watchOS, tvOS) | `references/sdks/powersync-kotlin.md` |
 | Swift | Swift / iOS / macOS (includes GRDB ORM) | `references/sdks/powersync-swift.md` |
 
 ## Key Rules to Apply Without Being Asked

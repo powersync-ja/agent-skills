@@ -1,13 +1,13 @@
 ---
 name: powersync-kotlin
-description: PowerSync Kotlin Multiplatform SDK — schema, queries, sync lifecycle, and backend connectors
+description: PowerSync Kotlin SDK — schema, queries, sync lifecycle, and backend connectors
 metadata:
-  tags: kotlin, android, ios, multiplatform, sqlite, offline-first
+  tags: kotlin, android, ios, sqlite, offline-first
 ---
 
-# PowerSync Kotlin Multiplatform SDK
+# PowerSync Kotlin SDK
 
-Best practices for building apps with the PowerSync Kotlin Multiplatform SDK.
+Best practices for building apps with the PowerSync Kotlin SDK.
 
 Supported targets: Android, JVM, iOS, macOS, watchOS, tvOS.
 

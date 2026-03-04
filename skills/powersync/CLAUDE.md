@@ -43,6 +43,7 @@ Key rule: **client writes never go through PowerSync** — they go directly from
 | Task | Load these files |
 |------|-----------------|
 | New project setup | See SDK Reference Files below for your platform |
+| Handling file uploads / attachments | `references/attachments.md` |
 | Debugging sync / connection issues | `powersync-debug.md` |
 | Writing or migrating sync config | `sync-config.md` |
 | Configuring the service / self-hosting | `powersync-service.md` |

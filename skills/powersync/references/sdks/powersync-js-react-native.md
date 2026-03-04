@@ -79,7 +79,7 @@ By default, `@powersync/react-native` uses OP-SQLite if installed, falling back 
 
 ### Managed Workflow
 
-PowerSync works with Expo managed workflow. You must use a development build (not Expo Go) because PowerSync requires native modules.
+PowerSync works with Expo managed workflow. Native adapters (recommended) require a development build because they use native modules. If you need to run in Expo Go, use the JavaScript-only adapter instead. See the Expo Go section below.
 
 ```bash
 npx expo install @powersync/react-native @powersync/op-sqlite

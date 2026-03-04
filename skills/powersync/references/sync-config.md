@@ -59,46 +59,205 @@ streams:
       - SELECT * FROM <table_b> WHERE ...
 ```
 
-## Basic Query
+> **Bucket limit**: Each unique `(stream name + parameter values)` combination creates one internal bucket. The default limit is **1,000 buckets per user**. If a stream with subscription parameters could create many combinations, use `queries:` (multiple queries inside one stream) instead of separate streams — this keeps everything in one bucket.
+
+## Stream Options
+
+Behavior options placed above `query`/`queries` in each stream definition.
+
+### `auto_subscribe` (default: `false`)
+
+When `true`, clients automatically subscribe on connect — no client-side `syncStream()` call needed.
+
+Use for:
+- Reference/global data all users need (e.g. `categories`, `app_config`)
+- User-scoped data that should always be available offline
+
+Do not use with streams that use `subscription.parameter()`. There is no mechanism to supply the parameter value at auto-subscribe time, so the subscription will produce empty results.
+
+```yaml
+streams:
+  categories:
+    auto_subscribe: true
+    query: SELECT * FROM categories
+
+  my_orders:
+    auto_subscribe: true
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+
+  # No auto_subscribe — requires client-supplied parameter
+  order_items:
+    query: |
+      SELECT * FROM order_items
+      WHERE order_id = subscription.parameter('order_id')
+        AND order_id IN (SELECT id FROM orders WHERE user_id = auth.user_id())
+```
+
+### `priority`
+
+Controls sync order. Lower number = higher priority. Valid range is `0`–`3`; default is `3`.
+
+Use when some data must be available sooner (e.g. user profile before activity feed):
+
+```yaml
+streams:
+  user_profile:
+    priority: 1
+    auto_subscribe: true
+    query: SELECT * FROM profiles WHERE user_id = auth.user_id()
+
+  activity_feed:
+    priority: 2
+    auto_subscribe: true
+    query: SELECT * FROM activity WHERE user_id = auth.user_id()
+```
+
+**Priority 0 — special case**: syncs regardless of pending uploads, bypassing the normal upload-consistency guarantee. Use only for append-only/CRDT workloads (e.g. Yjs collaborative editing). Misuse causes flickering or out-of-order data.
+
+The client can also override the priority per-subscription — see [Client Usage](#client-usage).
+
+See [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md) for full details.
+
+### `accept_potentially_dangerous_queries` (default: `false`)
+
+PowerSync raises a warning when a stream query uses `subscription.parameter()` or `connection.parameter()` (client-controlled values that are not signed). Set to `true` only after adding an `AND auth.user_id()` guard that scopes the client-supplied value to rows the user actually owns:
+
+```yaml
+streams:
+  workspace_data:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM documents
+      WHERE workspace_id = subscription.parameter('workspace_id')
+        AND workspace_id IN (SELECT id FROM workspaces WHERE owner_id = auth.user_id())
+```
+
+The inner `AND` clause is what makes this safe — it prevents a client from requesting data outside their own workspaces.
+
+## Common Patterns
+
+### Global data
+
+No filter — same data for all users. Use `auto_subscribe: true` so clients receive it automatically on connect.
+
+```yaml
+streams:
+  categories:
+    auto_subscribe: true
+    query: SELECT * FROM categories
+
+  products:
+    auto_subscribe: true
+    query: SELECT * FROM products WHERE active = true
+```
+
+### Personal data
+
+Filter by the authenticated user using `auth.user_id()`.
+
+```yaml
+streams:
+  my_notes:
+    auto_subscribe: true
+    query: SELECT * FROM notes WHERE owner_id = auth.user_id()
+
+  my_orders:
+    auto_subscribe: true
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+```
+
+### JOIN
+
+Use `INNER JOIN` to filter rows via a related table (e.g. a membership table):
+
+```yaml
+streams:
+  team_projects:
+    query: |
+      SELECT p.*
+      FROM projects p
+      INNER JOIN team_members tm ON tm.team_id = p.team_id
+      WHERE tm.user_id = auth.user_id()
+```
+
+### Subquery
+
+Use `WHERE id IN (SELECT ...)` for indirect access through a related table:
+
+```yaml
+streams:
+  org_documents:
+    query: |
+      SELECT * FROM documents
+      WHERE org_id IN (
+        SELECT org_id FROM org_members WHERE user_id = auth.user_id()
+      )
+```
+
+### On-demand with subscription parameter
+
+Client subscribes to a specific resource at runtime. Always include an auth guard.
+
+```yaml
+streams:
+  list_todos:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM todos
+      WHERE list_id = subscription.parameter('list_id')
+        AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
+```
+
+See [Writing Queries](https://docs.powersync.com/sync/streams/queries.md) for JOIN, subquery, and multiple queries per stream details.
+See [Examples & Demos](https://docs.powersync.com/sync/streams/examples.md) for complete working app patterns.
+
+## Query Parameters
+
+There are three kinds of query parameters. Choose based on where the value comes from and how often it changes.
+
+### Auth parameters
+
+Values from the signed JWT — the most secure option. Use when filtering by who the user is. These cannot be tampered with by the client.
+
 ```yaml
 streams:
   my_orders:
     query: SELECT * FROM orders WHERE user_id = auth.user_id()
 
+  tenant_data:
+    query: SELECT * FROM records WHERE tenant_id = auth.jwt() ->> 'tenant_id'
+```
+
+See [Auth Parameters](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters) for all available JWT claims.
+
+### Subscription parameters
+
+The client chooses what to sync at runtime. Each subscription is independent — a user can have multiple subscriptions to the same stream with different values. Always scope with an auth guard to prevent a client from accessing data they don't own.
+
+```yaml
+streams:
   list_todos:
+    accept_potentially_dangerous_queries: true
     query: |
       SELECT * FROM todos
       WHERE list_id = subscription.parameter('list_id')
+        AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
 ```
 
+See [Subscription Parameters](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters) for full reference.
 
-## How to Query Data
+### Connection parameters
 
-There are different ways you can use Sync Streams to query data in your applications. 
+Apply globally across all streams for the session. Use for values that rarely change, like environment flags or feature toggles. Changing them requires reconnecting.
 
-[Global Data](https://docs.powersync.com/sync/streams/overview.md#global-data)
+```yaml
+streams:
+  config:
+    auto_subscribe: true
+    query: SELECT * FROM config WHERE env = connection.parameter('environment')
+```
 
-[Filtering By User](https://docs.powersync.com/sync/streams/overview.md#filtering-data-by-user)
-
-For more information about how to perform advanced queries using [JOIN](https://docs.powersync.com/sync/streams/queries.md#using-joins), [Subqueries](https://docs.powersync.com/sync/streams/queries.md#using-subqueries) or [multiple queries per Stream](https://docs.powersync.com/sync/streams/queries.md#multiple-queries-per-stream) see [Queries](https://docs.powersync.com/sync/streams/queries.md). 
-
-## Query Parameters
-
-Query parameters allow you filter data in your Sync Streams. There are three different kinds of query parameters:
-
-Auth parameters are the most secure option. Use them when you need to filter data based on who the user is. Since these values come from the signed JWT, they can’t be tampered with by the client.
-
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters).
-
-Subscription parameters are the most flexible option. Use them when the client needs to choose what data to sync at runtime. Each subscription operates independently, so a user can have multiple subscriptions to the same stream with different parameters.
-
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters).
-
-Connection parameters apply globally across all streams for the session. Use them for values that rarely change, like environment flags or feature toggles. Keep in mind that changing them requires reconnecting.
-
-Examples can be found [here](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters).
-
-See [Sync Streams Parameters](https://docs.powersync.com/sync/streams/parameters.md) for more information beyond this.
+See [Connection Parameters](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters) for full reference.
 
 ## Common Table Expressions (CTEs)
 
@@ -147,10 +306,6 @@ with:
 
 For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/ctes.md#limitations).
 
-## Common Examples and Patterns
-
-Common patterns, use case examples, and demo Sync Streams. See [Examples](https://docs.powersync.com/sync/streams/examples.md).
-
 ## Migration
 
 There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](https://docs.powersync.com/sync/streams/migration.md) for information such as:
@@ -161,13 +316,35 @@ There are big differences between Sync Rules and Sync Streams, consider the foll
 
 ## Client Usage
 
-Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](https://docs.powersync.com/sync/streams/client-usage.md) Usage for a full breakdown.
-This covers topics such as:
-- Initializing a subscription
-- Inspect the sync status of a subscription
-- Waiting for the first sync of a subscription
-- Setting a TTL on a subscription
-- Unsubscribing
+Client applications subscribe to Sync Streams to start syncing data. See [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for a full breakdown.
+
+### TTL (Time-To-Live)
+
+Each subscription has a TTL that keeps data cached after unsubscribing. Default is **24 hours**.
+
+```js
+// Default (24h cache after unsubscribe)
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe();
+
+// Custom TTL in seconds
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: 3600 }); // 1 hour
+
+// Remove data immediately on unsubscribe
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: 0 });
+
+// Keep forever
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: Infinity });
+```
+
+### Priority Override
+
+Override the stream's YAML-defined priority for a specific subscription:
+
+```js
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ priority: 1 });
+```
+
+When multiple components subscribe to the same stream+parameters with different priorities, PowerSync uses the highest priority until all those subscriptions end.
 
 There are examples available for each PowerSync Client SDK.
 
@@ -185,9 +362,22 @@ There are examples available for each PowerSync Client SDK.
 |---------------------------|--------------------------------------------------------------------------------------------------------------------|
 | React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
 
+## Advanced Topics
+
+Reference these when the standard patterns don't cover your use case:
+
+| Topic | When to use |
+|-------|-------------|
+| [Client ID](https://docs.powersync.com/sync/advanced/client-id.md) | Filter or scope data by which specific client device is syncing |
+| [Sync Data by Time](https://docs.powersync.com/sync/advanced/sync-data-by-time.md) | Limit sync to a rolling time window (e.g. last 30 days) |
+| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Source data from multiple database schemas or connections |
+| [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
+| [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
+| [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
+
 # Sync Rules
 
-Sync rules define how data is partitioned into buckets and distributed to clients. This is considered legacy, however will still be supported. For the best experience use [sync-streams](./sync-streams.md).
+Sync rules define how data is partitioned into buckets and distributed to clients. This is considered legacy, however will still be supported. For the best experience use [sync-streams](#sync-streams).
 
 ## Structure
 

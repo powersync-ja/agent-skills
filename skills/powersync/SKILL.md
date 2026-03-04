@@ -1,7 +1,12 @@
 ---
 name: powersync
 description: Best practices for building applications with PowerSync — schema design, client SDK usage, sync configuration, service setup, and debugging.
+license: CC0-1.0
+compatibility: Works with any skills-compatible agent. Some references include CLI commands requiring the @powersync/cli package.
 metadata:
+  author: powersync
+  version: "1.0.0"
+  organization: PowerSync
   tags: powersync, offline-first, local-first, sync-rules, sync-streams, sqlite, backend-connector, uploadData, fetchCredentials, replication, attachments, files, uploads, downloads, storage
 ---
 

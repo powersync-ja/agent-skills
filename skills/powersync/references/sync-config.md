@@ -59,6 +59,81 @@ streams:
       - SELECT * FROM <table_b> WHERE ...
 ```
 
+> **Bucket limit**: Each unique `(stream name + parameter values)` combination creates one internal bucket. The default limit is **1,000 buckets per user**. If a stream with subscription parameters could create many combinations, use `queries:` (multiple queries inside one stream) instead of separate streams — this keeps everything in one bucket.
+
+## Stream Options
+
+Behavior options placed above `query`/`queries` in each stream definition.
+
+### `auto_subscribe` (default: `false`)
+
+When `true`, clients automatically subscribe on connect — no client-side `syncStream()` call needed.
+
+Use for:
+- Reference/global data all users need (e.g. `categories`, `app_config`)
+- User-scoped data that should always be available offline
+
+Do not use with streams that use `subscription.parameter()`. There is no mechanism to supply the parameter value at auto-subscribe time, so the subscription will produce empty results.
+
+```yaml
+streams:
+  categories:
+    auto_subscribe: true
+    query: SELECT * FROM categories
+
+  my_orders:
+    auto_subscribe: true
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+
+  # No auto_subscribe — requires client-supplied parameter
+  order_items:
+    query: |
+      SELECT * FROM order_items
+      WHERE order_id = subscription.parameter('order_id')
+        AND order_id IN (SELECT id FROM orders WHERE user_id = auth.user_id())
+```
+
+### `priority`
+
+Controls sync order. Lower number = higher priority. Valid range is `0`–`3`; default is `3`.
+
+Use when some data must be available sooner (e.g. user profile before activity feed):
+
+```yaml
+streams:
+  user_profile:
+    priority: 1
+    auto_subscribe: true
+    query: SELECT * FROM profiles WHERE user_id = auth.user_id()
+
+  activity_feed:
+    priority: 2
+    auto_subscribe: true
+    query: SELECT * FROM activity WHERE user_id = auth.user_id()
+```
+
+**Priority 0 — special case**: syncs regardless of pending uploads, bypassing the normal upload-consistency guarantee. Use only for append-only/CRDT workloads (e.g. Yjs collaborative editing). Misuse causes flickering or out-of-order data.
+
+The client can also override the priority per-subscription — see [Client Usage](#client-usage).
+
+See [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md) for full details.
+
+### `accept_potentially_dangerous_queries` (default: `false`)
+
+PowerSync raises a warning when a stream query uses `subscription.parameter()` or `connection.parameter()` (client-controlled values that are not signed). Set to `true` only after adding an `AND auth.user_id()` guard that scopes the client-supplied value to rows the user actually owns:
+
+```yaml
+streams:
+  workspace_data:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM documents
+      WHERE workspace_id = subscription.parameter('workspace_id')
+        AND workspace_id IN (SELECT id FROM workspaces WHERE owner_id = auth.user_id())
+```
+
+The inner `AND` clause is what makes this safe — it prevents a client from requesting data outside their own workspaces.
+
 ## Basic Query
 ```yaml
 streams:
@@ -161,13 +236,35 @@ There are big differences between Sync Rules and Sync Streams, consider the foll
 
 ## Client Usage
 
-Client applications subscribe to Sync Streams to start syncing data. See [Client-Side](https://docs.powersync.com/sync/streams/client-usage.md) Usage for a full breakdown.
-This covers topics such as:
-- Initializing a subscription
-- Inspect the sync status of a subscription
-- Waiting for the first sync of a subscription
-- Setting a TTL on a subscription
-- Unsubscribing
+Client applications subscribe to Sync Streams to start syncing data. See [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for a full breakdown.
+
+### TTL (Time-To-Live)
+
+Each subscription has a TTL that keeps data cached after unsubscribing. Default is **24 hours**.
+
+```js
+// Default (24h cache after unsubscribe)
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe();
+
+// Custom TTL in seconds
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: 3600 }); // 1 hour
+
+// Remove data immediately on unsubscribe
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: 0 });
+
+// Keep forever
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: Infinity });
+```
+
+### Priority Override
+
+Override the stream's YAML-defined priority for a specific subscription:
+
+```js
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ priority: 1 });
+```
+
+When multiple components subscribe to the same stream+parameters with different priorities, PowerSync uses the highest priority until all those subscriptions end.
 
 There are examples available for each PowerSync Client SDK.
 

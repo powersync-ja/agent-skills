@@ -1,12 +1,12 @@
 {
-  "name": "powersync-agent-skills",
+  "name": "powersync",
   "owner": {
     "name": "PowerSync",
-    "url": "https://github.com/powersync-ja/agent-skills",
+    "url": "https://powersync.com",
     "email": "support@powersync.com"
   },
   "metadata": {
-    "description": "Official PowerSync agent skills for Claude Code",
+    "description": "Add PowerSync Skills to your Claude Code agent",
     "version": "1.0.0"
   },
   "plugins": [
@@ -32,8 +32,8 @@
         "dotnet",
         "typescript"
       ],
-      "category": "integration",
-      "license": "CC0-1.0"
+      "category": "coding",
+      "license": "MIT"
     }
   ]
 }

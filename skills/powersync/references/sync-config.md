@@ -1,0 +1,549 @@
+---
+name: sync-config
+description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
+metadata:
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration
+---
+
+# Sync Config
+
+Expert guidance on Sync Config. Sync config is divided into two sections:
+1. Sync Streams (new, default) - The latest implementation of Sync Config. New apps should use Sync Streams by default. Prioritize Sync Streams above Sync Rules.
+2. Sync Rules (legacy) - The first implementation of Sync Config. New apps should not use Sync Rules, prioritize Sync Streams over Sync Rules.
+
+# Sync Streams
+
+Sync Streams define exactly which data is synced to each client by using named, SQL-like queries and subscription parameters.
+
+For a full overview, see [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md)
+
+## Requirements 
+
+### PowerSync Service
+- Self-hosted: v1.20.0+ 
+- Cloud: Already met
+
+### Sync Config
+Must use config edition 3 in their sync config:
+```yaml
+config:
+  edition: 3
+```
+
+### PowerSync SDKs
+There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration.md#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
+
+IMPORTANT
+Client applications using a lower version than the `Rust Client Default` should make sure to enable the Rust Sync Client to use Sync Streams. 
+
+## Structure
+```yaml
+config:
+  edition: 3
+
+streams:
+  <stream_name>:
+    # CTEs (optional) - define with block inside each stream
+    with:
+      <cte_name>: SELECT ... FROM ...
+
+    # Behavior options (place above query/queries)
+    auto_subscribe: true    # Auto-subscribe clients on connect (default: false)
+    priority: 1             # Sync priority (optional). Lower number -> higher priority
+    accept_potentially_dangerous_queries: true  # Silence security warnings (default: false)
+
+    # Query options (use one)
+    query: SELECT * FROM <table> WHERE ...         # Single query
+    queries:                                       # Multiple queries
+      - SELECT * FROM <table_a> WHERE ...
+      - SELECT * FROM <table_b> WHERE ...
+```
+
+> **Bucket limit**: Each unique `(stream name + parameter values)` combination creates one internal bucket. The default limit is **1,000 buckets per user**. If a stream with subscription parameters could create many combinations, use `queries:` (multiple queries inside one stream) instead of separate streams — this keeps everything in one bucket.
+
+## Stream Options
+
+Behavior options placed above `query`/`queries` in each stream definition.
+
+### `auto_subscribe` (default: `false`)
+
+When `true`, clients automatically subscribe on connect — no client-side `syncStream()` call needed.
+
+Use for:
+- Reference/global data all users need (e.g. `categories`, `app_config`)
+- User-scoped data that should always be available offline
+
+Do not use with streams that use `subscription.parameter()`. There is no mechanism to supply the parameter value at auto-subscribe time, so the subscription will produce empty results.
+
+```yaml
+streams:
+  categories:
+    auto_subscribe: true
+    query: SELECT * FROM categories
+
+  my_orders:
+    auto_subscribe: true
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+
+  # No auto_subscribe — requires client-supplied parameter
+  order_items:
+    query: |
+      SELECT * FROM order_items
+      WHERE order_id = subscription.parameter('order_id')
+        AND order_id IN (SELECT id FROM orders WHERE user_id = auth.user_id())
+```
+
+### `priority`
+
+Controls sync order. Lower number = higher priority. Valid range is `0`–`3`; default is `3`.
+
+Use when some data must be available sooner (e.g. user profile before activity feed):
+
+```yaml
+streams:
+  user_profile:
+    priority: 1
+    auto_subscribe: true
+    query: SELECT * FROM profiles WHERE user_id = auth.user_id()
+
+  activity_feed:
+    priority: 2
+    auto_subscribe: true
+    query: SELECT * FROM activity WHERE user_id = auth.user_id()
+```
+
+**Priority 0 — special case**: syncs regardless of pending uploads, bypassing the normal upload-consistency guarantee. Use only for append-only/CRDT workloads (e.g. Yjs collaborative editing). Misuse causes flickering or out-of-order data.
+
+The client can also override the priority per-subscription — see [Client Usage](#client-usage).
+
+See [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md) for full details.
+
+### `accept_potentially_dangerous_queries` (default: `false`)
+
+PowerSync raises a warning when a stream query uses `subscription.parameter()` or `connection.parameter()` (client-controlled values that are not signed). Set to `true` only after adding an `AND auth.user_id()` guard that scopes the client-supplied value to rows the user actually owns:
+
+```yaml
+streams:
+  workspace_data:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM documents
+      WHERE workspace_id = subscription.parameter('workspace_id')
+        AND workspace_id IN (SELECT id FROM workspaces WHERE owner_id = auth.user_id())
+```
+
+The inner `AND` clause is what makes this safe — it prevents a client from requesting data outside their own workspaces.
+
+## Common Patterns
+
+### Global data
+
+No filter — same data for all users. Use `auto_subscribe: true` so clients receive it automatically on connect.
+
+```yaml
+streams:
+  categories:
+    auto_subscribe: true
+    query: SELECT * FROM categories
+
+  products:
+    auto_subscribe: true
+    query: SELECT * FROM products WHERE active = true
+```
+
+### Personal data
+
+Filter by the authenticated user using `auth.user_id()`.
+
+```yaml
+streams:
+  my_notes:
+    auto_subscribe: true
+    query: SELECT * FROM notes WHERE owner_id = auth.user_id()
+
+  my_orders:
+    auto_subscribe: true
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+```
+
+### JOIN
+
+Use `INNER JOIN` to filter rows via a related table (e.g. a membership table):
+
+```yaml
+streams:
+  team_projects:
+    query: |
+      SELECT p.*
+      FROM projects p
+      INNER JOIN team_members tm ON tm.team_id = p.team_id
+      WHERE tm.user_id = auth.user_id()
+```
+
+### Subquery
+
+Use `WHERE id IN (SELECT ...)` for indirect access through a related table:
+
+```yaml
+streams:
+  org_documents:
+    query: |
+      SELECT * FROM documents
+      WHERE org_id IN (
+        SELECT org_id FROM org_members WHERE user_id = auth.user_id()
+      )
+```
+
+### On-demand with subscription parameter
+
+Client subscribes to a specific resource at runtime. Always include an auth guard.
+
+```yaml
+streams:
+  list_todos:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM todos
+      WHERE list_id = subscription.parameter('list_id')
+        AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
+```
+
+See [Writing Queries](https://docs.powersync.com/sync/streams/queries.md) for JOIN, subquery, and multiple queries per stream details.
+See [Examples & Demos](https://docs.powersync.com/sync/streams/examples.md) for complete working app patterns.
+
+## Query Parameters
+
+There are three kinds of query parameters. Choose based on where the value comes from and how often it changes.
+
+### Auth parameters
+
+Values from the signed JWT — the most secure option. Use when filtering by who the user is. These cannot be tampered with by the client.
+
+```yaml
+streams:
+  my_orders:
+    query: SELECT * FROM orders WHERE user_id = auth.user_id()
+
+  tenant_data:
+    query: SELECT * FROM records WHERE tenant_id = auth.jwt() ->> 'tenant_id'
+```
+
+See [Auth Parameters](https://docs.powersync.com/sync/streams/parameters.md#auth-parameters) for all available JWT claims.
+
+### Subscription parameters
+
+The client chooses what to sync at runtime. Each subscription is independent — a user can have multiple subscriptions to the same stream with different values. Always scope with an auth guard to prevent a client from accessing data they don't own.
+
+```yaml
+streams:
+  list_todos:
+    accept_potentially_dangerous_queries: true
+    query: |
+      SELECT * FROM todos
+      WHERE list_id = subscription.parameter('list_id')
+        AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
+```
+
+See [Subscription Parameters](https://docs.powersync.com/sync/streams/parameters.md#subscription-parameters) for full reference.
+
+### Connection parameters
+
+Apply globally across all streams for the session. Use for values that rarely change, like environment flags or feature toggles. Changing them requires reconnecting.
+
+```yaml
+streams:
+  config:
+    auto_subscribe: true
+    query: SELECT * FROM config WHERE env = connection.parameter('environment')
+```
+
+See [Connection Parameters](https://docs.powersync.com/sync/streams/parameters.md#connection-parameters) for full reference.
+
+## Common Table Expressions (CTEs)
+
+Reusable query patterns for your Sync Streams. You can create Global and Scoped CTEs. 
+
+Global 
+```yaml
+with:
+  user_orgs: SELECT org_id FROM org_members WHERE user_id = auth.user_id()
+
+streams:
+  org_projects:
+    query: SELECT * FROM projects WHERE org_id IN user_orgs
+  
+  org_repositories:
+    query: SELECT * FROM repositories WHERE org_id IN user_orgs
+  
+  org_settings:
+    query: SELECT * FROM settings WHERE org_id IN user_orgs
+```
+
+Scoped 
+```yaml
+streams:
+  project_data:
+    with:
+      accessible_projects: |
+        SELECT id FROM projects 
+        WHERE org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.user_id())
+    queries:
+      - SELECT * FROM projects WHERE id IN accessible_projects
+      - SELECT * FROM tasks WHERE project_id IN accessible_projects
+      - SELECT * FROM comments WHERE project_id IN accessible_projects
+```
+
+### CTE Limitations
+
+This won't work
+```yaml
+# This won't work - cte2 cannot reference cte1
+with:
+  cte1: SELECT org_id FROM org_members WHERE user_id = auth.user_id()
+  cte2: SELECT id FROM projects WHERE org_id IN cte1  # Error!
+
+```
+
+For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/ctes.md#limitations).
+
+## Migration
+
+There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](https://docs.powersync.com/sync/streams/migration.md) for information such as:
+- How to migrate
+- The tools that can make it easier 
+- Understanding the difference between Sync Rules and Sync Streams
+- Migration examples for common scenarios
+
+## Client Usage
+
+Client applications subscribe to Sync Streams to start syncing data. See [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for a full breakdown.
+
+### TTL (Time-To-Live)
+
+Each subscription has a TTL that keeps data cached after unsubscribing. Default is **24 hours**.
+
+```js
+// Default (24h cache after unsubscribe)
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe();
+
+// Custom TTL in seconds
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: 3600 }); // 1 hour
+
+// Remove data immediately on unsubscribe
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: 0 });
+
+// Keep forever
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ ttl: Infinity });
+```
+
+### Priority Override
+
+Override the stream's YAML-defined priority for a specific subscription:
+
+```js
+const sub = await db.syncStream('todos', { list_id: 'abc' }).subscribe({ priority: 1 });
+```
+
+When multiple components subscribe to the same stream+parameters with different priorities, PowerSync uses the highest priority until all those subscriptions end.
+
+There are examples available for each PowerSync Client SDK.
+
+| SDK                  | Client Usage Reference URL                                                                                         |
+|----------------------|-------------------------------------------------------------------------------------------------------------------|
+| TypeScript/JavaScript| [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#typescript%2Fjavascript)                           |
+| Dart                 | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#dart)                                              |
+| Kotlin               | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#kotlin)                                            |
+| Swift                | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#swift)                                             |
+| .NET                 | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#net)                                               |
+
+### Frameworks 
+
+| Framework                 | Client Usage Reference URL                                                                                         |
+|---------------------------|--------------------------------------------------------------------------------------------------------------------|
+| React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
+
+## Advanced Topics
+
+Reference these when the standard patterns don't cover your use case:
+
+| Topic | When to use |
+|-------|-------------|
+| [Client ID](https://docs.powersync.com/sync/advanced/client-id.md) | Filter or scope data by which specific client device is syncing |
+| [Sync Data by Time](https://docs.powersync.com/sync/advanced/sync-data-by-time.md) | Limit sync to a rolling time window (e.g. last 30 days) |
+| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Source data from multiple database schemas or connections |
+| [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
+| [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
+| [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
+
+# Sync Rules
+
+Sync rules define how data is partitioned into buckets and distributed to clients. This is considered legacy, however will still be supported. For the best experience use [sync-streams](#sync-streams).
+
+## Structure
+
+```yaml
+bucket_definitions:
+  <bucket_name>:
+    parameters: SELECT ...   # Which buckets user can access
+    data:                    # What data goes in each bucket
+      - SELECT ... WHERE column = bucket.parameter
+```
+
+## Parameter Queries
+
+Determine bucket access for authenticated users:
+
+```yaml
+# User's own data
+parameters: SELECT request.user_id() AS user_id
+
+# From database table
+parameters: SELECT org_id FROM users WHERE id = request.user_id()
+
+# From JWT claims
+parameters: SELECT request.jwt() ->> 'tenant_id' AS tenant_id
+
+# From client parameters
+parameters: SELECT request.parameters() ->> 'workspace_id' AS workspace_id
+```
+
+## Data Queries
+
+Define what rows go into each bucket:
+
+```yaml
+data:
+  # Basic - all columns
+  - SELECT * FROM documents WHERE user_id = bucket.user_id
+
+  # Column selection
+  - SELECT id, name, created_at FROM projects WHERE org_id = bucket.org_id
+
+  # Transformations
+  - SELECT id, UPPER(status) as status FROM tasks WHERE team_id = bucket.team_id
+```
+
+## Supported SQL Features
+
+### Functions
+
+| Category | Functions |
+|----------|-----------|
+| String | `upper()`, `lower()`, `substring()`, `length()`, `hex()`, `base64()` |
+| JSON | `json_extract()`, `->`, `->>`, `json_array_length()`, `json_valid()` |
+| Type | `typeof()`, `cast()` |
+| Utility | `ifnull()`, `iif()`, `uuid_blob()` |
+| Date/Time | `unixepoch()`, `datetime()` |
+| Geospatial | `st_asgeojson()`, `st_astext()`, `st_x()`, `st_y()` |
+
+### Operators (non-parameter comparisons)
+
+- Comparison: `=`, `!=`, `<`, `>`, `<=`, `>=`
+- Logical: `AND`, `OR`, `NOT`, `IS`, `IS NOT`
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
+- String: `||` (concatenation)
+- Null: `IS NULL`, `IS NOT NULL`
+
+### Parameter Comparisons (bucket.* or token_parameters.*)
+
+Only `=` and `IN` supported:
+```yaml
+# Allowed
+WHERE user_id = bucket.user_id
+WHERE bucket.role IN roles_array
+
+# NOT allowed
+WHERE user_id > bucket.user_id
+WHERE upper(bucket.name) = column
+```
+
+## Not Supported
+
+- JOINs (in data queries)
+- GROUP BY, HAVING
+- ORDER BY, LIMIT, OFFSET, DISTINCT
+- Subqueries, CTEs
+- Window functions
+- `COALESCE()` - use `ifnull()` instead
+
+## Common Patterns
+
+### Personal Data
+
+```yaml
+bucket_definitions:
+  my_data:
+    parameters: SELECT request.user_id() AS user_id
+    data:
+      - SELECT * FROM notes WHERE owner_id = bucket.user_id
+      - SELECT * FROM settings WHERE user_id = bucket.user_id
+```
+
+### Team/Organization
+
+```yaml
+bucket_definitions:
+  team_data:
+    parameters: |
+      SELECT team_id FROM team_members
+      WHERE user_id = request.user_id()
+    data:
+      - SELECT * FROM projects WHERE team_id = bucket.team_id
+      - SELECT * FROM tasks WHERE team_id = bucket.team_id
+```
+
+### Role-Based Access
+
+```yaml
+bucket_definitions:
+  admin_data:
+    parameters: |
+      SELECT 1 AS is_admin FROM users
+      WHERE id = request.user_id() AND role = 'admin'
+    data:
+      - SELECT * FROM audit_logs WHERE bucket.is_admin = 1
+```
+
+### Global Data (all users)
+
+```yaml
+bucket_definitions:
+  global:
+    parameters: SELECT 'global' AS scope
+    data:
+      - SELECT * FROM app_config WHERE bucket.scope = 'global'
+```
+
+### Multi-Tenant Organization
+
+```yaml
+bucket_definitions:
+  org_data:
+    parameters: |
+      SELECT org_id
+      FROM users
+      WHERE id = request.user_id()
+    data:
+      - SELECT * FROM documents WHERE org_id = bucket.org_id
+      - SELECT * FROM folders WHERE org_id = bucket.org_id
+
+  # User's private data within org
+  private_data:
+    parameters: |
+      SELECT org_id, request.user_id() AS user_id
+      FROM users
+      WHERE id = request.user_id()
+    data:
+      - SELECT * FROM drafts WHERE org_id = bucket.org_id AND author_id = bucket.user_id
+```
+
+### JWT Claims
+
+```yaml
+bucket_definitions:
+  tenant_data:
+    parameters: |
+      SELECT request.jwt() ->> 'tenant_id' AS tenant_id
+    data:
+      - SELECT * FROM records WHERE tenant_id = bucket.tenant_id
+```

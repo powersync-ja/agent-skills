@@ -14,3 +14,10 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/validate.mjs
+
+      - name: Validate SKILL.md (Agent Skills spec)
+        uses: Flash-Brew-Digital/validate-skill@v1
+        with:
+          path: ./skills/powersync
+          validate-references: true
+          fail-on-warning: true

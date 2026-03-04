@@ -1,7 +1,7 @@
 ---
 name: powersync
 description: Best practices for building applications with PowerSync — schema design, client SDK usage, sync configuration, service setup, and debugging.
-license: CC0-1.0
+license: MIT
 compatibility: Works with any skills-compatible agent. Some references include CLI commands requiring the @powersync/cli package.
 metadata:
   author: powersync

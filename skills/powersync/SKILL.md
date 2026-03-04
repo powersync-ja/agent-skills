@@ -56,11 +56,11 @@ Key rule: **client writes never go through PowerSync** — they go directly from
 |------|-----------------|
 | New project setup | See SDK Reference Files below for your platform |
 | Handling file uploads / attachments | `references/attachments.md` |
-| Debugging sync / connection issues | `powersync-debug.md` |
-| Writing or migrating sync config | `sync-config.md` |
-| Configuring the service / self-hosting | `powersync-service.md` |
-| Using the PowerSync CLI | `powersync-cli.md` |
-| Understanding the overall architecture | This file is sufficient; see `powersync-overview.md` for deep links |
+| Debugging sync / connection issues | `references/powersync-debug.md` |
+| Writing or migrating sync config | `references/sync-config.md` |
+| Configuring the service / self-hosting | `references/powersync-service.md` |
+| Using the PowerSync CLI | `references/powersync-cli.md` |
+| Understanding the overall architecture | This file is sufficient; see `references/powersync-overview.md` for deep links |
 
 ## SDK Reference Files
 
@@ -68,22 +68,22 @@ Key rule: **client writes never go through PowerSync** — they go directly from
 
 Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS project, then load the applicable framework file alongside it.
 
-| Framework file | Load when… |
-|----------------|-----------|
-| `powersync-js-react.md` | React web app or Next.js |
-| `powersync-js-react-native.md` | React Native, Expo, or Expo Go |
-| `powersync-js-vue.md` | Vue or Nuxt |
-| `powersync-js-node.md` | Node.js CLI/server or Electron |
-| `powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
+| Framework | Load when… | File |
+|-----------|-----------|------|
+| React / Next.js | React web app or Next.js | `references/sdks/powersync-js-react.md` |
+| React Native / Expo | React Native, Expo, or Expo Go | `references/sdks/powersync-js-react-native.md` |
+| Vue / Nuxt | Vue or Nuxt | `references/sdks/powersync-js-vue.md` |
+| Node.js / Electron | Node.js CLI/server or Electron | `references/sdks/powersync-js-node.md` |
+| TanStack | TanStack Query or TanStack DB (any framework) | `references/sdks/powersync-js-tanstack.md` |
 
 ### Other SDKs
 
-| File | Use when… |
-|------|----------|
-| `powersync-dart.md` | Dart / Flutter (includes Drift ORM + Flutter Web) |
-| `powersync-dotnet.md` | .NET (MAUI, WPF, Console) |
-| `powersync-kotlin.md` | Kotlin (Android, JVM, iOS, macOS, watchOS, tvOS) |
-| `powersync-swift.md` | Swift / iOS / macOS (includes GRDB ORM) |
+| Platform | Load when… | File |
+|----------|-----------|------|
+| Dart / Flutter | Dart / Flutter (includes Drift ORM + Flutter Web) | `references/sdks/powersync-dart.md` |
+| .NET | .NET (MAUI, WPF, Console) | `references/sdks/powersync-dotnet.md` |
+| Kotlin | Kotlin (Android, JVM, iOS, macOS, watchOS, tvOS) | `references/sdks/powersync-kotlin.md` |
+| Swift | Swift / iOS / macOS (includes GRDB ORM) | `references/sdks/powersync-swift.md` |
 
 ## Key Rules to Apply Without Being Asked
 
@@ -93,5 +93,5 @@ Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS pr
 - **No boolean/date column types** — use `column.integer` (0/1) for booleans and `column.text` (ISO string) for dates.
 - **`connect()` is fire-and-forget** — do not `await connect()` expecting data to be ready. Use `waitForFirstSync()` if you need to wait.
 - **`transaction.complete()` is mandatory** — if it is never called, the upload queue stalls permanently.
-- **`disconnectAndClear()` on logout** — `disconnect()` keeps local data; `disconnectAndClear()` wipes it. Always use `disconnectAndClear()` when switching users.
+- **`disconnectAndClear()` on logout** — `disconnect()` keeps local data; `disconnectAndClear()` wipes it. Always use `disconnectAndClear()` when switching users (this will however cause the client to do a full re-sync when connecting again).
 - **Backend must return 2xx for validation errors** — a 4xx response from `uploadData` blocks the upload queue permanently.

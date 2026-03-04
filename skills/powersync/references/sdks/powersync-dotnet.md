@@ -529,7 +529,7 @@ progress?.TotalOperations       // int
 
 ## Sync Streams
 
-Sync Streams are the recommended way to define what data syncs to each client. See [Sync Config](../sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for full examples.
+Sync Streams are the recommended way to define what data syncs to each client. See [Sync Config](references/sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for full examples.
 
 > Sync Streams are currently in alpha in the .NET SDK.
 

@@ -25,11 +25,11 @@ Framework-specific files (load alongside this file):
 
 | File | Use when... |
 |------|-------------|
-| `powersync-js-react.md` | React web app or Next.js |
-| `powersync-js-react-native.md` | React Native, Expo, or Expo Go |
-| `powersync-js-vue.md` | Vue or Nuxt |
-| `powersync-js-node.md` | Node.js CLI/server or Electron |
-| `powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
+| `references/sdks/powersync-js-react.md` | React web app or Next.js |
+| `references/sdks/powersync-js-react-native.md` | React Native, Expo, or Expo Go |
+| `references/sdks/powersync-js-vue.md` | Vue or Nuxt |
+| `references/sdks/powersync-js-node.md` | Node.js CLI/server or Electron |
+| `references/sdks/powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
 
 ## Package Coverage
 
@@ -264,7 +264,7 @@ await db.waitForFirstSync();
 
 ### 5. Provider / Plugin Setup
 
-Framework-specific setup (React `PowerSyncContext.Provider`, Vue plugin, Nuxt plugin) is covered in the framework files. See `powersync-js-react.md`, `powersync-js-vue.md`, etc.
+Framework-specific setup (React `PowerSyncContext.Provider`, Vue plugin, Nuxt plugin) is covered in the framework files. See `references/sdks/powersync-js-react.md`, `references/sdks/powersync-js-vue.md`, etc.
 
 ### Web-Specific Options
 
@@ -613,11 +613,11 @@ const entries = db.currentStatus.priorityStatusEntries();
 
 ### Sync Streams
 
-Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-config.md](../sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs).
+Sync Streams are the recommended way to define what data syncs to each client. They provide on-demand subscriptions with parameters and TTL-based expiry. See [sync-config.md](references/sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs).
 
 Requires the service to be configured with Sync Streams (edition 3 config). See [Sync Streams Overview](https://docs.powersync.com/sync/streams/overview.md) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for more information.
 
-The `streams` option in `useQuery` (see below) and the imperative API work across all JS/TS frameworks. Framework-specific Sync Stream hooks are covered in the respective framework files where available — for example, `useSyncStream` and `useSuspenseSyncStream` in `powersync-js-react.md`.
+The `streams` option in `useQuery` (see below) and the imperative API work across all JS/TS frameworks. Framework-specific Sync Stream hooks are covered in the respective framework files where available — for example, `useSyncStream` and `useSuspenseSyncStream` in `references/sdks/powersync-js-react.md`.
 
 #### Streams in useQuery
 

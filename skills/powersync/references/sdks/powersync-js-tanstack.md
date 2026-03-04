@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync TanStack Integrations
 
-TanStack-specific integrations for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when using TanStack Query (React) or TanStack DB (multi-framework) with PowerSync.
+TanStack-specific integrations for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when using TanStack Query (React) or TanStack DB (multi-framework) with PowerSync.
 
 | Resource | Description |
 |----------|-------------|
@@ -28,7 +28,7 @@ Use TanStack Query when you need:
 - Pagination support via TanStack's built-in paginated query patterns
 - React Suspense with navigation blocking via `v7_startTransition`
 
-Use `@powersync/react` hooks (from `powersync-js-react.md`) when:
+Use `@powersync/react` hooks (from `references/sdks/powersync-js-react.md`) when:
 - You don't need TanStack's query cache
 - You want a simpler API with fewer dependencies
 
@@ -190,7 +190,7 @@ npm ls @powersync/common
 npm ls @tanstack/react-db @tanstack/powersync-db-collection @tanstack/db
 ```
 
-If multiple versions appear, delete `node_modules` and the lock file, then reinstall. See also `powersync-debug.md` for the full debugging guidance.
+If multiple versions appear, delete `node_modules` and the lock file, then reinstall. See also `references/powersync-debug.md` for the full debugging guidance.
 
 ### Don't mix TanStack DB collections and direct `db.execute()` without accounting for optimistic state
 

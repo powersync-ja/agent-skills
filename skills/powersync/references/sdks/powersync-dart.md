@@ -124,7 +124,7 @@ See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/
 
 ## Sync Streams
 
-See [sync-config.md](../sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
+See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
 
 ## Query Patterns
 

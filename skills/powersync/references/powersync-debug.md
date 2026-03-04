@@ -9,7 +9,7 @@ metadata:
 
 These are debugging steps most frequently recommended by PowerSync, with an explanation of what problem each step helps identify and why it works.
 
-Make sure to understand the [PowerSync Architecture](./powersync-overview.md) before debugging.
+Make sure to understand the [PowerSync Architecture](references/powersync-overview.md) before debugging.
 
 ## Check `SyncStatus` / `currentStatus` Before Investigating Further
 

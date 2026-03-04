@@ -381,7 +381,7 @@ progress?.totalOperations      // Int
 
 ## Sync Streams
 
-Sync Streams are the recommended way to define what data syncs to each client. See [Sync Config](../sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for full Kotlin examples.
+Sync Streams are the recommended way to define what data syncs to each client. See [Sync Config](references/sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs) and [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md) for full Kotlin examples.
 
 If `auto_subscribe` is not set to `true` in the sync config, subscribe to streams from client code:
 

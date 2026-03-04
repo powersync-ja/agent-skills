@@ -1,0 +1,23 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/validate.mjs
+
+      - name: Validate SKILL.md (Agent Skills spec)
+        uses: Flash-Brew-Digital/validate-skill@v1
+        with:
+          path: ./skills/powersync
+          validate-references: true
+          fail-on-warning: true

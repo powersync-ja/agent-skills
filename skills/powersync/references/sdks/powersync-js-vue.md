@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync Vue & Nuxt
 
-Vue-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building Vue apps or Nuxt apps.
+Vue-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building Vue apps or Nuxt apps.
 
 | Resource | Description |
 |----------|-------------|
@@ -82,7 +82,7 @@ For advanced watch query features including incremental updates and differential
 
 #### `useStatus`
 
-Reactive connectivity status. Same shape as the React `useStatus` hook — see `powersync-js.md` for the full status field reference.
+Reactive connectivity status. Same shape as the React `useStatus` hook — see `references/sdks/powersync-js.md` for the full status field reference.
 
 ```ts
 import { useStatus } from '@powersync/vue'; // omit import in Nuxt

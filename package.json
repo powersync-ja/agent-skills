@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "PowerSync Agent Skills for developers building applications with PowerSync.",
   "main": "",
+  "scripts": {
+    "validate": "node scripts/validate.mjs"
+  },
   "keywords": [],
   "author": "",
   "license": "CC0-1.0",

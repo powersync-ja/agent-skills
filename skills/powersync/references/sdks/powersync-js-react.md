@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync React & Next.js
 
-React-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `powersync-js.md` when building React web apps, Next.js apps, or when using the React hooks from `@powersync/react` or `@powersync/react-native`.
+React-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building React web apps, Next.js apps, or when using the React hooks from `@powersync/react` or `@powersync/react-native`.
 
 | Resource | Description |
 |----------|-------------|

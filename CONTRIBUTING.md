@@ -1,6 +1,6 @@
 # Contributing to PowerSync Agent Skills
 
-Thank you for helping improve the PowerSync agent skills. Contributions are welcome from the community — whether you're fixing a bug, improving an existing reference, or adding support for a new SDK or topic.
+Contributions are welcome from the community — whether you're fixing a bug, improving an existing reference, or adding support for a new SDK or topic.
 
 ## What Lives Here
 
@@ -92,7 +92,7 @@ If you add an example that touches these patterns, make sure it reflects these r
 2. Make your changes. If adding a new reference file, also update the routing table in `CLAUDE.md` and `SKILL.md`.
 3. Test your changes by installing the skill locally and asking an agent a question that exercises the updated content:
    ```
-   npx skills add .
+   npx skills add <path/to/powersync-ja/agent-skills>
    ```
 4. Open a PR against `main` with a clear description of what changed and why.
 

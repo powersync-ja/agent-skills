@@ -2,6 +2,8 @@
 
 Agent skills that help developers build applications with [PowerSync](https://powersync.com).
 
+![PowerSync Agent Skills](assets/sync-dino.png)
+
 ## Available Skills
 
 | Skill                  | Description|
@@ -42,3 +44,6 @@ Suggest sync streams based on my current schema, where the user should only sync
 ```
 Add an upload endpoint to my backend API that accepts write operations from client applications.
 ```
+
+## Contributing
+We welcome contributions from the community to improve PowerSync AX. Please see [CONTRIBUTING.md](/CONTRIBUTING.md) for details.

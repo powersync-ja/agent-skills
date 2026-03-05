@@ -113,6 +113,9 @@ With details showing: `Known keys: <kid: *, kty: oct, alg: HS256>` but the token
 
 ```yaml
 client_auth:
+  # Use host.docker.internal to reach the host machine from inside the PowerSync Docker container.
+  # Alternatively, use the Supabase Kong container name (e.g. supabase_kong_<project-id>)
+  # if both are on the same Docker network.
   jwks_uri: http://host.docker.internal:54321/auth/v1/.well-known/jwks.json
   audience:
     - authenticated
@@ -120,7 +123,7 @@ client_auth:
 ```
 
 Key details:
-- Use `host.docker.internal` (not `localhost`) because this URI is resolved **from inside the PowerSync Docker container**.
+- Use `host.docker.internal` or the Supabase container name (not `localhost`) because this URI is resolved **from inside the PowerSync Docker container**.
 - `block_local_jwks: false` is required because `host.docker.internal` resolves to a local/private IP, which PowerSync blocks by default.
 - The well-known local Supabase JWT secret (`super-secret-jwt-token-with-at-least-32-characters-long`) is **not used** for token signing in newer Supabase versions — it's only used for the service role key and anon key.
 

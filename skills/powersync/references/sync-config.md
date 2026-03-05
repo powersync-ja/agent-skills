@@ -36,6 +36,21 @@ There are minimum SDK requirements when using Sync Streams in an application. Se
 IMPORTANT
 Client applications using a lower version than the `Rust Client Default` should make sure to enable the Rust Sync Client to use Sync Streams. 
 
+## sync-config.yaml File Format
+
+**IMPORTANT:** The `sync-config.yaml` file **must** begin with a top-level `config:` block specifying the edition. Without this wrapper, the PowerSync Service will reject the config. This is the most common deployment error — do not omit it.
+
+```yaml
+# powersync/sync-config.yaml — required structure
+config:
+  edition: 3        # <-- REQUIRED top-level wrapper
+
+streams:
+  my_data:
+    auto_subscribe: true
+    query: SELECT * FROM my_table WHERE user_id = auth.user_id()
+```
+
 ## Structure
 ```yaml
 config:
@@ -375,7 +390,7 @@ Reference these when the standard patterns don't cover your use case:
 | [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
 
-# Sync Rules
+# Sync Rules (Legacy, use Sync Streams for new applications)
 
 Sync rules define how data is partitioned into buckets and distributed to clients. This is considered legacy, however will still be supported. For the best experience use [sync-streams](#sync-streams).
 

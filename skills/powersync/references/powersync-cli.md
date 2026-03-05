@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync CLI
 
-The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the command line. It supports local config management, schema generation, development token generation, deployment, and more.
+The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the command line. It supports local config management, schema generation, development token generation, deployment, and more. See [this](https://docs.powersync.com/tools/cli) for any information not supplied in this document about the CLI.
 
 ## Installation
 ```bash
@@ -102,32 +102,98 @@ password: secret_ref: default_password
 
 ## Cloud Usage
 
-### New Instance
+### New Cloud Instance
+
+**Information the agent must collect from the user before proceeding:**
+- PowerSync account (if they don't have one, direct to https://dashboard.powersync.com to sign up)
+- A project on the dashboard (required before creating an instance — if they don't have one, they must create one at https://dashboard.powersync.com first)
+- Project ID (find on dashboard or via `powersync fetch instances` after login)
+- Org ID (only if their token covers multiple organizations)
+- Database connection details (type, host, port, database name, username, password)
+
+**Step-by-step:**
 
 ```bash
-powersync login
-powersync init cloud                          # scaffold powersync/ directory
-# Edit powersync/service.yaml and sync config
-powersync link cloud --create --project-id=<project-id>   # creates instance + writes cli.yaml
+# 1. Authenticate
+powersync login                               # opens browser for PAT
+
+# 2. Scaffold config files
+powersync init cloud                          # creates powersync/ with service.yaml and sync-config.yaml
+```
+
+**After `powersync init cloud`:** Read the generated `powersync/service.yaml` and `powersync/sync-config.yaml`. These contain placeholder values. Prompt the user for their database connection details and edit the files before continuing.
+
+```bash
+# 3. Create instance and deploy
+powersync link cloud --create --project-id=<project-id>
 # Add --org-id=<org-id> only if token has multiple orgs
 powersync validate
 powersync deploy
 ```
 
-### Existing Instance
+#### Cloud service.yaml Example
+
+The database connection **must** be nested under `replication.connections` — not at the root level:
+
+```yaml
+# powersync/service.yaml — Cloud
+replication:
+  connections:
+    - type: postgresql
+      hostname: !env PS_DATABASE_HOST
+      port: 5432
+      database: !env PS_DATABASE_NAME
+      username: !env PS_DATABASE_USER
+      password:
+        secret: !env PS_DATABASE_PASSWORD   # stored as Cloud secret on first deploy
+      sslmode: verify-full
+```
+
+For the full `service.yaml` schema, see `references/powersync-service.md`.
+
+#### Cloud sync-config.yaml Example
+
+The `sync-config.yaml` **must** start with a `config: edition: 3` top-level wrapper:
+
+```yaml
+# powersync/sync-config.yaml — Cloud
+config:
+  edition: 3
+
+streams:
+  my_data:
+    auto_subscribe: true
+    query: SELECT * FROM my_table WHERE user_id = auth.user_id()
+```
+
+For the full sync config reference, see `references/sync-config.md`.
+
+### Existing Cloud Instance
+
+**Information the agent must collect from the user:**
+- Project ID
+- Instance ID
+- Org ID (only if token covers multiple orgs)
+
+The user can find these on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`.
 
 ```bash
 powersync login
 powersync pull instance --project-id=<project-id> --instance-id=<instance-id>
-# Creates powersync/, writes cli.yaml, downloads service.yaml and sync-config.yaml
 # Add --org-id=<org-id> only if token has multiple orgs
+```
 
-# Edit YAML files as needed
+This creates `powersync/`, writes `cli.yaml`, and downloads `service.yaml` and `sync-config.yaml`.
+
+If the directory is already linked, `powersync pull instance` (no IDs needed) refreshes local config from the cloud.
+
+**WARNING:** `powersync pull instance` **silently overwrites** your local `service.yaml` and `sync-config.yaml` with the remote version. Any hand-crafted or uncommitted local changes will be lost without warning or merge prompt. Always commit or back up local config files before running `pull instance`.
+
+After pulling, edit files as needed, then:
+```bash
 powersync validate
 powersync deploy
 ```
-
-If the directory is already linked, `powersync pull instance` (no IDs needed) refreshes local config from the cloud.
 
 ### Deploy Commands
 
@@ -151,22 +217,65 @@ powersync generate token
 
 ## Self-Hosted Usage
 
+### Self-Hosted with CLI + Docker (Recommended for Local Development)
+
+The CLI manages a full Docker Compose stack for local development and testing.
+
+**Prerequisites:** Docker and Docker Compose V2 (2.20.3+).
+
+**Information the agent may need from the user:**
+- If using `--database external`: the source database URI (set as `PS_DATA_SOURCE_URI`)
+- If using `--storage external`: the storage database URI (set as `PS_STORAGE_SOURCE_URI`)
+- If using the default options: no user input needed — the CLI provisions local Postgres for both
+
+**Step-by-step:**
+
 ```bash
-powersync init self-hosted     # scaffold config template into powersync/
-# Edit YAML files (include api.tokens for API key auth in service.yaml)
+# 1. Scaffold config
+powersync init self-hosted                    # creates powersync/ with service.yaml template
 
-# Once your instance is deployed and reachable:
-powersync link self-hosted --api-url=https://your-powersync.example.com
-# Sets api_key in cli.yaml — use !env PS_ADMIN_TOKEN or set PS_ADMIN_TOKEN env var
+# 2. Configure Docker stack
+powersync docker configure
+# Use --database external to connect to an existing source database
+# Use --storage external to use an existing storage database
 
-powersync generate schema
-powersync generate token
-powersync status
+# 3. Start the stack
+powersync docker start                        # docker compose up -d --wait
 ```
 
-`--api-url` is the URL your running PowerSync instance is exposed from (configured by your deployment — Docker, Coolify, etc.).
+**After `powersync init self-hosted`:** Read the generated `powersync/service.yaml`. If the user is connecting to an external database, prompt them for the connection URI and update the file. The `powersync docker configure` command will merge Docker-specific settings into `service.yaml` and write `cli.yaml`.
 
-Supported self-hosted commands: `status`, `generate schema`, `generate token`, `validate`, `fetch instances`. The CLI does not provision or deploy to a remote server; use Docker for local development.
+```bash
+# 4. Verify and use the instance
+powersync status
+powersync validate
+powersync generate schema --output=ts --output-path=./schema.ts
+powersync generate token --subject=user-test-1
+```
+
+### Self-Hosted — Linking to an Existing Instance
+
+For self-hosted instances already running (not managed by the CLI), the CLI can link to them for schema generation, token generation, and status checks.
+
+**Information the agent must collect from the user:**
+- API URL of the running PowerSync instance
+- API token (must match a token configured in the instance's `api.tokens` setting)
+
+```bash
+powersync init self-hosted                    # scaffold config template
+# Edit powersync/service.yaml (include api.tokens for API key auth)
+
+powersync link self-hosted --api-url=https://your-powersync.example.com
+# Set PS_ADMIN_TOKEN env var to match the instance's api.tokens value
+
+powersync status
+powersync generate schema
+powersync generate token
+```
+
+`--api-url` is the URL the running PowerSync instance is exposed from (configured by your deployment — Docker, Coolify, etc.).
+
+Supported self-hosted commands: `status`, `generate schema`, `generate token`, `validate`, `fetch instances`. The CLI does **not** create, deploy to, or pull config from a remote self-hosted server — you manage the server and its config yourself.
 
 ## Supplying Instance Info Without Linking
 
@@ -252,27 +361,9 @@ Contents of `powersync/`:
 - `service.yaml` — service configuration (name, region, replication connection, auth)
 - `sync-config.yaml` — sync rules / sync streams config
 
-## Docker (Self-Hosted Local Stack)
+## Docker Commands Reference
 
-`powersync docker` runs a self-hosted PowerSync stack with Docker Compose for local development and testing.
-
-**Prerequisites:** Docker and Docker Compose V2 (2.20.3+).
-
-### Workflow
-
-```bash
-# 1. Scaffold config and configure Docker stack
-powersync init self-hosted
-powersync docker configure        # links to local API automatically; creates powersync/docker/
-
-# 2. Start the stack
-powersync docker start            # docker compose up -d --wait
-
-# 3. Use the local instance
-powersync status
-powersync validate
-powersync generate schema --output=ts --output-path=./schema.ts
-```
+For the full Docker setup workflow, see [Self-Hosted with CLI + Docker](#self-hosted-with-cli--docker-recommended-for-local-development) above.
 
 ### Stop and Reset
 

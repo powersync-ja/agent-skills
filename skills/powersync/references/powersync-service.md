@@ -51,10 +51,37 @@ There are three configuration methods available:
 #### Environment variable substitution
 Use !env PS_VARIABLE_NAME in YAML for config values.
 
+### Complete service.yaml Example
+
+Below is a minimal but complete `service.yaml` for a self-hosted instance. Pay close attention to the YAML nesting — in particular, the database connection **must** be under `replication.connections`, not a top-level `connections` key.
+
+```yaml
+# powersync/service.yaml — self-hosted
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI   # e.g. postgresql://user:pass@host:5432/db
+
+storage:
+  type: mongodb
+  uri: !env PS_STORAGE_URI           # e.g. mongodb://localhost:27017/powersync
+
+# Client auth — required before `powersync generate token` works
+client_auth:
+  jwks_uri: !env PS_JWKS_URI
+
+# API key for CLI access (matches PS_ADMIN_TOKEN)
+api:
+  tokens:
+    - !env PS_ADMIN_TOKEN
+```
+
 ### Replication connections
 
+**IMPORTANT:** The database connection **must** be nested under `replication.connections` — not a top-level `connections` key. Placing it elsewhere (e.g. `connections:` at the root) will cause a "No connection found in config" error.
+
 Only one source database connection is supported per instance. Example:
-```
+```yaml
 replication:
   connections:
     - type: postgresql
@@ -78,7 +105,20 @@ There are various options when configuring client authentication on a PowerSync 
 
 ## PowerSync Cloud Setup
 
-See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersync-service/cloud-instances.md) for step-by-step instructions on how to configure PowerSync Cloud instance on the [PowerSync Dashboard](https://dashboard.powersync.com).
+PowerSync Cloud can be set up via the **Dashboard** (UI) or the **CLI**. Both paths require the same four steps. **If any step is missing, the app will be stuck on "Syncing..." with no data.**
+
+| Step | Dashboard | CLI |
+|------|-----------|-----|
+| 1. Create instance | Dashboard → New Instance | `powersync link cloud --create --project-id=<id>` |
+| 2. Connect source DB | Instance Settings → Database | Edit `powersync/service.yaml` → `replication.connections`, then `powersync deploy` |
+| 3. Deploy sync config | Instance → Sync Config editor | Edit `powersync/sync-config.yaml`, then `powersync deploy sync-config` |
+| 4. Enable client auth | Instance → Client Auth section | Edit `powersync/service.yaml` → `client_auth`, then `powersync deploy service-config` |
+
+**IMPORTANT:** All four steps must be completed. The most common cause of an app stuck on "Syncing..." is a missing or misconfigured step above — typically the database connection or sync config not being deployed.
+
+For full CLI setup workflow, see `references/powersync-cli.md` → Cloud Usage.
+
+See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersync-service/cloud-instances.md) for detailed dashboard step-by-step instructions.
 
 ## Source Database Setup
 

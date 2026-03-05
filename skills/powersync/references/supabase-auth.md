@@ -95,9 +95,47 @@ client_auth:
 
 Get the secret from Supabase → Project Settings → JWT. Use `!env` to avoid hardcoding secrets.
 
-### Manual JWKS (non-standard / local Supabase)
+### Local Supabase (`supabase start`)
 
-Use when `supabase: true` cannot auto-detect the project (e.g. self-hosted Supabase or local Docker):
+**IMPORTANT:** Local Supabase (via `supabase start`) uses **ES256 asymmetric JWT signing keys**, not the legacy HS256 shared secret. This means:
+
+- `supabase: true` alone **will not work** — it cannot auto-detect a local project from the connection string.
+- `supabase: true` + `supabase_jwt_secret` **will not work** — it registers an HS256 key, but local Supabase issues ES256 tokens with a `kid` that doesn't match.
+- You **must** use manual JWKS pointing to the local Supabase JWKS endpoint.
+
+The error you'll see if misconfigured:
+```
+PSYNC_S2101: Could not find an appropriate key in the keystore. The key is missing or no key matched the token KID
+```
+With details showing: `Known keys: <kid: *, kty: oct, alg: HS256>` but the token has `alg: ES256` with a specific `kid`.
+
+**Correct config for local Supabase:**
+
+```yaml
+client_auth:
+  # Use host.docker.internal to reach the host machine from inside the PowerSync Docker container.
+  # Alternatively, use the Supabase Kong container name (e.g. supabase_kong_<project-id>)
+  # if both are on the same Docker network.
+  jwks_uri: http://host.docker.internal:54321/auth/v1/.well-known/jwks.json
+  audience:
+    - authenticated
+  block_local_jwks: false
+```
+
+Key details:
+- Use `host.docker.internal` or the Supabase container name (not `localhost`) because this URI is resolved **from inside the PowerSync Docker container**.
+- `block_local_jwks: false` is required because `host.docker.internal` resolves to a local/private IP, which PowerSync blocks by default.
+- The well-known local Supabase JWT secret (`super-secret-jwt-token-with-at-least-32-characters-long`) is **not used** for token signing in newer Supabase versions — it's only used for the service role key and anon key.
+
+You can verify your local Supabase is using ES256 by checking:
+```bash
+curl -s http://127.0.0.1:54321/auth/v1/.well-known/jwks.json
+# Returns: {"keys":[{"alg":"ES256","crv":"P-256","kty":"EC",...}]}
+```
+
+### Manual JWKS (other non-standard connections)
+
+Use when `supabase: true` cannot auto-detect the project (e.g. self-hosted Supabase, custom auth proxy):
 
 ```yaml
 client_auth:
@@ -197,14 +235,16 @@ val connector = SupabaseConnector(
 
 ### `PSYNC_S2101` — Could not find an appropriate key in the keystore
 
-PowerSync cannot verify the JWT signature.
+PowerSync cannot verify the JWT signature. Check the error logs for `Known keys` and `tokenDetails` to diagnose the mismatch.
 
-| Cause | Solution |
-|-------|---------|
-| Incomplete Supabase key migration | Complete the "Rotate to asymmetric JWTs" step in the [Supabase migration guide](https://supabase.com/blog/jwt-signing-keys#start-using-asymmetric-jwts-today). |
-| Stale tokens after migration | Have users sign out and back in to receive new tokens. |
-| Auto-detection failed | PowerSync couldn't detect your Supabase project from the connection string. Use manual JWKS config. |
-| Wrong JWT secret | For legacy HS256 keys, verify the secret matches Supabase → Project Settings → JWT. |
+| Cause | Symptom | Solution |
+|-------|---------|---------|
+| **Local Supabase with `supabase_jwt_secret`** | Known keys show `HS256` but token uses `ES256` with a specific `kid` | Local Supabase uses ES256 asymmetric keys. Switch to manual JWKS config — see "Local Supabase" section above. |
+| Incomplete Supabase key migration | Token `alg` doesn't match keystore | Complete the "Rotate to asymmetric JWTs" step in the [Supabase migration guide](https://supabase.com/blog/jwt-signing-keys#start-using-asymmetric-jwts-today). |
+| Stale tokens after migration | Old tokens fail, new logins work | Have users sign out and back in to receive new tokens. |
+| Auto-detection failed | `supabase: true` but no keys registered | PowerSync couldn't detect your Supabase project from the connection string. Use manual JWKS config. |
+| Wrong JWT secret | HS256 verification fails | For legacy HS256 keys, verify the secret matches Supabase → Project Settings → JWT. |
+| `block_local_jwks` blocking JWKS fetch | JWKS URI resolves to private IP, keys never fetched | Set `block_local_jwks: false` for local development. |
 
 ### `PSYNC_S2105` — JWT payload is missing a required claim "aud"
 

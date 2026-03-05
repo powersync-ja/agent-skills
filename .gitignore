@@ -4,3 +4,5 @@ node_modules/
 .claude
 .vscode
 /powersync
+/temp
+/temp-claude

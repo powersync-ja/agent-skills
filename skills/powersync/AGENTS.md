@@ -1,6 +1,128 @@
 # PowerSync Skills
 
-Best practices and expertise for building applications with PowerSync.
+Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
+
+## Onboarding Playbook
+
+When the task is to add PowerSync to an app, follow this sequence in order:
+
+1. Identify the platform: **Cloud** or **self-hosted**.
+2. Identify the setup path: **Dashboard** or **CLI**.
+3. Identify the backend: **Supabase** or another database.
+4. Collect required inputs before coding.
+5. Complete PowerSync service readiness before debugging frontend sync behavior.
+
+Do not start client-side debugging while the PowerSync service is still unconfigured. If the UI is stuck on `Syncing...`, the default diagnosis is incomplete backend setup, not a frontend bug.
+
+## Critical Footguns
+
+Apply these rules without exception:
+
+- `powersync/service.yaml` uses `replication.connections`, not a top-level `connections` key.
+- `powersync/sync-config.yaml` must begin with:
+  ```yaml
+  config:
+    edition: 3
+  ```
+- `powersync pull instance` silently overwrites local `service.yaml` and `sync-config.yaml`.
+- For existing Cloud instances, pull config before manual edits. Never pull after editing unless you have backed up the local files.
+
+## Default Benchmark Path
+
+For a React web app using Supabase auth and PowerSync Cloud, load these files in this order:
+
+1. `references/onboarding-supabase-web.md`
+2. `references/supabase-auth.md`
+3. `references/powersync-cli.md`
+4. `references/powersync-service.md`
+5. `references/sync-config.md`
+6. `references/sdks/powersync-js.md`
+7. `references/sdks/powersync-js-react.md`
+
+Use the onboarding recipe as the primary workflow. Use the other references to fill in details, not to invent a different sequence.
+
+## Required Inputs Before Coding
+
+Collect the minimum required information for the chosen path before changing app code.
+
+### Cloud + Supabase
+
+- Whether the user wants **Dashboard** setup or **CLI** setup
+- Whether the PowerSync instance already exists
+- PowerSync instance URL, if an instance already exists
+- Project ID and instance ID, if using CLI with an existing instance
+- Supabase Postgres connection string, if PowerSync still needs the source DB connection
+- Whether Supabase JWT signing uses new signing keys or legacy JWT secret, if not obvious from the setup
+
+Only ask for secrets when you are at the step that actually needs them.
+
+## Cloud Readiness Gate
+
+Do not proceed to frontend debugging until all items below are verified:
+
+- PowerSync instance exists
+- Source database connection is configured
+- Sync config is deployed
+- Client auth is configured
+- Instance URL is available for `fetchCredentials()`
+- Source database replication/publication setup is complete
+
+If any item is missing, finish the service setup first.
+
+## First Response for `Syncing...`
+
+When the app shows `Syncing...`, check these in order before asking for browser console logs:
+
+1. Confirm the PowerSync endpoint URL returned by `fetchCredentials()`.
+2. Confirm the PowerSync service has a valid source DB connection.
+3. Confirm sync config is deployed and uses `config: edition: 3`.
+4. Confirm client auth is configured correctly.
+5. Confirm the Supabase publication exists for the synced tables.
+6. Only then inspect frontend connector or SDK state.
+
+Before requesting console logs, ask the user to confirm:
+
+- whether the instance exists
+- whether database connection is configured
+- whether sync config was deployed
+- whether client auth was enabled
+- whether the Supabase SQL was run
+
+## Setup Paths
+
+Choose the matching path after the preflight.
+
+### Path 1: Cloud + Dashboard
+
+Guide the user through the dashboard sequence:
+
+1. Create or open the PowerSync project and instance.
+2. Connect the source database.
+3. Deploy sync config.
+4. Configure client auth.
+5. Copy the instance URL.
+6. Verify source database replication/publication setup.
+
+If the backend is Supabase, also load `references/supabase-auth.md`.
+
+### Path 2: Cloud + CLI
+
+Load `references/powersync-cli.md`.
+
+For Cloud instance work, prefer:
+
+- `PS_ADMIN_TOKEN` in autonomous or noninteractive environments
+- targeted deploys: `powersync deploy service-config` or `powersync deploy sync-config`
+
+Use `powersync login` only when interactive auth is acceptable.
+
+### Path 3: Self-Hosted + Manual Docker
+
+Load `references/powersync-service.md` and `references/sync-config.md`.
+
+### Path 4: Self-Hosted + CLI Docker
+
+Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`.
 
 ## Architecture
 
@@ -36,196 +158,51 @@ flowchart LR
   QUEUE -- "Uploads writes (when connectivity resumes)" --> API
 ```
 
-Key rule: **client writes never go through PowerSync** — they go directly from the app's upload queue to your backend API. PowerSync only handles the read/sync path.
-
-## Getting Started — PowerSync Service Setup
-
-When setting up the PowerSync Service, ask the user two questions if the answers aren't clear from context:
-1. **Cloud or Self-hosted?** — PowerSync Cloud (managed) or self-hosted (run your own Docker instance)?
-2. **Dashboard or CLI?** — For Cloud: set up via the PowerSync Dashboard UI, or via the PowerSync CLI? For Self-hosted: manual Docker setup, or use the CLI's Docker integration?
-
-Then follow the matching path below. For all paths, also load `references/powersync-service.md` and `references/sync-config.md`.
-
-### Path 1: Cloud — Dashboard Setup
-
-No CLI needed. The user does everything through the [PowerSync Dashboard](https://dashboard.powersync.com).
-
-Guide the user through these steps:
-
-1. **Sign up and create a project** — the user needs a PowerSync account at https://dashboard.powersync.com. Once signed in, they must create a project before they can create an instance.
-2. **Create a PowerSync instance** — inside the project, create a new instance.
-3. **Connect the source database** — in the instance settings, add the database connection. The user needs to provide:
-   - Database type (Postgres, MongoDB, MySQL, etc.)
-   - Connection URI or host/port/database/username/password
-   - The database must have replication enabled — see `references/powersync-service.md` → Source Database Setup for the SQL commands the user needs to run.
-4. **Configure sync rules** — in the instance's Sync Config editor, write Sync Streams that define what data each user receives. Must use `config: edition: 3`. See `references/sync-config.md` for the format.
-5. **Enable client authentication** — in the instance's "Client Auth" section, configure JWT verification (JWKS URI, Supabase Auth, etc.). For development, enable "Development Tokens" in this section.
-6. **Get the instance URL** — copy the instance URL from the dashboard. The app's `fetchCredentials()` needs this as the PowerSync endpoint.
-
-**IMPORTANT:** All steps must be completed. If any are missing, the app will be stuck on "Syncing..." with no data.
-
-### Path 2: Cloud — CLI Setup
-
-Load `references/powersync-cli.md` for full CLI reference.
-
-**What to ask the user before starting:**
-- Do they have a PowerSync account? If not, direct them to https://dashboard.powersync.com to sign up.
-- Have they created a project on the dashboard? If not, they need to create one first at https://dashboard.powersync.com (a project is required before creating an instance).
-- Do they have an existing instance, or should we create a new one?
-
-#### New Cloud Instance
-
-1. **Install and authenticate:**
-   ```bash
-   npm install -g powersync
-   powersync login
-   ```
-   `powersync login` opens a browser for the user to create/paste a personal access token (PAT). If they don't have one: https://dashboard.powersync.com/account/access-tokens
-
-2. **Scaffold config files:**
-   ```bash
-   powersync init cloud
-   ```
-   This creates `powersync/service.yaml` and `powersync/sync-config.yaml` with template values.
-
-3. **Read the scaffolded files**, then prompt the user for their database connection details and edit the files:
-   - `powersync/service.yaml` — fill in `replication.connections` with database type, host, port, database name, username, and password. For Cloud, use `password: secret: !env PS_DATABASE_PASSWORD` for credentials. See `references/powersync-service.md` for the correct YAML structure.
-   - `powersync/sync-config.yaml` — must start with `config: edition: 3`, then define `streams:`. Write Sync Streams based on the app's tables. See `references/sync-config.md`.
-
-4. **Ask the user for their project ID**, then create the instance and deploy:
-   ```bash
-   powersync link cloud --create --project-id=<project-id>
-   # Add --org-id=<org-id> only if their token has access to multiple orgs
-   powersync validate
-   powersync deploy
-   ```
-   The user can find their project ID on the PowerSync Dashboard under their project settings or by running `powersync fetch instances`.
-
-5. **Set up the source database** — the user must configure their database for replication. See `references/powersync-service.md` → Source Database Setup for the SQL commands. For Supabase, logical replication is already enabled but the user still needs to create the publication via the Supabase SQL Editor.
-
-6. **Generate a dev token** for testing:
-   ```bash
-   powersync generate token --subject=user-test-1
-   ```
-   Use this token in the app's `fetchCredentials()` during development.
-
-7. **Verify:** `powersync status` — confirm the instance is connected and replicating.
-
-#### Existing Cloud Instance
-
-**Ask the user for their project ID and instance ID**, then pull the config:
-```bash
-powersync login
-powersync pull instance --project-id=<project-id> --instance-id=<instance-id>
-# Add --org-id=<org-id> only if token has multiple orgs
-```
-The user can find these IDs on the PowerSync Dashboard or by running `powersync fetch instances`.
-
-**WARNING:** `powersync pull instance` silently overwrites local `service.yaml` and `sync-config.yaml`. Do not run it if there are uncommitted local changes to those files.
-
-After pulling, edit files as needed, then:
-```bash
-powersync validate
-powersync deploy
-```
-
-### Path 3: Self-Hosted — Manual Docker Setup
-
-No CLI needed. The user runs Docker directly with the PowerSync Service image.
-
-1. **Set up the source database** — see `references/powersync-service.md` → Source Database Setup.
-
-2. **Create the config file** — create a `config.yaml` with the correct structure. See `references/powersync-service.md` → Complete service.yaml Example. Key sections:
-   - `replication.connections` — the database connection (**must** be nested here, not at root level)
-   - `storage` — bucket storage database (MongoDB or Postgres, separate from source DB)
-   - `client_auth` — JWT verification settings
-   - `api.tokens` — API key for management access
-
-3. **Run the Docker container:**
-   ```bash
-   docker run \
-     -p 8080:80 \
-     -e POWERSYNC_CONFIG_B64="$(base64 -i ./config.yaml)" \
-     --network my-local-dev-network \
-     --name my-powersync journeyapps/powersync-service:latest
-   ```
-
-4. **Create the sync config** — write sync rules (see `references/sync-config.md`) either inline in `config.yaml` or via the built-in dashboard at `http://localhost:8080`.
-
-For more details on manual Docker setup, see `references/powersync-service.md`.
-
-### Path 4: Self-Hosted — CLI with Docker
-
-The CLI manages the Docker Compose stack for local development. Load `references/powersync-cli.md` for full CLI reference.
-
-1. **Install the CLI and scaffold:**
-   ```bash
-   npm install -g powersync
-   powersync init self-hosted
-   ```
-
-2. **Read the scaffolded `powersync/service.yaml`**, then prompt the user for connection details. If using `--database external`, the user needs to provide their source database URI. Otherwise the CLI provisions a local Postgres in Docker. See `references/powersync-service.md` for the YAML structure (`replication.connections`, `storage`, `client_auth`, `api.tokens`).
-
-3. **Configure and start the Docker stack:**
-   ```bash
-   powersync docker configure
-   # Use --database external if connecting to an existing database
-   # Use --storage external if using an existing storage database
-   powersync docker start
-   ```
-
-4. **Verify and generate tokens:**
-   ```bash
-   powersync status
-   powersync generate schema --output=ts --output-path=./schema.ts
-   powersync generate token --subject=user-test-1
-   ```
-
-For Docker stop/reset/cleanup commands, see `references/powersync-cli.md` → Docker section.
+Key rule: **client writes never go through PowerSync**. They go from the app's upload queue to your backend API. PowerSync handles the read and sync path only.
 
 ## What to Load for Your Task
 
 | Task | Load these files |
 |------|-----------------|
-| New project setup | `references/powersync-cli.md` + `references/powersync-service.md` + `references/sync-config.md` + SDK files for your platform (see below) |
-| Handling file uploads / attachments | `references/attachments.md` |
-| Setting up PowerSync with Supabase (database, auth, fetchCredentials) | `references/supabase-auth.md` |
+| React web app + Supabase + Cloud onboarding | `references/onboarding-supabase-web.md` + `references/supabase-auth.md` + `references/powersync-cli.md` + `references/powersync-service.md` + `references/sync-config.md` + `references/sdks/powersync-js.md` + `references/sdks/powersync-js-react.md` |
+| New project setup | `references/powersync-cli.md` + `references/powersync-service.md` + `references/sync-config.md` + SDK files for your platform |
+| Setting up PowerSync with Supabase | `references/onboarding-supabase-web.md` + `references/supabase-auth.md` |
 | Debugging sync / connection issues | `references/powersync-debug.md` |
 | Writing or migrating sync config | `references/sync-config.md` |
 | Configuring the service / self-hosting | `references/powersync-service.md` + `references/powersync-cli.md` |
 | Using the PowerSync CLI | `references/powersync-cli.md` + `references/sync-config.md` |
+| Handling file uploads / attachments | `references/attachments.md` |
 | Understanding the overall architecture | This file is sufficient; see `references/powersync-overview.md` for deep links |
 
 ## SDK Reference Files
 
 ### JavaScript / TypeScript
 
-Always load `references/sdks/powersync-js.md` as the foundation for any JS/TS project, then load the applicable framework file alongside it.
+Always load `references/sdks/powersync-js.md` for any JS/TS project, then load the applicable framework file.
 
-| Framework file | Load when… |
-|----------------|-----------|
-| `references/sdks/powersync-js-react.md` | React web app or Next.js |
-| `references/sdks/powersync-js-react-native.md` | React Native, Expo, or Expo Go |
-| `references/sdks/powersync-js-vue.md` | Vue or Nuxt |
-| `references/sdks/powersync-js-node.md` | Node.js CLI/server or Electron |
-| `references/sdks/powersync-js-tanstack.md` | TanStack Query or TanStack DB (any framework) |
+| Framework | Load when… | File |
+|-----------|-----------|------|
+| React / Next.js | React web app or Next.js | `references/sdks/powersync-js-react.md` |
+| React Native / Expo | React Native, Expo, or Expo Go | `references/sdks/powersync-js-react-native.md` |
+| Vue / Nuxt | Vue or Nuxt | `references/sdks/powersync-js-vue.md` |
+| Node.js / Electron | Node.js CLI/server or Electron | `references/sdks/powersync-js-node.md` |
+| TanStack | TanStack Query or TanStack DB | `references/sdks/powersync-js-tanstack.md` |
 
 ### Other SDKs
 
-| File | Use when… |
-|------|----------|
-| `references/sdks/powersync-dart.md` | Dart / Flutter (includes Drift ORM + Flutter Web) |
-| `references/sdks/powersync-dotnet.md` | .NET (MAUI, WPF, Console) |
-| `references/sdks/powersync-kotlin.md` | Kotlin (Android, JVM, iOS, macOS, watchOS, tvOS) |
-| `references/sdks/powersync-swift.md` | Swift / iOS / macOS (includes GRDB ORM) |
+| Platform | Load when… | File |
+|----------|-----------|------|
+| Dart / Flutter | Dart / Flutter | `references/sdks/powersync-dart.md` |
+| .NET | .NET | `references/sdks/powersync-dotnet.md` |
+| Kotlin | Kotlin | `references/sdks/powersync-kotlin.md` |
+| Swift | Swift / iOS / macOS | `references/sdks/powersync-swift.md` |
 
 ## Key Rules to Apply Without Being Asked
 
-- **Use the CLI for instance operations** — when deploying config, generating schemas, generating dev tokens, checking status, or managing Cloud/self-hosted instances, use `powersync` CLI commands. See `references/powersync-cli.md` for usage.
-- **Sync Streams over Sync Rules** — new projects must use Sync Streams (edition 3 config). Sync Rules are legacy; only use them when an existing project already has them.
-- **`id` column** — never define `id` in a PowerSync table schema; it is created automatically as `TEXT PRIMARY KEY`.
-- **No boolean/date column types** — use `column.integer` (0/1) for booleans and `column.text` (ISO string) for dates.
-- **`connect()` is fire-and-forget** — do not `await connect()` expecting data to be ready. Use `waitForFirstSync()` if you need to wait.
-- **`transaction.complete()` is mandatory** — if it is never called, the upload queue stalls permanently.
-- **`disconnectAndClear()` on logout** — `disconnect()` keeps local data; `disconnectAndClear()` wipes it. Always use `disconnectAndClear()` when switching users.
-- **Backend must return 2xx for validation errors** — a 4xx response from `uploadData` blocks the upload queue permanently.
+- Use Sync Streams for new projects. Sync Rules are legacy.
+- Never define the `id` column in a PowerSync table schema; it is created automatically.
+- Use `column.integer` for booleans and `column.text` for ISO date strings.
+- `connect()` is fire-and-forget. Use `waitForFirstSync()` if you need readiness.
+- `transaction.complete()` is mandatory or the upload queue stalls permanently.
+- `disconnectAndClear()` is required on logout or user switch when local data must be wiped.
+- A 4xx response from `uploadData` blocks the upload queue permanently; return 2xx for validation errors.

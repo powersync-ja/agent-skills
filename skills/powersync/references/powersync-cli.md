@@ -9,6 +9,33 @@ metadata:
 
 The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the command line. It supports local config management, schema generation, development token generation, deployment, and more. See [this](https://docs.powersync.com/tools/cli) for any information not supplied in this document about the CLI.
 
+## Recommended Defaults for Agents
+
+Use these defaults unless the user explicitly wants something else:
+
+- Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
+- Treat `powersync login` as interactive and likely to interrupt the flow.
+- Prefer `powersync deploy service-config` or `powersync deploy sync-config` over `powersync deploy` when only one file changed.
+- For existing Cloud instances, pull config before manual edits and never pull again after editing unless local files were backed up first.
+
+## High-Probability Failure Modes
+
+- `No connection found in config` usually means the database connection was placed at the root instead of `replication.connections`.
+- Sync config validation or deploy failures often mean `powersync/sync-config.yaml` is missing the top-level `config: edition: 3` wrapper.
+- `powersync pull instance` silently overwrites local `service.yaml` and `sync-config.yaml`.
+
+## Recommended Cloud Sequence
+
+For the common Cloud path, use this order:
+
+1. Authenticate with `PS_ADMIN_TOKEN` if available, otherwise `powersync login`.
+2. Create or pull config.
+3. Edit `service.yaml`.
+4. Edit `sync-config.yaml`.
+5. Deploy service config.
+6. Deploy sync config.
+7. Verify status.
+
 ## Installation
 ```bash
 npm install -g powersync
@@ -32,6 +59,8 @@ For Cloud, `--org-id` / `ORG_ID` is optional — omit it when your token has acc
 ## Authentication
 
 Cloud commands require a PowerSync personal access token (PAT). If the user does not have one, direct them to generate one at: https://dashboard.powersync.com/account/access-tokens
+
+Prefer `PS_ADMIN_TOKEN` when the environment is noninteractive or when the agent should avoid browser/device-login interruptions.
 
 The CLI checks in this order:
 
@@ -193,6 +222,12 @@ After pulling, edit files as needed, then:
 ```bash
 powersync validate
 powersync deploy
+```
+
+Prefer targeted deploys after edits:
+```bash
+powersync deploy service-config
+powersync deploy sync-config
 ```
 
 ### Deploy Commands

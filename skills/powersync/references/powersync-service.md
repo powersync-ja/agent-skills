@@ -9,6 +9,11 @@ metadata:
 
 Guidance for configuring PowerSync Service, sync config, and database replication.
 
+Critical warnings for fast setup:
+
+- Cloud and self-hosted service config both use `replication.connections`, never a root-level `connections`.
+- If the app is stuck on `Syncing...`, the default diagnosis is incomplete backend setup: missing DB connection, missing sync config, missing client auth, or missing publication.
+
 For source code see: [powersync-service](https://github.com/powersync-ja/powersync-service/)
 
 For debugging see: [powersync-debug.md](references/powersync-debug.md).
@@ -75,6 +80,23 @@ api:
   tokens:
     - !env PS_ADMIN_TOKEN
 ```
+
+### Minimal Cloud service.yaml Example
+
+For PowerSync Cloud, the minimal shape is:
+
+```yaml
+# powersync/service.yaml — Cloud
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATABASE_URI
+
+client_auth:
+  supabase: true
+```
+
+If you are using Cloud with Supabase, this is the easiest example to reason about. Do not mentally translate from the self-hosted example first.
 
 ### Replication connections
 

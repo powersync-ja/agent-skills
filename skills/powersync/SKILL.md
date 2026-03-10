@@ -21,8 +21,9 @@ When the task is to add PowerSync to an app, follow this sequence in order:
 1. Identify the platform: **Cloud** or **self-hosted**.
 2. Identify the setup path: **Dashboard** or **CLI**.
 3. Identify the backend: **Supabase** or another database.
-4. Collect required inputs before coding.
-5. Complete PowerSync service readiness before debugging frontend sync behavior.
+4. If the backend is Supabase and it is unclear whether the user means **online (Supabase Cloud)** or **locally hosted** (e.g. `supabase start`), **ask the user** before choosing connection strings, auth config, or references.
+5. Collect required inputs before coding.
+6. Complete PowerSync service readiness before debugging frontend sync behavior.
 
 Do not start client-side debugging while the PowerSync service is still unconfigured. If the UI is stuck on `Syncing...`, the default diagnosis is incomplete backend setup, not a frontend bug.
 
@@ -38,6 +39,9 @@ Apply these rules without exception:
   ```
 - `powersync pull instance` silently overwrites local `service.yaml` and `sync-config.yaml`.
 - For existing Cloud instances, pull config before manual edits. Never pull after editing unless you have backed up the local files.
+- The self-hosted Docker image listens on port **8080**, not 80. Use `-p 8080:8080` in port mapping.
+- The Docker image does **not** accept a `-s` flag for sync config. Use the `POWERSYNC_SYNC_CONFIG_B64` environment variable or the `-sync64` flag.
+- For local Postgres / local Supabase, set `sslmode: disable` as a YAML key on the connection — the `sslmode=disable` URI query string is ignored by pgwire.
 
 ## Default Benchmark Path
 
@@ -61,6 +65,7 @@ Collect the minimum required information for the chosen path before changing app
 
 - Whether the user wants **Dashboard** setup or **CLI** setup
 - Whether the PowerSync instance already exists
+- **Whether Supabase is online (hosted at supabase.com) or locally hosted** (e.g. `supabase start`) — if you cannot infer this from the project or env, **prompt the user**
 - PowerSync instance URL, if an instance already exists
 - Project ID and instance ID, if using CLI with an existing instance
 - Supabase Postgres connection string, if PowerSync still needs the source DB connection
@@ -130,7 +135,7 @@ Use `powersync login` only when interactive auth is acceptable.
 
 ### Path 3: Self-Hosted + Manual Docker
 
-Load `references/powersync-service.md` and `references/sync-config.md`.
+Load `references/powersync-service.md` and `references/sync-config.md`. If the backend is **not** Supabase, also load `references/custom-backend.md`.
 
 ### Path 4: Self-Hosted + CLI Docker
 
@@ -184,6 +189,7 @@ Key rule: **client writes never go through PowerSync**. They go from the app's u
 | Configuring the service / self-hosting | `references/powersync-service.md` + `references/powersync-cli.md` |
 | Using the PowerSync CLI | `references/powersync-cli.md` + `references/sync-config.md` |
 | Handling file uploads / attachments | `references/attachments.md` |
+| Custom backend (non-Supabase) | `references/custom-backend.md` + `references/powersync-service.md` + `references/sync-config.md` + SDK files for your platform |
 | Understanding the overall architecture | This file is sufficient; see `references/powersync-overview.md` for deep links |
 
 ## SDK Reference Files

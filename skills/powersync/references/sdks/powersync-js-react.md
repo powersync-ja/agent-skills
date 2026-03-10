@@ -279,8 +279,17 @@ import topLevelAwait from 'vite-plugin-top-level-await'
 
 export default defineConfig({
   plugins: [react(), wasm(), topLevelAwait()],
+  optimizeDeps: {
+    exclude: ['@journeyapps/wa-sqlite', '@powersync/web'],
+  },
+  worker: {
+    format: 'es',
+    plugins: () => [wasm(), topLevelAwait()],
+  },
 })
 ```
+
+> **Do NOT** add `optimizeDeps: { include: ['@powersync/web > js-logger'] }` — this dependency path does not exist in current SDK versions and causes build warnings. The `exclude` configuration above is sufficient.
 
 ## Common Pitfalls
 

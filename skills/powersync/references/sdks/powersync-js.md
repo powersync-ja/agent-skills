@@ -142,6 +142,8 @@ const tasks = new Table(
 
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-integrate-with-your-backend) and [Client-Side Integration](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) for more information.
 
+**IMPORTANT:** `PowerSyncBackendConnector`, `PowerSyncCredentials`, and `AbstractPowerSyncDatabase` are **type-only exports**. Always use `import type` for these — importing them as values (without `type`) causes runtime errors in bundlers like Vite. Only `UpdateType` is a runtime value (enum) and uses a regular import.
+
 ```ts
 import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
 async fetchCredentials(): Promise<PowerSyncCredentials> {
@@ -162,8 +164,8 @@ async fetchCredentials(): Promise<PowerSyncCredentials> {
 Called automatically whenever local writes are pending. Must be synchronous with the actual backend write — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
 
 ```ts
-import { AbstractPowerSyncDatabase, UpdateType } from '@powersync/web'
-import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
+import { UpdateType } from '@powersync/web'
+import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
 
 async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
   const transaction = await database.getNextCrudTransaction();

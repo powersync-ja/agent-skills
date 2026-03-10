@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync CLI
 
-The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the command line. It supports local config management, schema generation, development token generation, deployment, and more. See [this](https://docs.powersync.com/tools/cli) for any information not supplied in this document about the CLI.
+The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the command line. It supports local config management, schema generation, development token generation, deployment, and more. See [this](https://docs.powersync.com/tools/cli.md) for any information not supplied in this document about the CLI.
 
 ## Recommended Defaults for Agents
 

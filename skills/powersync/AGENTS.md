@@ -2,14 +2,22 @@
 
 Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
 
-## Use the PowerSync CLI
+## Always Use the PowerSync CLI
 
-**Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) as the first option** for instance and config operations — for both Cloud and self-hosted PowerSync — unless the user says otherwise or the CLI is unavailable. Try the CLI before directing the user to the dashboard for creating instances, linking, or deploying.
+**The [PowerSync CLI](https://docs.powersync.com/tools/cli.md) is the default tool for all PowerSync operations.** Do not manually create config files, do not direct users to the dashboard, and do not write service.yaml or sync-config.yaml from scratch. The CLI handles all of this.
 
-- **Cloud:** Prefer the CLI to create the instance (`powersync link cloud --create`), link the project, deploy service config (`powersync deploy service-config`), and deploy sync config (`powersync deploy sync-config`). See `references/powersync-cli.md`.
-- **Self-hosted:** Prefer the CLI for Docker-based runs (`powersync docker run`, `powersync docker reset`), schema generation, and any supported commands. See `references/powersync-cli.md`.
+What the CLI does — use it instead of doing these things manually:
 
-Full CLI reference: [PowerSync CLI docs](https://docs.powersync.com/tools/cli). Load `references/powersync-cli.md` when setting up or changing PowerSync instances or config.
+- **Create a Cloud instance:** `powersync init cloud` → `powersync link cloud --create --project-id=<id>` (scaffolds config, creates the instance, and links it in one flow)
+- **Link an existing Cloud instance:** `powersync pull instance --project-id=<id> --instance-id=<id>` (downloads config to local files)
+- **Create a local self-hosted instance:** `powersync init self-hosted` → `powersync docker configure` → `powersync docker start` (spins up a full local PowerSync stack via Docker — no manual Docker setup needed)
+- **Deploy config:** `powersync deploy service-config`, `powersync deploy sync-config` (validates and deploys — don't copy-paste YAML to a dashboard)
+- **Generate client schema:** `powersync generate schema --output=ts` (generates TypeScript schema from deployed sync config — don't write it by hand)
+- **Generate dev tokens:** `powersync generate token --subject=user-1` (for local testing — don't hardcode JWTs)
+
+Only fall back to manual config or dashboard instructions when the user explicitly says they can't use the CLI.
+
+Full CLI reference: `references/powersync-cli.md` — **always load this file** when setting up or modifying a PowerSync instance.
 
 ## Onboarding Playbook
 
@@ -20,7 +28,7 @@ When the task is to add PowerSync to an app, follow this sequence in order:
 3. If the backend is Supabase and it is unclear whether the user means **online (Supabase Cloud)** or **locally hosted** (e.g. `supabase start`), **ask the user** before choosing connection strings, auth config, or references.
 4. Collect required inputs before coding.
 5. Generate sync config and any required source database setup (e.g. Supabase publication SQL, Postgres publication, MongoDB replica set).
-6. **Create/link the instance and deploy config before writing app code.** Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) (see `references/powersync-cli.md`): create and link the instance (e.g. `powersync link cloud --create` for Cloud), then deploy service config (`powersync deploy service-config`) and sync config (`powersync deploy sync-config`) directly. For self-hosted Docker, use `powersync docker reset` after config changes. For source database setup that the agent cannot run (e.g. Supabase publication SQL in the Supabase SQL Editor), present the exact SQL to the user and ask them to confirm it is done. Do not defer deployment to a post-implementation summary — the app will not sync without a deployed sync config.
+6. **Create/link the instance and deploy config before writing app code.** Use the CLI — do not create config files manually. For Cloud: `powersync init cloud` → edit config → `powersync link cloud --create` → `powersync deploy`. For self-hosted: `powersync init self-hosted` → `powersync docker configure` → `powersync docker start`. For source database setup the agent cannot run (e.g. Supabase publication SQL), present the exact SQL and ask the user to confirm it is done. The app will not sync without deployed config.
 7. Only after backend readiness is confirmed, implement app-side PowerSync integration.
 
 Do not start client-side debugging while the PowerSync service is still unconfigured. If the UI is stuck on `Syncing...`, the default diagnosis is incomplete backend setup, not a frontend bug.
@@ -84,7 +92,7 @@ Do not proceed to app-side code until all items below are verified:
 
 If any item is missing, finish the service setup first.
 
-**IMPORTANT:** Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) for creating/linking instances and for all deploys (see `references/powersync-cli.md`). Try running CLI commands directly — e.g. `powersync link cloud --create`, `powersync deploy service-config`, `powersync deploy sync-config` — before asking the user to use the dashboard. For self-hosted Docker, use `powersync docker reset` after config changes. Fall back to dashboard instructions when the CLI is unavailable or the user explicitly prefers the dashboard. For steps the agent cannot perform (e.g. running SQL in Supabase SQL Editor), present the exact commands to the user and ask them to confirm completion before writing app code.
+Use the CLI to verify and complete any missing items. For steps the agent cannot perform (e.g. running SQL in Supabase SQL Editor), present the exact commands and ask the user to confirm completion before writing app code.
 
 ## First Response for `Syncing...`
 
@@ -107,7 +115,7 @@ Before requesting console logs, ask the user to confirm:
 
 ## Setup Paths
 
-Choose the matching path after the preflight. **Strongly prefer the CLI as the first option** for both Cloud and self-hosted — use it to create/link instances and to deploy config unless the user says otherwise. Full reference: [PowerSync CLI](https://docs.powersync.com/tools/cli) and `references/powersync-cli.md`.
+Choose the matching path after the preflight. The CLI is the default for all paths.
 
 ### Path 1: Cloud + CLI (Recommended)
 
@@ -135,7 +143,7 @@ If the backend is Supabase, also load `references/supabase-auth.md`.
 
 ### Path 3: Self-Hosted + CLI (Recommended)
 
-Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker runs (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted operations. See [PowerSync CLI](https://docs.powersync.com/tools/cli).
+Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker runs (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted operations. See [PowerSync CLI](https://docs.powersync.com/tools/cli.md).
 
 ### Path 4: Self-Hosted + Manual Docker
 

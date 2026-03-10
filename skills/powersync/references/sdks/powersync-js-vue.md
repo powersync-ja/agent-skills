@@ -78,7 +78,7 @@ const { data: todos } = useQuery(
 
 Return shape: `{ data: Ref<RowType[]>, isLoading: Ref<boolean>, isFetching: Ref<boolean>, error: Ref<Error | undefined> }`.
 
-For advanced watch query features including incremental updates and differential results, see [Live Queries / Watch Queries](https://docs.powersync.com/client-sdks/watch-queries).
+For advanced watch query features including incremental updates and differential results, see [Live Queries / Watch Queries](https://docs.powersync.com/client-sdks/watch-queries.md).
 
 #### `useStatus`
 

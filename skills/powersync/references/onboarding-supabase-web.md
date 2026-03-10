@@ -9,7 +9,7 @@ metadata:
 
 Use this file for the benchmark-style onboarding path: existing web app, Supabase auth already wired, PowerSync added for offline-first reads and queued uploads.
 
-**Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) as the first option** for setup — creating/linking the instance, deploying service config, and deploying sync config. See `references/powersync-cli.md`. Fall back to the dashboard if the CLI is unavailable or the user explicitly prefers it.
+**Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md) as the first option** for setup — creating/linking the instance, deploying service config, and deploying sync config. See `references/powersync-cli.md`. Fall back to the dashboard if the CLI is unavailable or the user explicitly prefers it.
 
 ## Required Inputs
 
@@ -25,7 +25,7 @@ Only ask for the Postgres connection string when you are at the service configur
 
 ## Workflow
 
-Follow this sequence exactly. **Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli)** (see `references/powersync-cli.md`) as the first option to create/link the instance and to deploy service config and sync config. Try running the CLI commands directly before sending the user to the dashboard.
+Follow this sequence exactly. **Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md)** (see `references/powersync-cli.md`) as the first option to create/link the instance and to deploy service config and sync config. Try running the CLI commands directly before sending the user to the dashboard.
 
 1. Confirm the path is PowerSync Cloud + Supabase + web app.
 2. Generate the sync config and Supabase SQL based on the app's tables.
@@ -39,7 +39,7 @@ Follow this sequence exactly. **Prefer the [PowerSync CLI](https://docs.powersyn
 
 ### Sync Config Deployment
 
-The sync config tells the PowerSync service what data to replicate to each client. It **must** be deployed before the app will sync. Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) to deploy it (see `references/powersync-cli.md`):
+The sync config tells the PowerSync service what data to replicate to each client. It **must** be deployed before the app will sync. Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md) to deploy it (see `references/powersync-cli.md`):
 
 ```bash
 powersync deploy sync-config
@@ -70,7 +70,7 @@ Do not move on until all items below are true:
 
 ### CLI path (Recommended)
 
-Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) for every step below unless the user says otherwise. Full reference: `references/powersync-cli.md`. Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
+Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md) for every step below unless the user says otherwise. Full reference: `references/powersync-cli.md`. Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
 
 1. Authenticate:
    ```bash

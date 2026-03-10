@@ -9,6 +9,8 @@ metadata:
 
 Use this file for the benchmark-style onboarding path: existing web app, Supabase auth already wired, PowerSync added for offline-first reads and queued uploads.
 
+**Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) as the first option** for setup — creating/linking the instance, deploying service config, and deploying sync config. See `references/powersync-cli.md`. Fall back to the dashboard if the CLI is unavailable or the user explicitly prefers it.
+
 ## Required Inputs
 
 Collect these before editing app code:
@@ -23,7 +25,7 @@ Only ask for the Postgres connection string when you are at the service configur
 
 ## Workflow
 
-Follow this sequence exactly. **Always prefer the CLI** — it lets the agent deploy sync config and service config directly without requiring the user to navigate the dashboard.
+Follow this sequence exactly. **Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli)** (see `references/powersync-cli.md`) as the first option to create/link the instance and to deploy service config and sync config. Try running the CLI commands directly before sending the user to the dashboard.
 
 1. Confirm the path is PowerSync Cloud + Supabase + web app.
 2. Generate the sync config and Supabase SQL based on the app's tables.
@@ -37,7 +39,7 @@ Follow this sequence exactly. **Always prefer the CLI** — it lets the agent de
 
 ### Sync Config Deployment
 
-The sync config tells the PowerSync service what data to replicate to each client. It **must** be deployed before the app will sync. The agent should deploy it directly using the CLI:
+The sync config tells the PowerSync service what data to replicate to each client. It **must** be deployed before the app will sync. Strongly prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) to deploy it (see `references/powersync-cli.md`):
 
 ```bash
 powersync deploy sync-config
@@ -49,7 +51,7 @@ For service config changes (e.g. database connection, client auth):
 powersync deploy service-config
 ```
 
-If the CLI is not available or the user explicitly prefers the dashboard, instruct them to paste the sync config into the PowerSync dashboard Sync Config editor and deploy from there.
+Prefer the CLI for creating/linking the instance and for all deploys. If the CLI is not available or the user explicitly prefers the dashboard, instruct them to paste the sync config into the PowerSync dashboard Sync Config editor and deploy from there.
 
 For Supabase publication SQL, the agent cannot run this directly. Present the exact SQL to the user and ask them to confirm it is done before proceeding.
 
@@ -68,7 +70,7 @@ Do not move on until all items below are true:
 
 ### CLI path (Recommended)
 
-Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
+Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli) for every step below unless the user says otherwise. Full reference: `references/powersync-cli.md`. Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
 
 1. Authenticate:
    ```bash
@@ -80,11 +82,11 @@ Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
    powersync init cloud
    ```
 3. Edit `powersync/service.yaml` and `powersync/sync-config.yaml` using the minimum examples below.
-4. Create and link the instance:
+4. **Create and link the instance** (prefer CLI):
    ```bash
    powersync link cloud --create --project-id=<project-id>
    ```
-5. Deploy service config, then sync config:
+5. **Deploy service config, then sync config** (prefer CLI):
    ```bash
    powersync deploy service-config
    powersync deploy sync-config

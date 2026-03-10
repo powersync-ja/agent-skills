@@ -19,11 +19,12 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 When the task is to add PowerSync to an app, follow this sequence in order:
 
 1. Identify the platform: **Cloud** or **self-hosted**.
-2. Identify the setup path: **Dashboard** or **CLI**.
-3. Identify the backend: **Supabase** or another database.
-4. If the backend is Supabase and it is unclear whether the user means **online (Supabase Cloud)** or **locally hosted** (e.g. `supabase start`), **ask the user** before choosing connection strings, auth config, or references.
-5. Collect required inputs before coding.
-6. Complete PowerSync service readiness before debugging frontend sync behavior.
+2. Identify the backend: **Supabase** or another database.
+3. If the backend is Supabase and it is unclear whether the user means **online (Supabase Cloud)** or **locally hosted** (e.g. `supabase start`), **ask the user** before choosing connection strings, auth config, or references.
+4. Collect required inputs before coding.
+5. Generate sync config and any required source database setup (e.g. Supabase publication SQL, Postgres publication, MongoDB replica set).
+6. **Deploy the sync config and complete backend setup before writing app code.** Use the CLI to deploy sync config (`powersync deploy sync-config`) and service config (`powersync deploy service-config`) directly. For self-hosted Docker setups, use `powersync docker reset` after config changes. For source database setup that the agent cannot run (e.g. Supabase publication SQL that must be run in the Supabase SQL Editor), present the exact SQL to the user and ask them to confirm it is done. Do not defer deployment to a post-implementation summary — the app will not sync without a deployed sync config.
+7. Only after backend readiness is confirmed, implement app-side PowerSync integration.
 
 Do not start client-side debugging while the PowerSync service is still unconfigured. If the UI is stuck on `Syncing...`, the default diagnosis is incomplete backend setup, not a frontend bug.
 
@@ -63,7 +64,6 @@ Collect the minimum required information for the chosen path before changing app
 
 ### Cloud + Supabase
 
-- Whether the user wants **Dashboard** setup or **CLI** setup
 - Whether the PowerSync instance already exists
 - **Whether Supabase is online (hosted at supabase.com) or locally hosted** (e.g. `supabase start`) — if you cannot infer this from the project or env, **prompt the user**
 - PowerSync instance URL, if an instance already exists
@@ -75,7 +75,7 @@ Only ask for secrets when you are at the step that actually needs them.
 
 ## Cloud Readiness Gate
 
-Do not proceed to frontend debugging until all items below are verified:
+Do not proceed to app-side code until all items below are verified:
 
 - PowerSync instance exists
 - Source database connection is configured
@@ -85,6 +85,8 @@ Do not proceed to frontend debugging until all items below are verified:
 - Source database replication/publication setup is complete
 
 If any item is missing, finish the service setup first.
+
+**IMPORTANT:** Always prefer the CLI to deploy sync config and service config — the agent should run `powersync deploy sync-config` and `powersync deploy service-config` directly rather than asking the user to do it manually via the dashboard. For self-hosted Docker, use `powersync docker reset` after config changes. Only fall back to dashboard instructions when the CLI is unavailable or the user explicitly prefers the dashboard. For steps the agent cannot perform (e.g. running SQL in Supabase SQL Editor), present the exact commands to the user and ask them to confirm completion before writing app code.
 
 ## First Response for `Syncing...`
 
@@ -107,9 +109,22 @@ Before requesting console logs, ask the user to confirm:
 
 ## Setup Paths
 
-Choose the matching path after the preflight.
+Choose the matching path after the preflight. **Always prefer CLI** — it gives the agent full control over config deployment without requiring the user to navigate the dashboard.
 
-### Path 1: Cloud + Dashboard
+### Path 1: Cloud + CLI (Recommended)
+
+Load `references/powersync-cli.md`.
+
+For Cloud instance work, prefer:
+
+- `PS_ADMIN_TOKEN` in autonomous or noninteractive environments
+- targeted deploys: `powersync deploy service-config` or `powersync deploy sync-config`
+
+Use `powersync login` only when interactive auth is acceptable.
+
+### Path 2: Cloud + Dashboard
+
+Only use this path if the user explicitly prefers the dashboard or the CLI is unavailable.
 
 Guide the user through the dashboard sequence:
 
@@ -121,17 +136,6 @@ Guide the user through the dashboard sequence:
 6. Verify source database replication/publication setup.
 
 If the backend is Supabase, also load `references/supabase-auth.md`.
-
-### Path 2: Cloud + CLI
-
-Load `references/powersync-cli.md`.
-
-For Cloud instance work, prefer:
-
-- `PS_ADMIN_TOKEN` in autonomous or noninteractive environments
-- targeted deploys: `powersync deploy service-config` or `powersync deploy sync-config`
-
-Use `powersync login` only when interactive auth is acceptable.
 
 ### Path 3: Self-Hosted + Manual Docker
 

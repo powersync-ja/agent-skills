@@ -29,13 +29,13 @@ Follow this sequence exactly. **Prefer the [PowerSync CLI](https://docs.powersyn
 
 1. Confirm the path is PowerSync Cloud + Supabase + web app.
 2. Generate the sync config and Supabase SQL based on the app's tables.
-3. **Deploy backend setup before writing app code:**
+3. **Run the Supabase publication SQL before deploying.** The publication must exist before PowerSync connects to the database — deploying without it causes replication errors. Present the exact SQL to the user and ask them to run it in the Supabase SQL Editor and confirm when done.
+4. **Deploy backend setup before writing app code:**
    - Use `powersync deploy sync-config` and `powersync deploy service-config` to deploy directly via CLI.
-   - For the Supabase publication SQL (which the agent cannot run), present the exact SQL to the user and ask them to run it in the Supabase SQL Editor and confirm when done.
    - Do not defer deployment to a post-implementation summary — the app will not sync without a deployed sync config.
-4. Verify backend readiness.
-5. Only then implement app-side PowerSync integration.
-6. If the UI is stuck on `Syncing...`, re-check backend readiness before touching frontend code.
+5. Verify backend readiness.
+6. Only then implement app-side PowerSync integration.
+7. If the UI is stuck on `Syncing...`, re-check backend readiness before touching frontend code.
 
 ### Sync Config Deployment
 
@@ -86,24 +86,25 @@ Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md) for every st
    ```bash
    powersync link cloud --create --project-id=<project-id>
    ```
-5. **Deploy service config, then sync config** (prefer CLI):
+5. **Run the Supabase publication SQL below.** The publication must exist before PowerSync connects to the database. Present the SQL to the user, ask them to run it in the Supabase SQL Editor, and confirm it is done before proceeding.
+6. **Deploy service config, then sync config** (prefer CLI):
    ```bash
    powersync deploy service-config
    powersync deploy sync-config
    ```
-6. Copy the instance URL and run the Supabase SQL below.
+7. Copy the instance URL.
 
 ### Dashboard path
 
 Only use if the user explicitly prefers the dashboard or the CLI is unavailable.
 
 1. Create a project and a new PowerSync Cloud instance in the dashboard.
-2. In the instance, connect the Supabase database.
-3. In Sync Config, deploy the minimum sync config below.
-4. In Client Auth, enable **Use Supabase Auth**.
-5. If Supabase uses new signing keys, leave the JWT secret field empty.
-6. Copy the instance URL for app `fetchCredentials()`.
-7. Run the Supabase SQL below.
+2. **Run the Supabase publication SQL below.** The publication must exist before PowerSync connects to the database.
+3. In the instance, connect the Supabase database.
+4. In Sync Config, deploy the minimum sync config below.
+5. In Client Auth, enable **Use Supabase Auth**.
+6. If Supabase uses new signing keys, leave the JWT secret field empty.
+7. Copy the instance URL for app `fetchCredentials()`.
 
 ## Existing Cloud Instance
 

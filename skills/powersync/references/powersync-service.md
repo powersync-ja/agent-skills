@@ -9,6 +9,11 @@ metadata:
 
 Guidance for configuring PowerSync Service, sync config, and database replication.
 
+Critical warnings for fast setup:
+
+- Cloud and self-hosted service config both use `replication.connections`, never a root-level `connections`.
+- If the app is stuck on `Syncing...`, the default diagnosis is incomplete backend setup: missing DB connection, missing sync config, missing client auth, or missing publication.
+
 For source code see: [powersync-service](https://github.com/powersync-ja/powersync-service/)
 
 For debugging see: [powersync-debug.md](references/powersync-debug.md).
@@ -29,18 +34,41 @@ The PowerSync Service Docker image is available on [Docker hub](https://hub.dock
 Quick Start:
 ```
 docker run \
--p 8080:80 \
+-p 8080:8080 \
 -e POWERSYNC_CONFIG_B64="$(base64 -i ./config.yaml)" \
 --network my-local-dev-network \
 --name my-powersync journeyapps/powersync-service:latest
 ```
 
+> **Port mapping:** The PowerSync service listens on port **8080** inside the container. Use `-p 8080:8080` (or `-p <host-port>:8080`). Do **not** use `8080:80` — the service does not listen on port 80.
+
 ### Configuration
 
-There are three configuration methods available:
-1. Base64-encoded config in an environment variable
-2. Config file on a mounted volume
-3. Base64-encoded config as a command-line argument
+There are four configuration methods available:
+1. Base64-encoded config in the `POWERSYNC_CONFIG_B64` environment variable
+2. Config file on a mounted volume (pass path with `-c` / `--config-path`)
+3. Base64-encoded config as a command-line argument (`-c64`)
+4. Sync config separately via `POWERSYNC_SYNC_CONFIG_B64` environment variable or `-sync64` flag
+
+> **Sync config flag:** The Docker image does **not** accept a `-s` flag for sync config. Use the `POWERSYNC_SYNC_CONFIG_B64` environment variable or the `-sync64` command-line flag instead.
+
+#### Docker Compose with mounted config + sync config
+
+```yaml
+powersync:
+  image: journeyapps/powersync-service:latest
+  ports:
+    - "8080:8080"
+  environment:
+    PS_DATA_SOURCE_URI: "postgresql://user:pass@host:5432/db"
+    PS_STORAGE_URI: "mongodb://mongo:27017/powersync_storage"
+    POWERSYNC_SYNC_CONFIG_B64: "<base64-encoded sync-config.yaml>"
+  volumes:
+    - ./powersync/service.yaml:/config/service.yaml
+  command: ["start", "-c", "/config/service.yaml"]
+```
+
+Generate the base64 value: `base64 -i ./powersync/sync-config.yaml` (macOS) or `base64 -w0 ./powersync/sync-config.yaml` (Linux).
 
 | Resource                        | Description                                                                                                             |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------|
@@ -76,6 +104,23 @@ api:
     - !env PS_ADMIN_TOKEN
 ```
 
+### Minimal Cloud service.yaml Example
+
+For PowerSync Cloud, the minimal shape is:
+
+```yaml
+# powersync/service.yaml — Cloud
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATABASE_URI
+
+client_auth:
+  supabase: true
+```
+
+If you are using Cloud with Supabase, this is the easiest example to reason about. Do not mentally translate from the self-hosted example first.
+
 ### Replication connections
 
 **IMPORTANT:** The database connection **must** be nested under `replication.connections` — not a top-level `connections` key. Placing it elsewhere (e.g. `connections:` at the root) will cause a "No connection found in config" error.
@@ -87,6 +132,20 @@ replication:
     - type: postgresql
       uri: postgresql://user:pass@host:5432/db
 ```
+
+#### SSL mode for local databases
+
+Local Postgres instances (including local Supabase via `supabase start`) do not support SSL. The PowerSync service uses pgwire for replication, which defaults to SSL and **does not respect `sslmode=disable` in the URI query string**. You must set `sslmode` as a separate YAML key:
+
+```yaml
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI
+      sslmode: disable   # Required for local Postgres / local Supabase
+```
+
+Without this, you will see: `Replication error postgres does not support ssl`.
 
 ### Bucket Storage Database
 This is required by PowerSync and can be configured in two different ways. This is separate from the source DB.

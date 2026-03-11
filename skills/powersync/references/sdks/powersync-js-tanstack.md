@@ -85,7 +85,7 @@ When navigating to or refreshing a page, a brief UI flicker (10–50ms) can occu
 
 ## TanStack DB
 
-> Alpha: The PowerSync TanStack DB collection is currently in an [Alpha](https://docs.powersync.com/resources/feature-status) release.
+> Alpha: The PowerSync TanStack DB collection is currently in an [Alpha](https://docs.powersync.com/resources/feature-status.md) release.
 
 `@tanstack/powersync-db-collection` lets you use TanStack DB collections backed by PowerSync. In-memory collections stay in sync with PowerSync's SQLite database, providing offline-first reactive data with optimistic mutations.
 

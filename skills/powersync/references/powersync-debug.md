@@ -11,6 +11,26 @@ These are debugging steps most frequently recommended by PowerSync, with an expl
 
 Make sure to understand the [PowerSync Architecture](references/powersync-overview.md) before debugging.
 
+## First Response When the UI Is Stuck on `Syncing...`
+
+Before asking for console logs or editing app code, verify these in order:
+
+1. The PowerSync endpoint URL returned by `fetchCredentials()` is correct.
+2. The PowerSync service has a valid source DB connection.
+3. Sync config was deployed and starts with `config: edition: 3`.
+4. Client auth is configured correctly.
+5. The Supabase publication exists for the synced tables.
+
+Only inspect frontend connector code or SDK state after all five checks pass.
+
+Before requesting browser console logs, ask the user to confirm:
+
+- the instance exists
+- the DB connection was configured
+- sync config was deployed
+- client auth was configured
+- the Supabase SQL was run
+
 ## Check `SyncStatus` / `currentStatus` Before Investigating Further
 
 What it identifies: Whether the SDK is actually connected, syncing, or has hit an error, before diving into logs.

@@ -127,6 +127,18 @@ Key details:
 - `block_local_jwks: false` is required because `host.docker.internal` resolves to a local/private IP, which PowerSync blocks by default.
 - The well-known local Supabase JWT secret (`super-secret-jwt-token-with-at-least-32-characters-long`) is **not used** for token signing in newer Supabase versions — it's only used for the service role key and anon key.
 
+**SSL for local Supabase Postgres:** Local Supabase does not support SSL. You **must** set `sslmode: disable` on the replication connection in `service.yaml`. The `sslmode=disable` query string in the URI alone does not work — pgwire ignores it. Use the YAML key instead:
+
+```yaml
+replication:
+  connections:
+    - type: postgresql
+      uri: postgresql://postgres:postgres@host.docker.internal:54322/postgres
+      sslmode: disable
+```
+
+Without this you will see: `Replication error postgres does not support ssl`.
+
 You can verify your local Supabase is using ES256 by checking:
 ```bash
 curl -s http://127.0.0.1:54321/auth/v1/.well-known/jwks.json

@@ -11,6 +11,11 @@ Expert guidance on Sync Config. Sync config is divided into two sections:
 1. Sync Streams (new, default) - The latest implementation of Sync Config. New apps should use Sync Streams by default. Prioritize Sync Streams above Sync Rules.
 2. Sync Rules (legacy) - The first implementation of Sync Config. New apps should not use Sync Rules, prioritize Sync Streams over Sync Rules.
 
+Critical warnings for fast setup:
+
+- `sync-config.yaml` must begin with a top-level `config:` block containing `edition: 3`.
+- If the app is stuck on `Syncing...`, first assume sync config was never deployed or backend setup is incomplete.
+
 # Sync Streams
 
 Sync Streams define exactly which data is synced to each client by using named, SQL-like queries and subscription parameters.
@@ -49,6 +54,18 @@ streams:
   my_data:
     auto_subscribe: true
     query: SELECT * FROM my_table WHERE user_id = auth.user_id()
+```
+
+### Minimal Supabase-Oriented Example
+
+```yaml
+config:
+  edition: 3
+
+streams:
+  posts:
+    auto_subscribe: true
+    query: SELECT * FROM posts WHERE user_id = auth.user_id()
 ```
 
 ## Structure

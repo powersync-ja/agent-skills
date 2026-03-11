@@ -147,6 +147,7 @@ Rules:
 - The database connection must be under `replication.connections`.
 - Do not use a top-level `connections:` key.
 - If using legacy Supabase JWT signing keys, add `supabase_jwt_secret`.
+- `!env PS_DATABASE_URI` reads from the shell environment — it is **not** prompted by the CLI. Set the variable before deploying: `PS_DATABASE_URI="postgresql://..." powersync deploy service-config`. Get the Supabase Postgres URI from Supabase Dashboard → Project Settings → Database → Connection string (URI).
 
 ## Minimum `sync-config.yaml`
 

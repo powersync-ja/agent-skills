@@ -23,7 +23,7 @@ Collect these before editing app code:
 
 Only ask for the Postgres connection string when you are at the service configuration step.
 
-**Note:** The Supabase CLI (`supabase init`, `supabase link`) does **not** create a new Supabase project — it only scaffolds local config or links to an existing one. The user must create the project via the Supabase dashboard first.
+**Note:** The Supabase CLI (`supabase init`, `supabase link`) does **not** create a new online Supabase project — it only scaffolds local config or links to an existing one. The user must create the project via the Supabase dashboard first.
 
 ## Workflow
 

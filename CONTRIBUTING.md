@@ -8,9 +8,9 @@ This repo contains a single skill (`skills/powersync/`) following the [Agent Ski
 
 ```
 skills/powersync/
-├── CLAUDE.md           # Entry point for Claude Code
-├── AGENTS.md           # Entry point for other agents (Cursor, Codex, etc.)
-├── SKILL.md            # Entry point for skills.sh
+├── CLAUDE.md           # Redirect to AGENTS.md (for Claude Code)
+├── AGENTS.md           # Primary entry point for all agents (Cursor, Codex, Claude, etc.)
+├── SKILL.md            # Entry point for skills.sh (includes YAML frontmatter + same content as AGENTS.md)
 └── references/
     ├── sync-config.md
     ├── powersync-service.md
@@ -89,7 +89,7 @@ If you add an example that touches these patterns, make sure it reflects these r
 ## Submitting a Pull Request
 
 1. Fork the repo and create a branch from `main`.
-2. Make your changes. If adding a new reference file, also update the routing table in `CLAUDE.md` and `SKILL.md`.
+2. Make your changes. If adding a new reference file, update the routing table in `AGENTS.md` and `SKILL.md`. (`CLAUDE.md` is a redirect and does not need changes.)
 3. Test your changes by installing the skill locally and asking an agent a question that exercises the updated content:
    ```
    npx skills add <path/to/powersync-ja/agent-skills>

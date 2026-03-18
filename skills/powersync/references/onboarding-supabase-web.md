@@ -23,19 +23,22 @@ Collect these before editing app code:
 
 Only ask for the Postgres connection string when you are at the service configuration step.
 
+**Note:** The Supabase CLI (`supabase init`, `supabase link`) does **not** create a new Supabase project — it only scaffolds local config or links to an existing one. The user must create the project via the Supabase dashboard first.
+
 ## Workflow
 
 Follow this sequence exactly. **Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md)** (see `references/powersync-cli.md`) as the first option to create/link the instance and to deploy service config and sync config. Try running the CLI commands directly before sending the user to the dashboard.
 
 1. Confirm the path is PowerSync Cloud + Supabase + web app.
-2. Generate the sync config and Supabase SQL based on the app's tables.
-3. **Run the Supabase publication SQL before deploying.** The publication must exist before PowerSync connects to the database — deploying without it causes replication errors. Present the exact SQL to the user and ask them to run it in the Supabase SQL Editor and confirm when done.
-4. **Deploy backend setup before writing app code:**
+2. **Write all credentials to `.env` immediately.** As soon as Supabase project details are available (from CLI output or dashboard), write `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI` (Postgres connection string), and `POWERSYNC_URL` to the project `.env` file. Both `service.yaml` (via `!env` tags) and app code depend on these values — if they are missing, config deploys will use broken placeholders and the app will not connect.
+3. Generate the sync config and Supabase SQL based on the app's tables.
+4. **Run the Supabase publication SQL before deploying.** The publication must exist before PowerSync connects to the database — deploying without it causes replication errors. Present the exact SQL to the user and ask them to run it in the Supabase SQL Editor and confirm when done.
+5. **Deploy backend setup before writing app code:**
    - Use `powersync deploy sync-config` and `powersync deploy service-config` to deploy directly via CLI.
    - Do not defer deployment to a post-implementation summary — the app will not sync without a deployed sync config.
-5. Verify backend readiness.
-6. Only then implement app-side PowerSync integration.
-7. If the UI is stuck on `Syncing...`, re-check backend readiness before touching frontend code.
+6. Verify backend readiness.
+7. Only then implement app-side PowerSync integration.
+8. If the UI is stuck on `Syncing...`, re-check backend readiness before touching frontend code.
 
 ### Sync Config Deployment
 
@@ -65,6 +68,7 @@ Do not move on until all items below are true:
 - Client auth is configured for Supabase
 - PowerSync instance URL is known
 - Supabase publication exists for the synced tables
+- All credentials and URLs are in `.env` (`POWERSYNC_URL`, `PS_DATABASE_URI`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`)
 
 ## New Cloud Instance
 

@@ -14,6 +14,7 @@ The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the com
 Use these defaults unless the user explicitly wants something else:
 
 - Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
+- **`powersync login` is Cloud-only** (stores a Cloud PAT). Do not present it as the auth path for self-hosted-only setups.
 - Treat `powersync login` as interactive and likely to interrupt the flow.
 - Prefer `powersync deploy service-config` or `powersync deploy sync-config` over `powersync deploy` when only one file changed.
 - For existing Cloud instances, pull config before manual edits and never pull again after editing unless local files were backed up first.
@@ -58,17 +59,31 @@ For Cloud, `--org-id` / `ORG_ID` is optional — omit it when your token has acc
 
 ## Authentication
 
+### `powersync login` is for PowerSync Cloud only
+
+**`powersync login`** stores a **PowerSync Cloud** personal access token (PAT). It authenticates the CLI against the **hosted PowerSync API** (create/link Cloud instances, `powersync deploy` to Cloud, `powersync fetch instances`, etc.). It is **not** used to authenticate to a **self-hosted** PowerSync service running in Docker.
+
+| Hosting | How the CLI authenticates |
+|---------|---------------------------|
+| **PowerSync Cloud** | `PS_ADMIN_TOKEN` (PAT) or token from **`powersync login`** |
+| **Self-hosted** | No `powersync login` for the running service. Use **`powersync init self-hosted`**, **`powersync docker configure` / `powersync docker start`**, and **`PS_ADMIN_TOKEN`** matching the self-hosted service’s admin API token (see self-hosted docs). |
+
+Do not tell users to run `powersync login` when they are **only** using a local self-hosted stack unless they also need Cloud CLI commands.
+
+---
+
 Cloud commands require a PowerSync personal access token (PAT). If the user does not have one, direct them to generate one at: https://dashboard.powersync.com/account/access-tokens
 
 Prefer `PS_ADMIN_TOKEN` when the environment is noninteractive or when the agent should avoid browser/device-login interruptions.
 
-The CLI checks in this order:
+The CLI checks in this order (**for Cloud API calls**):
 
 1. `PS_ADMIN_TOKEN` environment variable
-2. Token stored via `powersync login` (macOS Keychain or config-file fallback)
+2. Token stored via **`powersync login`** (macOS Keychain or config-file fallback) — **Cloud PAT only**
 
 ```bash
-# Store token for local use — opens browser to create a token or paste an existing one
+# Store a PowerSync Cloud PAT for local use — opens browser or paste token
+# Not applicable to self-hosted-only workflows.
 powersync login
 
 # CI / one-off — set env var

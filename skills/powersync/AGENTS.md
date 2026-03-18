@@ -2,6 +2,20 @@
 
 Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
 
+## Agent compliance (read first — non-negotiable)
+
+**Follow this file’s playbook in order.** Do not skip ahead, assume defaults, or substitute your own architecture to “save time.”
+
+| Do | Don’t |
+|----|--------|
+| Ask for **Cloud vs self-hosted** and **which backend** if the user did not say | Assume Supabase, assume Postgres, or pick self-hosted Docker without asking |
+| Use the **PowerSync CLI** to scaffold, link (if cloud hosted), and deploy (`references/powersync-cli.md`) | Hand-write `service.yaml` / `sync-config.yaml` from scratch or invent compose files **unless** the user explicitly says they cannot use the CLI |
+| **Stop and ask** when a step needs credentials or interactive Cloud login you cannot perform | Silently build an alternate stack (e.g. manual Docker) without user confirmation |
+| Complete **backend readiness** (deployed sync config, auth, publication) **before** app code | Start React/client integration while sync is still unconfigured |
+
+If the user wants a shortcut, they must **say so explicitly** (e.g. “I can’t use the CLI, give dashboard steps only”).
+
+
 ## Always Use the PowerSync CLI
 
 **The [PowerSync CLI](https://docs.powersync.com/tools/cli.md) is the default tool for all PowerSync operations.** Do not manually create config files, do not direct users to the dashboard, and do not write service.yaml or sync-config.yaml from scratch. The CLI handles all of this.
@@ -119,7 +133,7 @@ Load `references/powersync-cli.md` and prefer the CLI for every step it supports
 - Create and link the instance: `powersync link cloud --create --project-id=<project-id>`
 - Deploy service config: `powersync deploy service-config`
 - Deploy sync config: `powersync deploy sync-config`
-- Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments; use `powersync login` only when interactive auth is acceptable
+- Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments; use **`powersync login` only for Cloud** (stores a Cloud PAT), and only when interactive auth is acceptable
 
 ### Path 2: Cloud + Dashboard
 
@@ -137,6 +151,8 @@ Guide the user through the dashboard sequence:
 If the backend is Supabase, also load `references/supabase-auth.md`.
 
 ### Path 3: Self-Hosted + CLI (Recommended)
+
+**Not Cloud:** do not use **`powersync login`** as the way to “log in” to self-hosted — that command stores a **PowerSync Cloud** PAT. Self-hosted uses **`powersync init self-hosted`**, **`powersync docker configure`**, **`powersync docker start`**, and the service’s **`PS_ADMIN_TOKEN`** for admin API access.
 
 Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker runs (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted operations. See [PowerSync CLI](https://docs.powersync.com/tools/cli.md).
 

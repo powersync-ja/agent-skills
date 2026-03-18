@@ -30,6 +30,16 @@ skills/powersync/
         └── powersync-swift.md
 ```
 
+## Writing for agents (playbook enforcement)
+
+Agents often skip long docs. When you change this skill:
+
+1. **Keep [skills/powersync/AGENTS.md](skills/powersync/AGENTS.md) as the single source of truth** for onboarding order. Put non-negotiable rules at the top (see **Agent compliance**).
+2. **Duplicate critical constraints** in `SKILL.md` (first screen for many installers) and in `references/powersync-cli.md` when the topic is CLI/auth.
+3. **Root [AGENTS.md](AGENTS.md)** should stay short but **mandatory**: point to the full playbook and forbid silent shortcuts.
+
+Optional for Cursor users in this repo: [.cursor/rules/powersync-playbook.mdc](.cursor/rules/powersync-playbook.mdc) reinforces the same rules when editing skill files.
+
 ## Types of Contributions
 
 ### Bug fixes

@@ -14,6 +14,8 @@ metadata:
 
 Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
 
+**Agents:** Follow **[AGENTS.md](AGENTS.md)** in order — including **Agent compliance** (ask Cloud vs self-hosted, ask backend if unspecified, CLI-first, no silent shortcuts). **`powersync login`** is **PowerSync Cloud only** (PAT); self-hosted does not use it for the running service. See `references/powersync-cli.md` → Authentication.
+
 ## Always Use the PowerSync CLI
 
 **The [PowerSync CLI](https://docs.powersync.com/tools/cli.md) is the default tool for all PowerSync operations.** Do not manually create config files, do not direct users to the dashboard, and do not write service.yaml or sync-config.yaml from scratch. The CLI handles all of this.
@@ -131,7 +133,7 @@ Load `references/powersync-cli.md` and prefer the CLI for every step it supports
 - Create and link the instance: `powersync link cloud --create --project-id=<project-id>`
 - Deploy service config: `powersync deploy service-config`
 - Deploy sync config: `powersync deploy sync-config`
-- Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments; use `powersync login` only when interactive auth is acceptable
+- Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments; use **`powersync login` only for PowerSync Cloud** (interactive PAT), not for self-hosted-only workflows
 
 ### Path 2: Cloud + Dashboard
 

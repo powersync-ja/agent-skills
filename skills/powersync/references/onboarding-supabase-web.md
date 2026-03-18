@@ -19,7 +19,7 @@ Collect these before editing app code:
 - PowerSync instance URL, if the instance already exists
 - Project ID and instance ID, if using CLI with an existing instance
 - Supabase Postgres connection string, if the PowerSync source DB connection is not already configured
-- `PS_ADMIN_TOKEN` or willingness to run `powersync login` (for CLI deployment)
+- `PS_ADMIN_TOKEN` or willingness to run **`powersync login`** (**PowerSync Cloud** PAT only — not used for self-hosted stacks)
 
 Only ask for the Postgres connection string when you are at the service configuration step.
 
@@ -80,7 +80,7 @@ Prefer the [PowerSync CLI](https://docs.powersync.com/tools/cli.md) for every st
    ```bash
    PS_ADMIN_TOKEN=your-token-here powersync fetch instances
    ```
-   If no token is available, use `powersync login` and treat it as interactive.
+   If no token is available, use **`powersync login`** (Cloud PAT) and treat it as interactive. Skip this for self-hosted-only paths.
 2. Scaffold:
    ```bash
    powersync init cloud
@@ -118,7 +118,7 @@ Never run `powersync pull instance` after editing local config. If you need to p
 
 ### CLI path (Recommended)
 
-1. Authenticate with `PS_ADMIN_TOKEN` if available, otherwise `powersync login`.
+1. Authenticate to **PowerSync Cloud** with `PS_ADMIN_TOKEN` if available, otherwise **`powersync login`** (Cloud PAT).
 2. Pull config before editing:
    ```bash
    powersync pull instance --project-id=<project-id> --instance-id=<instance-id>

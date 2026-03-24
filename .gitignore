@@ -6,3 +6,5 @@ node_modules/
 /powersync
 /temp
 /temp-claude
+/powersync-workspace
+**/evals/

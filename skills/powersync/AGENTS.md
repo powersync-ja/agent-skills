@@ -40,7 +40,7 @@ When the task is to add PowerSync to an app, follow this sequence in order:
 1. Identify the platform: **Cloud** or **self-hosted**.
 2. **Identify the backend.** If the user has not specified a backend, **ask them** which database/backend they want to use (e.g. Supabase, custom Postgres, MongoDB, MySQL, MSSQL). Do not assume Supabase. The choice determines which references to load:
    - **Supabase** → load `references/onboarding-supabase-web.md` + `references/supabase-auth.md`
-   - **Any other backend** → load `references/custom-backend.md` — the agent must create a backend API with an `uploadData`, `token` endpoint and a JWT auth provider. Do not skip this.
+   - **Any other backend (web)** → load `references/onboarding-custom-web.md` + `references/custom-backend.md` — the agent must create a backend API with an `uploadData`, `token` endpoint and a JWT auth provider. Do not skip this.
 3. If the backend is Supabase and it is unclear whether the user means **online (Supabase Cloud)** or **locally hosted** (e.g. `supabase start`), **ask the user** before choosing connection strings, auth config, or references.
 4. Collect required inputs before coding.
 5. **Always load `references/sync-config.md`** and generate sync config. Also set up any required source database configuration (e.g. Supabase publication SQL, Postgres publication, MongoDB replica set). Sync config is mandatory for every PowerSync project — without it, nothing syncs.
@@ -207,7 +207,7 @@ Key rule: **client writes never go through PowerSync**. They go from the app's u
 | Writing sync config | `references/sync-config.md` | — |
 | Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` + `references/sync-config.md` | — |
 | Attachments | `references/attachments.md` | — |
-| Custom backend (non-Supabase) | `references/custom-backend.md` + `references/powersync-cli.md` + `references/sync-config.md` | `references/powersync-service.md`, SDK files (when writing app code) |
+| Web + custom backend (non-Supabase) | `references/onboarding-custom-web.md` + `references/powersync-cli.md` + `references/sync-config.md` | `references/custom-backend.md`, `references/powersync-service.md`, SDK files (when writing app code) |
 | Architecture overview | This file is sufficient | `references/powersync-overview.md` for deep links |
 
 ## SDK Reference Files

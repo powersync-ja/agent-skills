@@ -39,11 +39,11 @@ When the task is to add PowerSync to an app, follow this sequence in order:
 
 1. Identify the platform: **Cloud** or **self-hosted**.
 2. **Identify the backend.** If the user has not specified a backend, **ask them** which database/backend they want to use (e.g. Supabase, custom Postgres, MongoDB, MySQL, MSSQL). Do not assume Supabase. The choice determines which references to load:
-   - **Supabase** → load `references/onboarding-supabase-web.md` + `references/supabase-auth.md`
-   - **Any other backend (web)** → load `references/onboarding-custom-web.md` + `references/custom-backend.md` — the agent must create a backend API with an `uploadData`, `token` endpoint and a JWT auth provider. Do not skip this.
+   - **Supabase** → load `references/onboarding-supabase.md`
+   - **Any other backend** → load `references/onboarding-custom.md` — the agent must create a backend API with `uploadData`, token, and JWKS endpoints. Do not skip this.
 3. If the backend is Supabase and it is unclear whether the user means **online (Supabase Cloud)** or **locally hosted** (e.g. `supabase start`), **ask the user** before choosing connection strings, auth config, or references.
 4. Collect required inputs before coding.
-5. **Always load `references/sync-config.md`** and generate sync config. Also set up any required source database configuration (e.g. Supabase publication SQL, Postgres publication, MongoDB replica set). Sync config is mandatory for every PowerSync project — without it, nothing syncs.
+5. **Always load `references/sync-config.md`** and generate sync config. For source database setup (publication SQL, replication, CDC), see `references/powersync-service.md` § "Source Database Setup". Sync config is mandatory for every PowerSync project — without it, nothing syncs.
 6. **Persist all credentials and connection details to `.env` immediately.** When a CLI or dashboard provides database credentials (host, port, database name, username, password, connection URI), write them to the project's `.env` file right away — before deploying config or writing app code. Both `service.yaml` (via `!env` tags) and app code (e.g. `fetchCredentials`) depend on these values. If they are not in `.env`, the PowerSync config will deploy with broken connection details and the app will not connect. Include at minimum: `POWERSYNC_URL`, the Postgres connection URI (e.g. `PS_DATABASE_URI`), and any backend-specific keys.
 7. **Create/link the instance and deploy config before writing app code.** Use the CLI — do not create config files manually. For Cloud: `powersync init cloud` → edit config → `powersync link cloud --create` → `powersync deploy`. For self-hosted: `powersync init self-hosted` → `powersync docker configure` → `powersync docker start`. For source database setup the agent cannot run (e.g. Supabase publication SQL), present the exact SQL and ask the user to confirm it is done. The app will not sync without deployed config.
 8. Only after backend readiness is confirmed, implement app-side PowerSync integration.
@@ -61,7 +61,8 @@ Additional footguns are in their reference files — do not load these unless wo
 - **Config/CLI:** `references/powersync-cli.md`, `references/powersync-service.md`, `references/sync-config.md`
 - **JS/TS SDK:** `references/sdks/powersync-js.md` (type-only imports, connect() semantics, transaction.complete())
 - **React:** `references/sdks/powersync-js-react.md` (Strict Mode, Suspense, Next.js)
-- **Supabase:** `references/onboarding-supabase-web.md` (CLI limitations, publication SQL)
+- **Supabase:** `references/supabase-auth.md` (JWT signing keys, publication SQL, local Supabase)
+- **Custom backend:** `references/custom-backend.md` (upload endpoint rules, JWT pitfalls)
 
 ## Required Inputs Before Coding
 
@@ -105,22 +106,7 @@ Use the CLI to verify and complete any missing items. For steps the agent cannot
 
 ## First Response for `Syncing...`
 
-When the app shows `Syncing...`, check these in order before asking for browser console logs:
-
-1. Confirm the PowerSync endpoint URL returned by `fetchCredentials()`.
-2. Confirm the PowerSync service has a valid source DB connection.
-3. Confirm sync config is deployed and uses `config: edition: 3`.
-4. Confirm client auth is configured correctly.
-5. Confirm the source database publication/replication is set up for the synced tables.
-6. Only then inspect frontend connector or SDK state.
-
-Before requesting console logs, ask the user to confirm:
-
-- whether the instance exists
-- whether database connection is configured
-- whether sync config was deployed
-- whether client auth was enabled
-- whether the source database publication/replication SQL was run
+Follow `references/powersync-debug.md` § "First Response When the UI Is Stuck on `Syncing...`" — verify backend readiness (endpoint URL, DB connection, sync config, client auth, replication/publication) before inspecting frontend code or requesting console logs.
 
 ## Setup Paths
 
@@ -200,14 +186,13 @@ Key rule: **client writes never go through PowerSync**. They go from the app's u
 
 | Task | Start with | Load on demand |
 |------|-----------|----------------|
-| React web + Supabase + Cloud | `references/onboarding-supabase-web.md` + `references/powersync-cli.md` + `references/sync-config.md` | `references/supabase-auth.md`, `references/sdks/powersync-js.md` + `references/sdks/powersync-js-react.md` (when writing app code) |
-| New project setup | `references/powersync-cli.md` + `references/powersync-service.md` + `references/sync-config.md` | SDK files for your platform (when writing app code) |
-| PowerSync + Supabase | `references/onboarding-supabase-web.md` + `references/sync-config.md` | `references/supabase-auth.md` (when configuring auth) |
-| Debugging sync issues | `references/powersync-debug.md` | — |
+| Supabase + PowerSync | `references/onboarding-supabase.md` | `references/supabase-auth.md`, `references/sync-config.md`, SDK files (when writing app code) |
+| Custom backend (non-Supabase) | `references/onboarding-custom.md` | `references/custom-backend.md`, `references/sync-config.md`, SDK files (when writing app code) |
+| New project setup | `references/powersync-cli.md` + `references/powersync-service.md` | `references/sync-config.md`, SDK files (when writing app code) |
+| Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
 | Writing sync config | `references/sync-config.md` | — |
-| Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` + `references/sync-config.md` | — |
+| Debugging sync issues | `references/powersync-debug.md` | — |
 | Attachments | `references/attachments.md` | — |
-| Web + custom backend (non-Supabase) | `references/onboarding-custom-web.md` + `references/powersync-cli.md` + `references/sync-config.md` | `references/custom-backend.md`, `references/powersync-service.md`, SDK files (when writing app code) |
 | Architecture overview | This file is sufficient | `references/powersync-overview.md` for deep links |
 
 ## SDK Reference Files

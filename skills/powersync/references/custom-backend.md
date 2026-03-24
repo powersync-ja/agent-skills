@@ -1,13 +1,17 @@
 ---
 name: custom-backend
-description: Building a custom backend for PowerSync — server-side API for uploadData, custom JWT auth, Postgres setup without Supabase, and end-to-end connector examples
+description: Building a custom backend for PowerSync — server-side API for uploadData, custom JWT auth, JWKS endpoints, and client-side connector implementation
 metadata:
-  tags: backend, custom, jwt, auth, express, fastify, postgres, uploadData, api, non-supabase
+  tags: backend, custom, jwt, auth, express, fastify, uploadData, api, non-supabase
 ---
 
 # Custom Backend for PowerSync
 
-Use this file when building a PowerSync integration **without Supabase** — a custom Postgres database, your own auth, and a backend API (Express, Fastify, Hono, etc.) that receives writes from the client's upload queue.
+Use this file when building a PowerSync integration **without Supabase** — your own auth and a backend API that receives writes from the client's upload queue.
+
+For **source database setup** (Postgres replication, MongoDB replica set, MySQL binlog, MSSQL CDC), see `references/powersync-service.md` § "Source Database Setup".
+
+For **service.yaml configuration** (Cloud or self-hosted templates), see `references/powersync-service.md`.
 
 | Resource | Description |
 |----------|-------------|
@@ -20,11 +24,10 @@ Use this file when building a PowerSync integration **without Supabase** — a c
 ## Architecture Recap
 
 ```
-Client App                    Your Backend API              Postgres DB
+Client App                    Your Backend API              Source Database
   |                                |                           |
   |-- uploadData() POST ---------->|--- INSERT/UPDATE/DELETE -->|
   |                                |<-- 2xx response -----------|
-  |                                |                           |
   |                                                            |
 PowerSync Service <-------------- CDC / logical replication ---|
   |
@@ -33,63 +36,7 @@ PowerSync Service <-------------- CDC / logical replication ---|
 
 Key rule: **client writes never go through PowerSync**. The upload queue sends writes to YOUR backend API. PowerSync only handles the read/sync path.
 
-## 1. Postgres Database Setup
-
-Skip this section if using Supabase — see `references/supabase-auth.md` instead.
-
-### Enable Logical Replication
-
-```sql
--- Check current setting
-SHOW wal_level;
--- If not 'logical', set it (requires restart):
-ALTER SYSTEM SET wal_level = 'logical';
--- Restart PostgreSQL after this change
-```
-
-Most managed Postgres providers (Neon, Railway, Render, etc.) have logical replication enabled or expose a setting for it. Check your provider's docs.
-
-### Create Replication User
-
-Generate a secure password — never use placeholder values.
-
-```sql
--- Create dedicated user for PowerSync replication
-CREATE USER powersync_replication WITH REPLICATION PASSWORD 'YOUR_GENERATED_PASSWORD';
-
--- Grant read access to synced tables
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO powersync_replication;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO powersync_replication;
-```
-
-### Create Publication
-
-```sql
--- List specific tables (recommended)
-CREATE PUBLICATION powersync FOR TABLE users, posts, comments;
-
--- Or all tables (simpler but less precise)
-CREATE PUBLICATION powersync FOR ALL TABLES;
-
--- For each synced table, set REPLICA IDENTITY FULL (required for DELETE sync)
-ALTER TABLE users REPLICA IDENTITY FULL;
-ALTER TABLE posts REPLICA IDENTITY FULL;
-ALTER TABLE comments REPLICA IDENTITY FULL;
-```
-
-### Service Config Connection
-
-```yaml
-# powersync/service.yaml
-replication:
-  connections:
-    - type: postgresql
-      uri: !env PS_DATA_SOURCE_URI
-      # For local Postgres without SSL:
-      # sslmode: disable
-```
-
-## 2. Custom JWT Auth
+## 1. Custom JWT Auth
 
 PowerSync verifies JWTs from client apps. Without Supabase, you must generate and serve your own JWTs and JWKS.
 
@@ -156,7 +103,7 @@ export async function getJWKS() {
 
 ### Generate JWTs (Token Endpoint)
 
-The token endpoint generates a PowerSync JWT for an already-authenticated user. It does **not** handle user login — your app authenticates users separately via sessions, OAuth, or whatever mechanism you use. The token endpoint simply takes a `user_id` and returns a signed JWT.
+The token endpoint generates a PowerSync JWT for an already-authenticated user. It does **not** handle user login — your app authenticates users separately via sessions, OAuth, or whatever mechanism you use.
 
 ```ts
 import { SignJWT, importPKCS8 } from 'jose';
@@ -180,42 +127,15 @@ export async function generateToken(userId: string): Promise<string> {
 }
 ```
 
-### PowerSync Service Config for Custom Auth
+### Service Config for Custom Auth
 
-```yaml
-# powersync/service.yaml
-client_auth:
-  # Option 1: JWKS URI (recommended — supports key rotation)
-  jwks_uri: https://your-backend.com/.well-known/jwks.json
-  audience:
-    - powersync
+See `references/powersync-service.md` § "Minimal Cloud service.yaml Examples" for the Cloud + Custom Auth template, or § "Complete service.yaml Example" for self-hosted.
 
-  # Option 2: Inline JWKS (no external endpoint needed)
-  # jwks:
-  #   keys:
-  #     - kty: RSA
-  #       n: "..."
-  #       e: "AQAB"
-  #       alg: RS256
-  #       kid: powersync-key-1
-  #       use: sig
-  # audience:
-  #   - powersync
-```
+For local development with `host.docker.internal`, set `block_local_jwks: false` in service config when the JWKS URI resolves to a private IP.
 
-For local development with `host.docker.internal`:
+### Development Tokens
 
-```yaml
-client_auth:
-  jwks_uri: http://host.docker.internal:3001/.well-known/jwks.json
-  audience:
-    - powersync
-  block_local_jwks: false  # Required when JWKS URI resolves to a private IP
-```
-
-### Development Tokens (Self-Hosted)
-
-For quick development without setting up full auth, configure a signing key in `service.yaml` and use the CLI to generate tokens:
+For quick development without full auth, configure a signing key in `service.yaml` and use the CLI:
 
 ```bash
 powersync generate token --user-id "test-user-123"
@@ -233,12 +153,12 @@ When using a JWKS URI:
 4. Wait for all old tokens to expire (up to their `exp`).
 5. Remove the old key from the JWKS endpoint.
 
-## 3. Backend API for uploadData
+## 2. Backend API for uploadData
 
 The client's `uploadData()` sends pending writes to your backend API. Your backend must:
 
 1. Accept the write operations.
-2. Apply them to Postgres **synchronously** (do not queue for later processing).
+2. Apply them to the database **synchronously** (do not queue for later processing).
 3. Return 2xx — even for validation errors.
 
 ### Request/Response Contract
@@ -280,14 +200,9 @@ app.use(express.json());
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 // Token endpoint — client calls this in fetchCredentials()
-// This does NOT handle user authentication — your app authenticates users
-// separately (session, OAuth, etc.). This endpoint just generates a
-// PowerSync JWT for an already-authenticated user.
 app.get('/api/auth/token', async (req, res) => {
   const userId = req.query.user_id as string;
   if (!userId) return res.status(400).json({ error: 'user_id is required' });
-
-  // Optional: verify the caller is actually this user (check session, etc.)
 
   const token = await generateToken(userId);
   res.json({
@@ -360,7 +275,7 @@ app.post('/api/powersync/upload', async (req, res) => {
 app.listen(3001, () => console.log('Backend running on :3001'));
 ```
 
-**IMPORTANT:** The upload endpoint example above uses string interpolation for table names. In production, validate `op.table` against an allowlist of known tables to prevent SQL injection:
+**IMPORTANT:** The upload endpoint example above uses string interpolation for table names. In production, validate `op.table` against an allowlist:
 
 ```ts
 const ALLOWED_TABLES = new Set(['posts', 'comments', 'users']);
@@ -371,16 +286,15 @@ if (!ALLOWED_TABLES.has(op.table)) {
 
 ### Boolean Conversion
 
-PowerSync stores booleans as integers (0/1) in SQLite. If your Postgres schema uses native `boolean` columns, convert before writing:
+PowerSync stores booleans as integers (0/1) in SQLite. If your database uses native `boolean` columns, convert before writing:
 
 ```ts
-// Convert 0/1 to true/false for boolean columns
 if (op.table === 'posts' && op.opData?.is_published !== undefined) {
   op.opData.is_published = Boolean(op.opData.is_published);
 }
 ```
 
-## 4. Client-Side Connector (Custom Backend)
+## 3. Client-Side Connector (Custom Backend)
 
 ### fetchCredentials
 
@@ -399,9 +313,6 @@ export class CustomConnector implements PowerSyncBackendConnector {
   }
 
   async fetchCredentials(): Promise<PowerSyncCredentials> {
-    // Request a PowerSync JWT for the current user.
-    // Your app handles user authentication separately — this endpoint
-    // only generates PowerSync tokens for already-authenticated users.
     const res = await fetch(
       `${BACKEND_URL}/api/auth/token?user_id=${encodeURIComponent(this.userId)}`
     );
@@ -445,108 +356,23 @@ export class CustomConnector implements PowerSyncBackendConnector {
 
       const result = await res.json();
       if (!result.success) {
-        // Log validation errors but still complete the transaction
-        // to prevent queue from stalling
         console.warn('Upload had errors:', result.error);
       }
 
       // MUST call complete() — without this the queue stalls permanently
       await transaction.complete();
     } catch (ex) {
-      // Throw to retry later — PowerSync backs off automatically
       throw ex;
     }
   }
 }
 ```
 
-## 5. Complete Self-Hosted Docker Compose
-
-A full local development setup with custom Postgres, MongoDB (for PowerSync bucket storage), and the PowerSync service:
-
-```yaml
-services:
-  postgres:
-    image: postgres:16
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app_password
-      POSTGRES_DB: myapp
-    command: ["postgres", "-c", "wal_level=logical"]
-    volumes:
-      - pg-data:/var/lib/postgresql/data
-
-  mongo:
-    image: mongo:7
-    command: mongod --replSet rs0
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-  mongo-init:
-    image: mongo:7
-    depends_on:
-      - mongo
-    restart: "no"
-    entrypoint: >
-      mongosh --host mongo --eval "
-        try { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }); }
-        catch(e) { if (e.codeName !== 'AlreadyInitialized') throw e; }
-      "
-
-  powersync:
-    image: journeyapps/powersync-service:latest
-    depends_on:
-      - mongo
-      - mongo-init
-    ports:
-      - "8080:8080"
-    environment:
-      PS_DATA_SOURCE_URI: "postgresql://app:app_password@postgres:5432/myapp"
-      PS_STORAGE_URI: "mongodb://mongo:27017/powersync_storage?replicaSet=rs0"
-      PS_JWKS_URI: "http://host.docker.internal:3001/.well-known/jwks.json"
-      PS_ADMIN_TOKEN: "dev-admin-token"
-      POWERSYNC_SYNC_CONFIG_B64: "<base64-encoded sync-config.yaml>"
-    volumes:
-      - ./powersync/service.yaml:/config/service.yaml
-    command: ["start", "-c", "/config/service.yaml"]
-
-volumes:
-  pg-data:
-  mongo-data:
-```
-
-Notes:
-- `PS_JWKS_URI` uses `host.docker.internal` to reach your backend API running on the host machine.
-- If Postgres is also in Docker (same compose), use the service name (`postgres:5432`) — no `host.docker.internal` needed, and no `sslmode: disable` needed.
-- If Postgres is on the host (e.g. local install, Supabase), use `host.docker.internal:<port>` and add `sslmode: disable` in the service.yaml if SSL is not configured.
-- Generate the base64 sync config: `base64 -i ./powersync/sync-config.yaml` (macOS) or `base64 -w0 ./powersync/sync-config.yaml` (Linux).
-
 ## Common Pitfalls
 
-### 1. Returning 4xx from upload endpoint
-
-A 4xx response blocks the upload queue **permanently**. Always return 2xx, even for validation errors. Surface errors through a synced table or response body, never through HTTP status codes.
-
-### 2. Async processing of writes
-
-Do not accept the write and process it later (e.g., via a job queue). PowerSync's checkpoint system expects writes to be reflected in Postgres immediately so they can sync back to clients. If writes are delayed, clients see stale data or missing rows.
-
-### 3. Missing REPLICA IDENTITY FULL
-
-Without `ALTER TABLE ... REPLICA IDENTITY FULL`, PowerSync cannot sync DELETE operations to clients. The delete will apply in Postgres but clients keep the deleted row in local SQLite.
-
-### 4. Token expiry exceeding 24 hours
-
-PowerSync rejects tokens with `exp - iat > 86400` (24 hours). Use 1 hour for production, up to 24 hours for development.
-
-### 5. Missing `kid` in JWT header
-
-If the `kid` (Key ID) in the JWT header does not match any key in the JWKS, PowerSync returns `PSYNC_S2101: Could not find an appropriate key in the keystore`. Ensure the `kid` used in `setProtectedHeader()` matches the `kid` in your JWKS endpoint.
-
-### 6. Forgetting `block_local_jwks: false` for local development
-
-When the JWKS URI resolves to a private IP (`host.docker.internal`, `localhost`, `127.0.0.1`), PowerSync blocks the request by default. Set `block_local_jwks: false` in your service config for local development.
+1. **4xx from upload endpoint** — Blocks the upload queue **permanently**. Always return 2xx, even for validation errors.
+2. **Async processing of writes** — PowerSync expects writes reflected in the database immediately. Do not queue writes.
+3. **Token expiry > 24h** — PowerSync rejects tokens with `exp - iat > 86400`. Use short-lived tokens (1h production, max 24h dev).
+4. **`kid` mismatch** — JWT header `kid` must match a key in your JWKS. Causes `PSYNC_S2101`.
+5. **`block_local_jwks` not set** — JWKS URIs resolving to private IPs are blocked by default. Set `block_local_jwks: false` for local dev.
+6. **Wrong `endpoint` in `fetchCredentials()`** — Must be the PowerSync URL, not your backend URL. Causes 404 on `/sync/stream`.

@@ -28,10 +28,10 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 
 | Task | Start with | Load on demand |
 |------|-----------|----------------|
-| New project setup | `references/powersync-cli.md` + `references/sync-config.md` | SDK files for your platform (when writing app code) |
-| React web + Supabase + Cloud | `references/onboarding-supabase-web.md` + `references/powersync-cli.md` + `references/sync-config.md` | `references/supabase-auth.md`, `references/sdks/powersync-js.md` + `references/sdks/powersync-js-react.md` |
-| Web + custom backend (non-Supabase) | `references/onboarding-custom-web.md` + `references/powersync-cli.md` + `references/sync-config.md` | `references/custom-backend.md`, `references/powersync-service.md`, SDK files |
-| Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` + `references/sync-config.md` | — |
+| Supabase + PowerSync | `references/onboarding-supabase.md` | `references/supabase-auth.md`, `references/sync-config.md`, SDK files |
+| Custom backend (non-Supabase) | `references/onboarding-custom.md` | `references/custom-backend.md`, `references/sync-config.md`, SDK files |
+| New project setup | `references/powersync-cli.md` + `references/powersync-service.md` | `references/sync-config.md`, SDK files |
+| Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
 | Writing sync config | `references/sync-config.md` | — |
 | Debugging sync issues | `references/powersync-debug.md` | — |
 | Attachments | `references/attachments.md` | — |

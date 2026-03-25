@@ -1,1 +1,1 @@
-See [AGENTS.md](AGENTS.md) for guidance.
+See [AGENTS.md](AGENTS.md) for guidance. For PowerSync work, follow [skills/powersync/AGENTS.md](skills/powersync/AGENTS.md) in full — including **Agent compliance**. **`powersync login`** = PowerSync Cloud only.

@@ -1,5 +1,14 @@
 # PowerSync Agent Skills
 
-If you are building an application with PowerSync, start here: [skills/powersync/AGENTS.md](skills/powersync/AGENTS.md)
+If you are building or modifying anything that uses **PowerSync**, you **must** follow the playbook in **[skills/powersync/AGENTS.md](skills/powersync/AGENTS.md)** — not a condensed summary.
 
-That file contains the full onboarding playbook, setup paths, SDK references, and debugging guides.
+That file includes:
+
+- **Agent compliance (non-negotiable):** ask Cloud vs self-hosted, ask backend if unspecified, CLI-first, no silent shortcuts.
+- Full onboarding sequence, setup paths, SDK references, and debugging.
+
+**Do not** assume Supabase, assume self-hosted Docker, or skip CLI steps unless the user **explicitly** opts out.
+
+**`powersync login`** authenticates the CLI to **PowerSync Cloud** only (personal access token). It is **not** how you “log in” to a **self-hosted** PowerSync service. Self-hosted doesnt not require login
+
+When editing files under `skills/powersync/`, preserve and strengthen playbook language so agents cannot reasonably treat references as optional recipes.

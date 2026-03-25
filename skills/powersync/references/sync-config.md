@@ -56,7 +56,7 @@ streams:
     query: SELECT * FROM my_table WHERE user_id = auth.user_id()
 ```
 
-### Minimal Supabase-Oriented Example
+### Minimal Example
 
 ```yaml
 config:

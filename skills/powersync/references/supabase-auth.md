@@ -207,6 +207,53 @@ async fetchCredentials(): Promise<PowerSyncCredentials> {
 
 `fetchCredentials` is called automatically on reconnect — always return a fresh token, never a cached one.
 
+### `uploadData()` — Writing Changes Back to Supabase
+
+For Supabase backends, `uploadData` writes client-side changes directly to Supabase using the Supabase JS client. **`transaction.complete()` is mandatory** — without it the upload queue stalls permanently.
+
+```ts
+import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, CrudEntry, UpdateType } from '@powersync/web';
+
+export const connector: PowerSyncBackendConnector = {
+  async fetchCredentials() { /* ... see above ... */ },
+
+  async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
+    const transaction = await database.getNextCrudTransaction();
+    if (!transaction) return;
+
+    try {
+      for (const op of transaction.crud) {
+        const { op: opType, table, opData, id } = op;
+        if (opType === UpdateType.PUT) {
+          const { error } = await supabase.from(table).upsert({ ...opData, id });
+          if (error) throw error;
+        } else if (opType === UpdateType.PATCH) {
+          const { error } = await supabase.from(table).update(opData).eq('id', id);
+          if (error) throw error;
+        } else if (opType === UpdateType.DELETE) {
+          const { error } = await supabase.from(table).delete().eq('id', id);
+          if (error) throw error;
+        }
+      }
+      await transaction.complete(); // REQUIRED — clears the queue entry
+    } catch (error) {
+      // For 4xx errors (permanent failures), complete the transaction to avoid
+      // blocking the queue. For 5xx/network errors, throw to trigger a retry.
+      console.error('Upload error', error);
+      throw error;
+    }
+  }
+};
+```
+
+**Important:** RLS policies on your Supabase tables must allow the authenticated user to write their own rows. If `uploadData` consistently gets 4xx errors, the queue stalls — call `transaction.complete()` and log the error rather than retrying forever.
+
+### Getting the PowerSync Instance URL
+
+See `references/powersync-cli.md` § "Getting POWERSYNC_URL" — the instance ID is printed by `powersync link cloud --create` and the URL pattern is `https://<instance-id>.powersync.journeyapps.com`. Write it to `.env` before writing app code.
+
+For self-hosted, the URL is whatever hostname your PowerSync Docker service is exposed on (e.g. `http://localhost:8080`).
+
 ---
 
 ## `auth.user_id()` in Sync Streams

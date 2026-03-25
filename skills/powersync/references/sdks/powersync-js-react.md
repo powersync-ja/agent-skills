@@ -293,6 +293,38 @@ export default defineConfig({
 
 ## Common Pitfalls
 
+### React Strict Mode destroys PowerSyncDatabase in useEffect
+
+In development, React Strict Mode unmounts and remounts every component. If you create a `PowerSyncDatabase` inside a `useEffect` cleanup/setup cycle, the first mount's cleanup releases the shared-worker DB proxy before the second mount can use it — the database connection silently breaks.
+
+```tsx
+// WRONG — Strict Mode will destroy this on the dev double-mount
+function App() {
+  const [db, setDb] = useState<PowerSyncDatabase | null>(null);
+  useEffect(() => {
+    const database = new PowerSyncDatabase({ schema, database: { dbFilename: 'app.db' } });
+    database.connect(connector);
+    setDb(database);
+    return () => { database.close(); }; // Kills the DB on Strict Mode re-mount
+  }, []);
+  // ...
+}
+
+// CORRECT — create once at module scope (or use a stable singleton)
+const db = new PowerSyncDatabase({ schema, database: { dbFilename: 'app.db' } });
+db.connect(connector);
+
+function App() {
+  return (
+    <PowerSyncContext.Provider value={db}>
+      <YourApp />
+    </PowerSyncContext.Provider>
+  );
+}
+```
+
+Keep the DB instance stable across transient remounts. Only call `db.close()` when the app is truly done with it (e.g. on logout with `disconnectAndClear()`). Disabling `enableMultiTabs` can mask the symptom temporarily but does not fix the root cause.
+
 ### Suspense requires ErrorBoundary
 
 `useSuspenseQuery` throws query errors upward — they go to the nearest `<ErrorBoundary>`, not `<Suspense>`. Without an ErrorBoundary, query errors crash the component tree silently.

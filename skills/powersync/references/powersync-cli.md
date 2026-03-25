@@ -171,6 +171,8 @@ powersync init cloud                          # creates powersync/ with service.
 # 3. Create instance and deploy
 powersync link cloud --create --project-id=<project-id>
 # Add --org-id=<org-id> only if token has multiple orgs
+# Output: "Created Cloud instance <instance-id> and updated powersync/cli.yaml."
+# → Construct and save POWERSYNC_URL immediately (see "Getting POWERSYNC_URL" below)
 powersync validate
 powersync deploy
 ```
@@ -211,6 +213,26 @@ streams:
 ```
 
 For the full sync config reference, see `references/sync-config.md`.
+
+### Getting POWERSYNC_URL
+
+The client-side `POWERSYNC_URL` follows the pattern `https://<instance-id>.powersync.journeyapps.com`.
+
+**New instance** — the instance ID is printed when you create it. Construct and save the URL immediately:
+```bash
+powersync link cloud --create --project-id=<project-id>
+# Output: "Created Cloud instance 69c3d035b5b902d469b2b47f and updated powersync/cli.yaml."
+# → POWERSYNC_URL=https://69c3d035b5b902d469b2b47f.powersync.journeyapps.com
+```
+
+**Existing instance** — retrieve the ID from `powersync fetch instances`:
+```bash
+powersync fetch instances
+# Note the instance id, e.g. "69a961b47c4f8b306a18fb7e"
+# → POWERSYNC_URL=https://69a961b47c4f8b306a18fb7e.powersync.journeyapps.com
+```
+
+Write it to `.env` as `POWERSYNC_URL=https://<instance-id>.powersync.journeyapps.com` before writing any app code.
 
 ### Existing Cloud Instance
 

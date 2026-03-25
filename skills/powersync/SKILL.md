@@ -43,13 +43,13 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 
 Always load `references/sdks/powersync-js.md` for any JS/TS project, then load the applicable framework file.
 
-| Framework | File |
-|-----------|------|
-| React / Next.js | `references/sdks/powersync-js-react.md` |
-| React Native / Expo | `references/sdks/powersync-js-react-native.md` |
-| Vue / Nuxt | `references/sdks/powersync-js-vue.md` |
-| Node.js / Electron | `references/sdks/powersync-js-node.md` |
-| TanStack | `references/sdks/powersync-js-tanstack.md` |
+| Framework | File | Load early if… |
+|-----------|------|----------------|
+| React / Next.js | `references/sdks/powersync-js-react.md` | Vite + React project — contains the required `vite.config.ts` setup (`optimizeDeps.exclude`, `worker.format: 'es'`) needed before installing packages |
+| React Native / Expo | `references/sdks/powersync-js-react-native.md` | |
+| Vue / Nuxt | `references/sdks/powersync-js-vue.md` | |
+| Node.js / Electron | `references/sdks/powersync-js-node.md` | |
+| TanStack | `references/sdks/powersync-js-tanstack.md` | |
 
 ### Other SDKs
 

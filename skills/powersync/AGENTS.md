@@ -203,7 +203,7 @@ Always load `references/sdks/powersync-js.md` for any JS/TS project, then load t
 
 | Framework | Load when… | File |
 |-----------|-----------|------|
-| React / Next.js | React web app or Next.js | `references/sdks/powersync-js-react.md` |
+| React / Next.js | React web app, Next.js, or **any Vite + React project** (load before package install — contains required `vite.config.ts` with `optimizeDeps.exclude` and `worker.format: 'es'`) | `references/sdks/powersync-js-react.md` |
 | React Native / Expo | React Native, Expo, or Expo Go | `references/sdks/powersync-js-react-native.md` |
 | Vue / Nuxt | Vue or Nuxt | `references/sdks/powersync-js-vue.md` |
 | Node.js / Electron | Node.js CLI/server or Electron | `references/sdks/powersync-js-node.md` |

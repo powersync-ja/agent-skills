@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync Debug
 
+> **Load this when** troubleshooting sync issues, stuck "Syncing..." states, JWT errors, or replication problems.
+
 These are debugging steps most frequently recommended by PowerSync, with an explanation of what problem each step helps identify and why it works.
 
 Make sure to understand the [PowerSync Architecture](references/powersync-overview.md) before debugging.

@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync Swift SDK
 
+> **Load this when** building a Swift app (iOS, macOS) with PowerSync.
+
 Best practices and guidance for building apps with the PowerSync Swift SDK.
 
 | Resource | Description |

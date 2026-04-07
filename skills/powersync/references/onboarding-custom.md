@@ -7,6 +7,8 @@ metadata:
 
 # Custom Backend + PowerSync Onboarding
 
+> **Load this when** onboarding an app onto PowerSync with a non-Supabase backend (custom Postgres, MongoDB, MySQL, MSSQL).
+
 Use this recipe when onboarding any app onto PowerSync with a **non-Supabase backend** — your own database, your own auth, and your own backend API. Works for all platforms (web, React Native, Flutter, Kotlin, Swift, .NET, etc.) and both Cloud and self-hosted.
 
 **CLI-first.** See `references/powersync-cli.md`. Fall back to the dashboard (Cloud) or manual Docker config (self-hosted) only if the CLI is unavailable or the user explicitly prefers it.

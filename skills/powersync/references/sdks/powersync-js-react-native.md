@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync React Native, Expo & Expo Go
 
+> **Load this when** building a React Native app, Expo app (managed or bare), or Expo Go sandbox. Always load `powersync-js.md` first.
+
 React Native-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building React Native apps, Expo apps (managed or bare workflow), or Expo Go sandboxes.
 
 The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`) from `@powersync/react-native` is identical to `@powersync/react` — see `references/sdks/powersync-js.md` for full hook patterns and `references/sdks/powersync-js-react.md` for `useSuspenseQuery` and sync stream hooks.

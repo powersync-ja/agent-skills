@@ -1,6 +1,6 @@
 ---
 name: powersync
-description: Guided onboarding and best practices for building applications with PowerSync — Cloud and self-hosted setup, sync configuration, client SDK usage, backend integration (Supabase, custom Postgres, MongoDB, MySQL, MSSQL), and debugging.
+description: Guided onboarding and best practices for building applications with PowerSync — Cloud and self-hosted setup, sync configuration, client SDK usage, backend integration (Supabase, custom Postgres, MongoDB, MySQL, MSSQL), and debugging. Use this skill whenever the user mentions PowerSync, offline-first sync, local-first architecture, sync rules, sync streams, uploadData, fetchCredentials, real-time data replication, or wants to add offline-capable sync to a mobile or web app — even if they don't explicitly name PowerSync.
 license: MIT
 compatibility: Works with any skills-compatible agent. Some references include CLI commands requiring the @powersync/cli package.
 metadata:
@@ -14,7 +14,7 @@ metadata:
 
 Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
 
-**Agents:** Follow **[AGENTS.md](AGENTS.md)** in full — including **Agent compliance** (ask Cloud vs self-hosted, ask backend if unspecified, CLI-first, no silent shortcuts). **`powersync login`** is **PowerSync Cloud only** (PAT); self-hosted does not use it.
+**Agents: Read [AGENTS.md](AGENTS.md) before proceeding.** It contains the mandatory compliance rules and onboarding playbook. The Quick Rules below are a reminder, not a substitute. **`powersync login`** is **PowerSync Cloud only** (PAT); self-hosted does not use it.
 
 ## Quick Rules
 
@@ -34,6 +34,7 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 | Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
 | Writing sync config | `references/sync-config.md` | — |
 | Debugging sync issues | `references/powersync-debug.md` | — |
+| Raw Tables (advanced) | `references/raw-tables.md` | — |
 | Attachments | `references/attachments.md` | — |
 | Architecture overview | `references/powersync-overview.md` | — |
 
@@ -50,6 +51,7 @@ Always load `references/sdks/powersync-js.md` for any JS/TS project, then load t
 | Vue / Nuxt | `references/sdks/powersync-js-vue.md` | |
 | Node.js / Electron | `references/sdks/powersync-js-node.md` | |
 | TanStack | `references/sdks/powersync-js-tanstack.md` | |
+| Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Project uses Drizzle or Kysely |
 
 ### Other SDKs
 

@@ -7,6 +7,16 @@ metadata:
 
 # PowerSync + Supabase Auth
 
+> **Load this when** using Supabase as the backend — covers database publication setup, JWT signing keys, fetchCredentials(), uploadData error handling, and Cloud/self-hosted auth config.
+
+## Table of Contents
+- [Supabase Database Setup](#supabase-database-setup)
+- [JWT Signing Key Types](#jwt-signing-key-types)
+- [PowerSync Cloud Setup](#powersync-cloud-setup)
+- [Self-Hosted Config](#self-hosted-serviceyaml-config)
+- [fetchCredentials()](#fetchcredentials--client-implementation)
+- [Troubleshooting](#troubleshooting)
+
 PowerSync verifies Supabase JWTs directly when connected to a Supabase-hosted Postgres database. This file covers everything needed to configure authentication end-to-end.
 
 ## Supabase Database Setup
@@ -162,9 +172,17 @@ client_auth:
 
 ## `fetchCredentials()` — Client Implementation
 
+**Prerequisite:** `fetchCredentials()` requires an active Supabase auth session. PowerSync calls it automatically whenever a token is needed, but if no session exists (user not signed in), it will throw and sync will not start. **You must sign the user in before calling `db.connect()`.**
+
+- If your app requires explicit sign-in (email/password, OAuth, magic link), connect PowerSync only after the sign-in completes.
+- If anonymous access is acceptable, use the anonymous sign-in pattern below.
+- If anonymous auth is disabled on your Supabase project, there is no silent fallback — the agent must gate `db.connect()` behind an explicit auth flow.
+
 `fetchCredentials()` in your backend connector should return the Supabase session JWT. The examples below use the JS Supabase client; equivalent patterns exist for [Dart](https://github.com/powersync-ja/powersync.dart/blob/9ef224175c8969f5602c140bcec6dd8296c31260/demos/supabase-todolist/lib/powersync.dart#L38) and [Kotlin](https://github.com/powersync-ja/powersync-kotlin/blob/main/connectors/supabase/src/commonMain/kotlin/com/powersync/connector/supabase/SupabaseConnector.kt).
 
 ### Standard Supabase Auth (JS/TS)
+
+Use this when users sign in explicitly (email, OAuth, magic link). Call `db.connect(connector)` only after `supabase.auth.signIn*` succeeds.
 
 ```ts
 import { createClient } from '@supabase/supabase-js';
@@ -188,13 +206,14 @@ export const connector: PowerSyncBackendConnector = {
 
 ### Anonymous Sign-In (JS/TS)
 
+Use this when you want sync to work without an explicit sign-in step. Requires **anonymous sign-ins to be enabled** in Supabase (Dashboard → Authentication → Providers → Anonymous). If disabled, `signInAnonymously()` returns an error and sync fails silently.
+
 ```ts
 async fetchCredentials(): Promise<PowerSyncCredentials> {
-  // Sign in anonymously if no session exists
   let { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) throw error;
+    if (error) throw error; // Will throw if anonymous auth is disabled
     session = data.session!;
   }
   return {
@@ -209,10 +228,20 @@ async fetchCredentials(): Promise<PowerSyncCredentials> {
 
 ### `uploadData()` — Writing Changes Back to Supabase
 
-For Supabase backends, `uploadData` writes client-side changes directly to Supabase using the Supabase JS client. **`transaction.complete()` is mandatory** — without it the upload queue stalls permanently.
+For Supabase backends, `uploadData` writes client-side changes directly to Supabase. **`transaction.complete()` is mandatory** — without it the upload queue stalls permanently.
+
+#### Error handling strategy
+
+| Error type | What to do | Why |
+|-----------|-----------|-----|
+| Network / 5xx (transient) | `throw error` — do not call `transaction.complete()` | PowerSync retries with backoff |
+| 4xx / RLS violation (permanent) | Call `transaction.complete()`, log the error | 4xx blocks the queue forever; better to skip and log than halt all future writes |
+| Validation error | Call `transaction.complete()`, surface via a synced error table | Data errors are permanent; retrying won't fix them |
+
+The Supabase JS client returns errors as `{ error: PostgrestError }` rather than throwing HTTP status codes — check `error.code` or `error.message` to distinguish permanent failures (constraint violations, RLS denials) from transient ones. Supabase RLS errors return `{ code: '42501' }` (PostgreSQL insufficient_privilege).
 
 ```ts
-import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, CrudEntry, UpdateType } from '@powersync/web';
+import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, UpdateType } from '@powersync/web';
 
 export const connector: PowerSyncBackendConnector = {
   async fetchCredentials() { /* ... see above ... */ },
@@ -224,29 +253,34 @@ export const connector: PowerSyncBackendConnector = {
     try {
       for (const op of transaction.crud) {
         const { op: opType, table, opData, id } = op;
+        let result: { error: any };
         if (opType === UpdateType.PUT) {
-          const { error } = await supabase.from(table).upsert({ ...opData, id });
-          if (error) throw error;
+          result = await supabase.from(table).upsert({ ...opData, id });
         } else if (opType === UpdateType.PATCH) {
-          const { error } = await supabase.from(table).update(opData).eq('id', id);
-          if (error) throw error;
-        } else if (opType === UpdateType.DELETE) {
-          const { error } = await supabase.from(table).delete().eq('id', id);
-          if (error) throw error;
+          result = await supabase.from(table).update(opData).eq('id', id);
+        } else {
+          result = await supabase.from(table).delete().eq('id', id);
         }
+        if (result.error) throw result.error;
       }
-      await transaction.complete(); // REQUIRED — clears the queue entry
-    } catch (error) {
-      // For 4xx errors (permanent failures), complete the transaction to avoid
-      // blocking the queue. For 5xx/network errors, throw to trigger a retry.
-      console.error('Upload error', error);
+      await transaction.complete(); // REQUIRED — advances the queue
+    } catch (error: any) {
+      // Permanent failures (RLS violation, constraint error, 4xx-equivalent):
+      // complete the transaction so the queue can advance. Log for debugging.
+      const isPermanent = error?.code === '42501' || error?.status === 400;
+      if (isPermanent) {
+        console.error('Permanent upload error, skipping:', error);
+        await transaction.complete();
+        return;
+      }
+      // Transient failures: throw so PowerSync retries with backoff.
       throw error;
     }
   }
 };
 ```
 
-**Important:** RLS policies on your Supabase tables must allow the authenticated user to write their own rows. If `uploadData` consistently gets 4xx errors, the queue stalls — call `transaction.complete()` and log the error rather than retrying forever.
+**Important:** RLS policies on your Supabase tables must allow the authenticated user to write their own rows. Ensure `INSERT`/`UPDATE`/`DELETE` policies exist — `SELECT`-only policies silently block all writes.
 
 ### Getting the PowerSync Instance URL
 

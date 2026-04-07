@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync Architecture Overview
 
+> **Load this when** you need to understand how PowerSync's components fit together before diving into implementation.
+
 Guidance for understanding all the moving components of PowerSync. For information about the vision of PowerSync, see [PowerSync Philosophy](https://docs.powersync.com/intro/powersync-philosophy.md)
 
 ## Architecture

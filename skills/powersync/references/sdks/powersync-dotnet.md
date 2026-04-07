@@ -7,6 +7,18 @@ metadata:
 
 # PowerSync .NET SDK
 
+> **Load this when** building a .NET app (MAUI, WPF, Console) with PowerSync.
+
+## Table of Contents
+- [Installation](#installation)
+- [Quick Setup](#quick-setup)
+- [Query Patterns](#query-patterns)
+- [Writes and Transactions](#writes-and-transactions)
+- [Sync Status](#sync-status)
+- [Sync Streams](#sync-streams)
+- [Logging](#logging)
+- [Schema Updates](#schema-updates)
+
 Best practices for building apps with the PowerSync .NET SDK.
 
 Supported targets: .NET 9, .NET 8, .NET 6, .NET Standard 2.0, .NET Framework 4.8. Application frameworks: MAUI (iOS, Android, Windows), WPF, Console.

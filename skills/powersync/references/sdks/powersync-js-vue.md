@@ -7,6 +7,12 @@ metadata:
 
 # PowerSync Vue & Nuxt
 
+> **Load this when** building a Vue app or Nuxt app with PowerSync. Always load `powersync-js.md` first.
+
+## Table of Contents
+- [Vue](#vue) (Plugin, Composables, Watchers)
+- [Nuxt](#nuxt) (Module, Auto-imports, SSR)
+
 Vue-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building Vue apps or Nuxt apps.
 
 | Resource | Description |

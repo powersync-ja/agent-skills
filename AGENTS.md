@@ -9,6 +9,6 @@ That file includes:
 
 **Do not** assume Supabase, assume self-hosted Docker, or skip CLI steps unless the user **explicitly** opts out.
 
-**`powersync login`** authenticates the CLI to **PowerSync Cloud** only (personal access token). It is **not** how you “log in” to a **self-hosted** PowerSync service. Self-hosted doesnt not require login
+**`powersync login`** is **PowerSync Cloud only**. Self-hosted does not use it — see `skills/powersync/references/powersync-cli.md` § “Authentication”.
 
 When editing files under `skills/powersync/`, preserve and strengthen playbook language so agents cannot reasonably treat references as optional recipes.

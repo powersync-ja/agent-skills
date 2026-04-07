@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync TanStack Integrations
 
+> **Load this when** using TanStack Query (React) or TanStack DB (multi-framework) with PowerSync. Always load `powersync-js.md` first.
+
 TanStack-specific integrations for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when using TanStack Query (React) or TanStack DB (multi-framework) with PowerSync.
 
 | Resource | Description |

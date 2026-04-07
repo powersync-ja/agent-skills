@@ -339,6 +339,8 @@ PowerSync cannot verify the JWT signature. Check the error logs for `Known keys`
 | Wrong JWT secret | HS256 verification fails | For legacy HS256 keys, verify the secret matches Supabase → Project Settings → JWT. |
 | `block_local_jwks` blocking JWKS fetch | JWKS URI resolves to private IP, keys never fetched | Set `block_local_jwks: false` for local development. |
 
+After any `service.yaml` auth change, restart the service to pick it up: `powersync docker reset` (self-hosted) or `powersync deploy service-config` (Cloud).
+
 ### `PSYNC_S2105` — JWT payload is missing a required claim "aud"
 
 Using manual JWKS config without specifying an audience. Add `authenticated` to the audience list (Cloud dashboard or `audience: [authenticated]` in `service.yaml`).

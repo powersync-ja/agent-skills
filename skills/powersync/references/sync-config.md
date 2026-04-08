@@ -7,6 +7,12 @@ metadata:
 
 # Sync Config
 
+> **Load this when** writing or modifying sync configuration — Sync Streams (new) or Sync Rules (legacy). Required for every PowerSync project.
+
+## Table of Contents
+**Sync Streams (new):** [Requirements](#requirements) · [File Format](#sync-configyaml-file-format) · [Structure](#structure) · [Stream Options](#stream-options) · [Common Patterns](#common-patterns) · [Query Parameters](#query-parameters) · [CTEs](#common-table-expressions-ctes) · [Migration](#migration) · [Client Usage](#client-usage) · [Advanced Topics](#advanced-topics)
+**Sync Rules (legacy):** [Structure](#structure-1) · [Parameter Queries](#parameter-queries) · [Data Queries](#data-queries) · [Supported SQL](#supported-sql-features) · [Common Patterns](#common-patterns-1)
+
 Expert guidance on Sync Config. Sync config is divided into two sections:
 1. Sync Streams (new, default) - The latest implementation of Sync Config. New apps should use Sync Streams by default. Prioritize Sync Streams above Sync Rules.
 2. Sync Rules (legacy) - The first implementation of Sync Config. New apps should not use Sync Rules, prioritize Sync Streams over Sync Rules.

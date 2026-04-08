@@ -7,6 +7,16 @@ metadata:
 
 # PowerSync Service
 
+> **Load this when** configuring the PowerSync service itself — self-hosting, Docker, source database connections, bucket storage, or authentication setup.
+
+## Table of Contents
+- [Sync Config](#sync-config)
+- [Service Configuration (Self-hosted)](#service-configuration-self-hosted)
+- [PowerSync Cloud Setup](#powersync-cloud-setup)
+- [Source Database Setup](#source-database-setup)
+- [App Backend](#app-backend)
+- [Authentication](#authentication)
+
 Guidance for configuring PowerSync Service, sync config, and database replication.
 
 Critical warnings for fast setup:

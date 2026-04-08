@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync Dart SDK
 
+> **Load this when** building a Flutter or Dart app with PowerSync.
+
 Best practices and guidance for building Flutter apps with the PowerSync Dart SDK.
 
 | Resource | Description |

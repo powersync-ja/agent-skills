@@ -7,6 +7,18 @@ metadata:
 
 # PowerSync Kotlin SDK
 
+> **Load this when** building a Kotlin app (Android, JVM, KMP) with PowerSync.
+
+## Table of Contents
+- [Installation](#installation)
+- [Quick Setup](#quick-setup)
+- [Query Patterns](#query-patterns)
+- [Writes and Transactions](#writes-and-transactions)
+- [Compose Integration](#compose-integration)
+- [Sync Status](#sync-status)
+- [Sync Streams](#sync-streams)
+- [Background Sync (Android)](#background-sync-android)
+
 Best practices for building apps with the PowerSync Kotlin SDK.
 
 Supported targets: Android, JVM, iOS, macOS, watchOS, tvOS.

@@ -7,6 +7,8 @@ metadata:
 
 # Supabase + PowerSync Cloud Onboarding
 
+> **Load this when** onboarding an app onto PowerSync Cloud with a Supabase backend.
+
 Use this recipe when onboarding any app onto PowerSync Cloud with a Supabase backend. This works for all platforms (web, React Native, Flutter, Kotlin, Swift, .NET, etc.).
 
 **CLI-first.** See `references/powersync-cli.md`. Fall back to the dashboard only if the CLI is unavailable or the user explicitly prefers it.
@@ -81,13 +83,17 @@ Only after Phase 2 is complete.
     ```
     Or write manually — but never define the `id` column (it is automatic).
 
-11. **Implement the backend connector.** See `references/supabase-auth.md` § "fetchCredentials()" for the Supabase-specific implementation. For `uploadData`, Supabase users can write directly to Supabase via the client library or use Edge Functions.
+11. **Implement the backend connector.** See `references/supabase-auth.md` § "fetchCredentials()" and § "uploadData()" for complete implementations including error handling strategy.
+
+    **Auth prerequisite:** `fetchCredentials()` requires an active Supabase session. Call `db.connect(connector)` only after the user has signed in. For apps without a sign-in screen, enable anonymous auth in Supabase Dashboard → Authentication → Providers → Anonymous.
 
 12. **Initialize PowerSync and connect.**
     - `connect()` is fire-and-forget — use `waitForFirstSync()` if you need readiness.
     - Use `disconnectAndClear()` on logout or user switch.
 
-13. **Switch reads to local SQLite** and test offline behavior.
+13. **Development tokens** (optional, for testing without user auth): After deploying, run `powersync generate token --subject=<user-id>` to get a short-lived JWT. On PowerSync Cloud, this works immediately after deploy — no extra `client_auth` config needed. Do not use dev tokens in production.
+
+14. **Switch reads to local SQLite** and test offline behavior.
 
 ## If the App Is Stuck on `Syncing...`
 

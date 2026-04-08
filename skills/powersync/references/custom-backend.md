@@ -7,6 +7,15 @@ metadata:
 
 # Custom Backend for PowerSync
 
+> **Load this when** building a PowerSync integration without Supabase — custom auth, custom backend API, or any non-Supabase database.
+
+## Table of Contents
+- [Architecture Recap](#architecture-recap)
+- [1. Custom JWT Auth](#1-custom-jwt-auth)
+- [2. Backend API for uploadData](#2-backend-api-for-uploaddata)
+- [3. Client-Side Connector](#3-client-side-connector-custom-backend)
+- [Common Pitfalls](#common-pitfalls)
+
 Use this file when building a PowerSync integration **without Supabase** — your own auth and a backend API that receives writes from the client's upload queue.
 
 For **source database setup** (Postgres replication, MongoDB replica set, MySQL binlog, MSSQL CDC), see `references/powersync-service.md` § "Source Database Setup".

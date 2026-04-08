@@ -1,13 +1,31 @@
 ---
 name: powersync-js
-description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, raw tables, Drizzle/Kysely ORM, and debugging
+description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, sqlite, offline-first, drizzle, kysely
+  tags: javascript, typescript, web, sqlite, offline-first
 ---
+
+> **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
 
 # PowerSync JavaScript/TypeScript SDK
 
-Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets. Use this reference for any JS/TS project — it covers schema design, the backend connector, database initialization, transactions, imperative queries, sync status, raw tables, and debugging. Always load this file as the foundation, then load the applicable framework-specific file alongside it.
+Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets — schema design, the backend connector, database initialization, transactions, imperative queries, sync status, and debugging. For ORM integration see `powersync-js-orm.md`; for raw tables and sync internals see `powersync-js-raw-tables.md`.
+
+## Table of Contents
+
+- [Package Coverage](#package-coverage)
+- [Quick Setup](#quick-setup) (Install, Schema, Backend Connector, uploadData, Initialize)
+- [Query Patterns](#query-patterns) (useQuery, CompilableQuery, Imperative, Watch)
+- [Writes & Transactions](#writes--transactions)
+- [Sync Status, Priorities & Sync Streams](#sync-status-priorities--sync-streams)
+- [Debugging](#debugging)
+- [Common Pitfalls](#common-pitfalls)
+
+**TypeScript-only exports:** `PowerSyncBackendConnector`, `PowerSyncCredentials`, and `AbstractPowerSyncDatabase` are **TypeScript interfaces only** — they exist at compile time for type checking but have no runtime presence. This means:
+- Always use `import type` for these (e.g. `import type { PowerSyncBackendConnector } from '@powersync/web'`)
+- Runtime checks like `require('@powersync/web').PowerSyncBackendConnector` will return `undefined` — this is expected, not a bug
+- Only `UpdateType` is a runtime value (enum) and uses a regular import
+- Bundlers like Vite will error if you import these without `type` since they try to resolve them as values
 
 | Resource | Description |
 |----------|-------------|
@@ -52,34 +70,34 @@ Framework-specific files (load alongside this file):
 
 ```bash
 # Web
-npm install @powersync/web
-npm install @journeyapps/wa-sqlite # Needed (peer-dependency)
+npm install @powersync/web@latest
+npm install @journeyapps/wa-sqlite@latest # Needed (peer-dependency)
 
 # React Native
-npm install @powersync/react-native
-npm install @powersync/powersync-op-sqlite  # Needed (peer-dependency)
+npm install @powersync/react-native@latest
+npm install @powersync/powersync-op-sqlite@latest  # Needed (peer-dependency)
 
 # Node.js
-npm install @powersync/node
+npm install @powersync/node@latest
 npm install better-sqlite3 # Needed (peer-dependency)
 
 # React integration
-npm install @powersync/react
+npm install @powersync/react@latest
 
 # Vue
-npm install @powersync/vue
+npm install @powersync/vue@latest
 
 # Nuxt (includes @powersync/vue — npm v7+ installs peers automatically)
-npm install @powersync/nuxt
+npm install @powersync/nuxt@latest
 
 # TanStack Query (React)
-npm install @powersync/tanstack-react-query
+npm install @powersync/tanstack-react-query@latest
 
 # TanStack DB
-npm install @tanstack/powersync-db-collection
+npm install @tanstack/powersync-db-collection@latest
 ```
 
-Always install packages by running these commands rather than writing versions into `package.json` manually. Using `"latest"` as a version string in `package.json` is incorrect — it bypasses the lockfile and can pull in breaking changes at any install.
+Always install packages using `@latest` as shown above — PowerSync releases frequently and older cached versions can be missing critical fixes. Do not write version strings into `package.json` manually.
 
 See the framework-specific files for full setup instructions per target.
 
@@ -141,8 +159,6 @@ const tasks = new Table(
 ### 3. Create Backend Connector
 
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-integrate-with-your-backend) and [Client-Side Integration](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) for more information.
-
-**IMPORTANT:** `PowerSyncBackendConnector`, `PowerSyncCredentials`, and `AbstractPowerSyncDatabase` are **type-only exports**. Always use `import type` for these — importing them as values (without `type`) causes runtime errors in bundlers like Vite. Only `UpdateType` is a runtime value (enum) and uses a regular import.
 
 ```ts
 import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
@@ -668,157 +684,31 @@ subscription.unsubscribe();
 - Default streams: server may configure streams as default — these subscribe automatically without a client call
 - TTL eviction: after TTL expires with no active subscriber, the stream's data may be removed from the local DB
 
-## Raw Tables
+## ORM & Raw Tables
 
-Raw tables let PowerSync sync data directly into native SQLite tables you define, instead of storing data as JSON in `ps_data__<table>` and exposing it via views. This gives full SQLite control and better query performance. See [Raw Tables](https://docs.powersync.com/usage/use-case-examples/raw-tables.md) for more information.
+These advanced topics are in separate files — load only when needed:
 
-Requires: The Rust sync client (now the default). Will not work with the legacy JavaScript client.
+| Topic | File | Load when… |
+|-------|------|-----------|
+| Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
+| Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |
 
-Status: Experimental — not covered by semver stability guarantees.
+## JS Internals
 
-### When to Use Raw Tables
+> Only needed when debugging QueryStore eviction, investigating sync client implementations, or working with internal op types.
 
-- Complex queries that benefit from native column types (e.g. `SUM`, `GROUP BY` on typed columns)
-- Tables with many rows where JSON extraction overhead is significant
-- Need for SQLite constraints (foreign keys, `NOT NULL`, `GENERATED` columns)
-- Custom indexes on expressions or generated columns
+### Sync Client Implementations
 
-### Defining a Raw Table
+The Rust-based sync client is now the default — no config needed. The legacy JS client (`SyncClientImplementation.JAVASCRIPT`) is deprecated. Do not downgrade the SDK after using the Rust client — older JS client versions can't read the Rust format.
 
-```ts
-import { Schema, RawTable } from '@powersync/common';
+### QueryStore
 
-const schema = new Schema({
-  // Regular PowerSync-managed tables here
-});
+`useSuspenseQuery` uses a `QueryStore` (one per `PowerSyncDatabase`, stored in a `WeakMap`). Caches `WatchedQuery` instances keyed by `"${sql} -- ${JSON.stringify(params)} -- ${JSON.stringify(options)}"`. Evicted when listener count reaches 0. `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`.
 
-schema.withRawTables({
-  // The key name ('todo_lists') matches the table name in the backend database
-  // as sent by the PowerSync service — NOT necessarily the local SQLite table name
-  todo_lists: {
-    put: {
-      sql: 'INSERT OR REPLACE INTO todo_lists (id, created_by, title, content) VALUES (?, ?, ?, ?)',
-      params: ['Id', { Column: 'created_by' }, { Column: 'title' }, { Column: 'content' }]
-    },
-    delete: {
-      sql: 'DELETE FROM todo_lists WHERE id = ?',
-      params: ['Id']
-    }
-  }
-});
-```
+### Op Types (Internal Sync vs CRUD)
 
-Parameter types:
-- `'Id'` — replaced with the object ID from the sync service
-- `{ Column: 'fieldName' }` — replaced with the value of that column from the synced row data
-- For `delete` statements, only `'Id'` is supported
-
-You must also create the actual SQLite table separately (e.g. in app init):
-
-```ts
-await db.execute(`
-  CREATE TABLE IF NOT EXISTS todo_lists (
-    id TEXT NOT NULL PRIMARY KEY,
-    created_by TEXT NOT NULL,
-    title TEXT NOT NULL,
-    content TEXT
-  ) STRICT
-`);
-```
-
-### Triggers for Local Writes
-
-Raw tables require manual triggers to capture local writes into PowerSync's upload queue (`powersync_crud` virtual table):
-
-```sql
-CREATE TRIGGER todo_lists_insert
-  AFTER INSERT ON todo_lists FOR EACH ROW
-  BEGIN
-    INSERT INTO powersync_crud (op, id, type, data)
-    VALUES ('PUT', NEW.id, 'todo_lists', json_object(
-      'created_by', NEW.created_by,
-      'title', NEW.title,
-      'content', NEW.content
-    ));
-  END;
-
-CREATE TRIGGER todo_lists_update
-  AFTER UPDATE ON todo_lists FOR EACH ROW
-  BEGIN
-    SELECT CASE
-      WHEN (OLD.id != NEW.id) THEN RAISE(FAIL, 'Cannot update id')
-    END;
-    INSERT INTO powersync_crud (op, id, type, data)
-    VALUES ('PATCH', NEW.id, 'todo_lists', json_object(
-      'created_by', NEW.created_by,
-      'title', NEW.title,
-      'content', NEW.content
-    ));
-  END;
-
-CREATE TRIGGER todo_lists_delete
-  AFTER DELETE ON todo_lists FOR EACH ROW
-  BEGIN
-    INSERT INTO powersync_crud (op, id, type)
-    VALUES ('DELETE', OLD.id, 'todo_lists');
-  END;
-```
-
-The `powersync_crud` virtual table fields:
-- `op` — `'PUT'`, `'PATCH'`, or `'DELETE'`
-- `id` — row ID
-- `type` — table name (as the backend knows it)
-- `data` — JSON object of column values (omit for DELETE)
-- `old_values` — optional previous values for conflict resolution
-- `metadata` — optional metadata string
-
-### Migrating from ps_untyped
-
-If PowerSync has already synced data for a table before you added it as a raw table, it's stored in `ps_untyped`. After creating the raw table and defining it in the schema, run:
-
-```sql
-INSERT INTO my_table (id, col1, col2)
-  SELECT id, data ->> 'col1', data ->> 'col2'
-  FROM ps_untyped WHERE type = 'my_table';
-DELETE FROM ps_untyped WHERE type = 'my_table';
-```
-
-Not needed if the raw table definition was present from the very first `connect()` call.
-
-### Raw Table Caveats
-
-- Rust client only — the JavaScript sync client logs a warning and ignores raw tables
-- No automatic column migration — adding columns requires deleting all data and resyncing, or a manual workaround
-- Foreign keys — must use `DEFERRABLE INITIALLY DEFERRED`; enable with `PRAGMA foreign_keys = ON`; avoid FK references from high-priority to lower-priority raw tables (priorities sync in separate transactions)
-- `disconnectAndClear()` won't clear raw tables by default — add a `clear` statement to `RawTable` if needed
-- The `name` property matches the backend table name, not the local SQLite table name — `put`/`delete` can target any local table
-
-## Drizzle ORM Integration
-
-See [Drizzle ORM Setup](https://docs.powersync.com/client-sdks/orms/javascript-web/drizzle.md) for full setup instructions.
-
-```ts
-import { drizzle } from '@powersync/drizzle-driver';
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { eq } from 'drizzle-orm';
-
-// Define Drizzle schema
-export const todos = sqliteTable('todos', {
-  id: text('id').primaryKey(),
-  description: text('description').notNull(),
-  completed: integer('completed').notNull().default(0),
-  listId: text('list_id')
-});
-
-// Create Drizzle instance
-const drizzleDb = drizzle(db);
-
-// Type-safe queries
-const activeTodos = await drizzleDb
-  .select()
-  .from(todos)
-  .where(eq(todos.completed, 0));
-```
+Internal bucket ops (`OpTypeEnum`): `CLEAR=1`, `MOVE=2`, `PUT=3`, `REMOVE=4` — sync protocol only, not exposed to userland.
+CRUD upload ops (`UpdateType`): `PUT`, `PATCH`, `DELETE` — what you see in `uploadData`. Don't confuse sync-level `REMOVE` with CRUD-level `DELETE`.
 
 ## Debugging
 
@@ -925,58 +815,6 @@ console.log(db.currentStatus);
 // { connected, connecting, lastSyncedAt, hasSynced, isSyncing, downloadProgress }
 ```
 
-## Internals
-
-> Load this section only when debugging QueryStore eviction behaviour, investigating sync client implementation differences, or working with internal op types. Not needed for typical integration, setup, or feature work.
-
-### Sync Client Implementations
-
-The Rust-based sync client is now the default:
-
-```ts
-// Default — Rust client (no config needed)
-const db = new PowerSyncDatabase({ schema, database: { dbFilename: 'app.db' } });
-
-// Explicit (not needed unless reverting to legacy)
-import { SyncClientImplementation } from '@powersync/common';
-const db = new PowerSyncDatabase({
-  schema,
-  database: { dbFilename: 'app.db' },
-  sync: { implementation: SyncClientImplementation.RUST } // now default
-});
-```
-
-The Rust client:
-- More performant — offloads sync line decoding to native extension
-- Required for raw tables and partial checkpoints by priority
-- Stores sync data in a slightly different format than the old JS client
-- Auto-migrates from JS format on first use
-
-Do not downgrade the SDK after using the Rust client — older SDK versions using the JS client can't read the Rust format.
-
-The legacy JS client (`SyncClientImplementation.JAVASCRIPT`) is deprecated and will be removed in a future version.
-
-### QueryStore
-
-`useSuspenseQuery` uses a `QueryStore` (one per `PowerSyncDatabase` instance, stored in a `WeakMap`). The store caches `WatchedQuery` instances keyed by:
-
-```
-"${sql} -- ${JSON.stringify(params)} -- ${JSON.stringify(options)}"
-```
-
-A query is evicted (closed) when the count of `ON_DATA + ON_STATE_CHANGE + ON_ERROR` listeners reaches 0.
-
-Implication: `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`. If one component unmounts but another with the same query is still mounted, the query stays alive and is not re-fetched.
-
-### Op Types (Internal Sync vs CRUD)
-
-Internal bucket ops (`OpTypeEnum`) — used inside sync protocol, not exposed to userland:
-- `CLEAR=1`, `MOVE=2`, `PUT=3`, `REMOVE=4`
-
-CRUD upload ops (`UpdateType`) — what you see in `uploadData`:
-- `PUT`, `PATCH`, `DELETE`
-
-These are separate enumerations. Don't confuse the sync-level `REMOVE` with the CRUD-level `DELETE`.
 
 ## Common Pitfalls
 

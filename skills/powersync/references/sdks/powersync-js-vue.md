@@ -7,6 +7,12 @@ metadata:
 
 # PowerSync Vue & Nuxt
 
+> **Load this when** building a Vue app or Nuxt app with PowerSync. Always load `powersync-js.md` first.
+
+## Table of Contents
+- [Vue](#vue) (Plugin, Composables, Watchers)
+- [Nuxt](#nuxt) (Module, Auto-imports, SSR)
+
 Vue-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building Vue apps or Nuxt apps.
 
 | Resource | Description |
@@ -22,10 +28,10 @@ Vue-specific integration for the PowerSync JavaScript SDK. Use this reference al
 
 ```bash
 # npm (v7+ installs peer dependencies automatically)
-npm install @powersync/vue
+npm install @powersync/vue@latest
 
 # pnpm (must install peer dependencies explicitly)
-pnpm add @powersync/vue @powersync/web @journeyapps/wa-sqlite
+pnpm add @powersync/vue@latest @powersync/web@latest @journeyapps/wa-sqlite@latest
 ```
 
 ### 2. Plugin Setup
@@ -171,10 +177,10 @@ PowerSync is tailored for client-side applications. Nuxt evaluates plugins serve
 
 ```bash
 # npm (v7+ installs peer dependencies automatically)
-npm install @powersync/nuxt
+npm install @powersync/nuxt@latest
 
 # pnpm (must install peer dependencies explicitly)
-pnpm add @powersync/nuxt @powersync/vue @powersync/web
+pnpm add @powersync/nuxt@latest @powersync/vue@latest @powersync/web@latest
 ```
 
 ### 2. `nuxt.config.ts`
@@ -247,7 +253,7 @@ The module optionally exposes a `usePowerSyncKysely()` composable for type-safe 
 Install the driver:
 
 ```bash
-npm install @powersync/kysely-driver
+npm install @powersync/kysely-driver@latest
 ```
 
 Enable it in `nuxt.config.ts`:

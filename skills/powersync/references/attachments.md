@@ -7,6 +7,17 @@ metadata:
 
 # PowerSync Attachments
 
+> **Load this when** the app needs file uploads/downloads (images, documents, media) synced alongside PowerSync data.
+
+## Table of Contents
+- [How It Works](#how-it-works)
+- [Package Setup](#package-setup)
+- [Schema Setup](#schema-setup)
+- [Storage Adapters](#storage-adapters)
+- [Initialize the Attachment Queue](#initialize-the-attachment-queue)
+- [Upload / Delete / Access Files](#upload-a-file)
+- [Error Handling](#error-handling)
+
 PowerSync handles file attachments using a **metadata + storage provider** pattern: structured metadata syncs through PowerSync while actual files live in a purpose-built storage system (S3, Supabase Storage, Cloudflare R2, etc.). An offline-first queue manages uploads, downloads, and retries automatically in the background.
 
 | Resource | Description |

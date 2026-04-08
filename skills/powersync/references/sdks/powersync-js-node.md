@@ -7,6 +7,8 @@ metadata:
 
 # PowerSync Node.js & Electron
 
+> **Load this when** building a Node.js CLI tool, background sync process, ETL pipeline, or Electron desktop app. Always load `powersync-js.md` first.
+
 Node.js-specific integration for the PowerSync JavaScript SDK. Use this reference alongside `references/sdks/powersync-js.md` when building Node.js CLI tools, background sync processes, ETL pipelines, or Electron desktop apps.
 
 | Resource | Description |
@@ -19,7 +21,7 @@ Node.js-specific integration for the PowerSync JavaScript SDK. Use this referenc
 ### 1. Install
 
 ```bash
-npm install @powersync/node
+npm install @powersync/node@latest
 npm install better-sqlite3   # required peer dependency
 ```
 
@@ -123,7 +125,7 @@ Electron App
 The renderer process is a full browser environment. Set it up exactly like any other web app:
 
 ```bash
-npm install @powersync/web @journeyapps/wa-sqlite @powersync/react
+npm install @powersync/web@latest @journeyapps/wa-sqlite@latest @powersync/react@latest
 ```
 
 Use `PowerSyncContext.Provider` and `useQuery`/`useStatus` hooks as documented in `references/sdks/powersync-js-react.md`. The Web-Specific Options section in `references/sdks/powersync-js.md` (VFS options, multi-tab, `debugMode`) also applies to the renderer process.
@@ -133,7 +135,7 @@ Use `PowerSyncContext.Provider` and `useQuery`/`useStatus` hooks as documented i
 The main process runs Node.js with no DOM. Use `@powersync/node`:
 
 ```bash
-npm install @powersync/node better-sqlite3
+npm install @powersync/node@latest better-sqlite3
 ```
 
 ```ts

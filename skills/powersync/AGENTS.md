@@ -12,26 +12,16 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 | Use the **PowerSync CLI** to scaffold, link (if cloud hosted), and deploy (`references/powersync-cli.md`) | Hand-write `service.yaml` / `sync-config.yaml` from scratch or invent compose files **unless** the user explicitly says they cannot use the CLI |
 | **Stop and ask** when a step needs credentials or interactive Cloud login you cannot perform | Silently build an alternate stack (e.g. manual Docker) without user confirmation |
 | Complete **backend readiness** (deployed sync config, auth, publication) **before** app code | Start React/client integration while sync is still unconfigured |
+| Use **Sync Streams** (`config: edition: 3`) for new projects | Generate legacy Sync Rules YAML for new projects |
 
 If the user wants a shortcut, they must **say so explicitly** (e.g. “I can’t use the CLI, give dashboard steps only”).
 
 
 ## Always Use the PowerSync CLI
 
-**The [PowerSync CLI](https://docs.powersync.com/tools/cli.md) is the default tool for all PowerSync operations.** Do not manually create config files, do not direct users to the dashboard, and do not write service.yaml or sync-config.yaml from scratch. The CLI handles all of this.
+**The [PowerSync CLI](https://docs.powersync.com/tools/cli.md) is the default tool for all PowerSync operations.** Do not manually create config files, do not direct users to the dashboard, and do not write `service.yaml` or `sync-config.yaml` from scratch. Only fall back to manual config or dashboard instructions when the user explicitly says they can't use the CLI.
 
-What the CLI does — use it instead of doing these things manually:
-
-- **Create a Cloud instance:** `powersync init cloud` → `powersync link cloud --create --project-id=<id>` (scaffolds config, creates the instance, and links it in one flow)
-- **Link an existing Cloud instance:** `powersync pull instance --project-id=<id> --instance-id=<id>` (downloads config to local files)
-- **Create a local self-hosted instance:** `powersync init self-hosted` → `powersync docker configure` → `powersync docker start` (spins up a full local PowerSync stack via Docker — no manual Docker setup needed)
-- **Deploy config:** `powersync deploy service-config`, `powersync deploy sync-config` (validates and deploys — don't copy-paste YAML to a dashboard)
-- **Generate client schema:** `powersync generate schema --output=ts` (generates TypeScript schema from deployed sync config — don't write it by hand)
-- **Generate dev tokens:** `powersync generate token --subject=user-1` (for local testing — don't hardcode JWTs)
-
-Only fall back to manual config or dashboard instructions when the user explicitly says they can't use the CLI.
-
-Full CLI reference: `references/powersync-cli.md` — **always load this file** when setting up or modifying a PowerSync instance.
+**Always load `references/powersync-cli.md`** when setting up or modifying a PowerSync instance — it contains the full command reference for Cloud, self-hosted, and Docker workflows.
 
 ## Onboarding Playbook
 
@@ -49,6 +39,17 @@ When the task is to add PowerSync to an app, follow this sequence in order:
 8. Only after backend readiness is confirmed, implement app-side PowerSync integration.
 
 Do not start client-side debugging while the PowerSync service is still unconfigured. If the UI is stuck on `Syncing...`, the default diagnosis is incomplete backend setup, not a frontend bug.
+
+## Install Latest Dependencies
+
+Always install PowerSync packages with `@latest` to get critical fixes and the most current API:
+
+```bash
+npm install @powersync/web@latest        # or react-native, node, etc.
+npm install @journeyapps/wa-sqlite@latest
+```
+
+Never omit `@latest` for `@powersync/*` and `@journeyapps/*` packages. These packages release frequently and older cached versions can be missing critical fixes or new APIs the sync config depends on.
 
 ## Critical Footguns
 
@@ -138,92 +139,17 @@ If the backend is Supabase, also load `references/supabase-auth.md`.
 
 ### Path 3: Self-Hosted + CLI (Recommended)
 
-**Not Cloud:** do not use **`powersync login`** as the way to “log in” to self-hosted — that command stores a **PowerSync Cloud** PAT. Self-hosted uses **`powersync init self-hosted`**, **`powersync docker configure`**, **`powersync docker start`**, and the service’s **`PS_ADMIN_TOKEN`** for admin API access.
-
-Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker runs (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted operations. See [PowerSync CLI](https://docs.powersync.com/tools/cli.md).
+Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker runs (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted operations. Remember: **`powersync login` is Cloud-only** — see `references/powersync-cli.md` § “Authentication” for self-hosted auth.
 
 ### Path 4: Self-Hosted + Manual Docker
 
 Only when the CLI cannot be used. Load `references/powersync-service.md` and `references/sync-config.md`. If the backend is **not** Supabase, also load `references/custom-backend.md`.
 
-## Architecture
+## Architecture, Routing, SDK Tables & Key Rules
 
-```mermaid
-flowchart LR
+These are defined once in **SKILL.md** — refer there for:
 
-  subgraph BACKEND["Your Backend"]
-    direction TB
-    DB["Backend Database (Postgres | MongoDB | MySQL | Supabase | …)"]
-    API["Backend API (Your server / cloud functions)"]
-    API -- "Applies writes" --> DB
-  end
-
-  subgraph PS_SERVICE["PowerSync Service"]
-    direction TB
-    SYNC["Partial Sync (sync rules filter data per user)"]
-  end
-
-  subgraph APP["Your App"]
-    direction TB
-    SDK["PowerSync SDK"]
-    SQLITE["In-app SQLite (local replica — reads are instant)"]
-    QUEUE["Upload Queue (offline write buffer)"]
-    UI["UI"]
-    SDK --- SQLITE
-    SDK --- QUEUE
-    SQLITE <--> UI
-    QUEUE <--> UI
-  end
-
-  DB -- "Replicates changes (CDC / logical replication)" --> PS_SERVICE
-  PS_SERVICE -- "Streams changes (real-time sync)" --> SDK
-  QUEUE -- "Uploads writes (when connectivity resumes)" --> API
-```
-
-Key rule: **client writes never go through PowerSync**. They go from the app's upload queue to your backend API. PowerSync handles the read and sync path only.
-
-## What to Load for Your Task
-
-| Task | Start with | Load on demand |
-|------|-----------|----------------|
-| Supabase + PowerSync | `references/onboarding-supabase.md` | `references/supabase-auth.md`, `references/sync-config.md`, SDK files (when writing app code) |
-| Custom backend (non-Supabase) | `references/onboarding-custom.md` | `references/custom-backend.md`, `references/sync-config.md`, SDK files (when writing app code) |
-| New project setup | `references/powersync-cli.md` + `references/powersync-service.md` | `references/sync-config.md`, SDK files (when writing app code) |
-| Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
-| Writing sync config | `references/sync-config.md` | — |
-| Debugging sync issues | `references/powersync-debug.md` | — |
-| Attachments | `references/attachments.md` | — |
-| Architecture overview | This file is sufficient | `references/powersync-overview.md` for deep links |
-
-## SDK Reference Files
-
-### JavaScript / TypeScript
-
-Always load `references/sdks/powersync-js.md` for any JS/TS project, then load the applicable framework file.
-
-| Framework | Load when… | File |
-|-----------|-----------|------|
-| React / Next.js | React web app, Next.js, or **any Vite + React project** (load before package install — contains required `vite.config.ts` with `optimizeDeps.exclude` and `worker.format: 'es'`) | `references/sdks/powersync-js-react.md` |
-| React Native / Expo | React Native, Expo, or Expo Go | `references/sdks/powersync-js-react-native.md` |
-| Vue / Nuxt | Vue or Nuxt | `references/sdks/powersync-js-vue.md` |
-| Node.js / Electron | Node.js CLI/server or Electron | `references/sdks/powersync-js-node.md` |
-| TanStack | TanStack Query or TanStack DB | `references/sdks/powersync-js-tanstack.md` |
-
-### Other SDKs
-
-| Platform | Load when… | File |
-|----------|-----------|------|
-| Dart / Flutter | Dart / Flutter | `references/sdks/powersync-dart.md` |
-| .NET | .NET | `references/sdks/powersync-dotnet.md` |
-| Kotlin | Kotlin | `references/sdks/powersync-kotlin.md` |
-| Swift | Swift / iOS / macOS | `references/sdks/powersync-swift.md` |
-
-## Key Rules to Apply Without Being Asked
-
-- Use Sync Streams for new projects. Sync Rules are legacy.
-- Never define the `id` column in a PowerSync table schema; it is created automatically.
-- Use `column.integer` for booleans and `column.text` for ISO date strings.
-- `connect()` is fire-and-forget. Use `waitForFirstSync()` if you need readiness.
-- `transaction.complete()` is mandatory or the upload queue stalls permanently.
-- `disconnectAndClear()` is required on logout or user switch when local data must be wiped.
-- A 4xx response from `uploadData` blocks the upload queue permanently; return 2xx for validation errors.
+- **Architecture diagram** — shows the read/sync path (PowerSync Service → SDK) and write path (upload queue → your backend API)
+- **"What to Load for Your Task"** table — maps tasks to starter files and on-demand files
+- **SDK Reference Files** tables — maps frameworks/platforms to reference files
+- **"Key Rules to Apply Without Being Asked"** — `id` column, `connect()`, `transaction.complete()`, `disconnectAndClear()`, 4xx upload handling

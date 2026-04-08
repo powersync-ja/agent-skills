@@ -7,6 +7,20 @@ metadata:
 
 # PowerSync CLI
 
+> **Load this when** setting up, deploying, or managing any PowerSync instance (Cloud or self-hosted). This is the primary tool for all PowerSync operations.
+
+## Table of Contents
+- [Recommended Defaults for Agents](#recommended-defaults-for-agents)
+- [Installation](#installation)
+- [Instance Resolution](#how-the-cli-resolves-instance-information)
+- [Authentication](#authentication)
+- [Config Files](#config-files)
+- [Cloud Usage](#cloud-usage)
+- [Self-Hosted Usage](#self-hosted-usage)
+- [Docker Commands](#docker-commands-reference)
+- [Common Commands](#common-commands)
+- [Development Tokens](#development-tokens)
+
 The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the command line. It supports local config management, schema generation, development token generation, deployment, and more. See [this](https://docs.powersync.com/tools/cli.md) for any information not supplied in this document about the CLI.
 
 ## Recommended Defaults for Agents

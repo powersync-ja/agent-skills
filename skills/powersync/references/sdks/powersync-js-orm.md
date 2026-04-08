@@ -19,7 +19,7 @@ PowerSync provides official drivers for both Drizzle and Kysely. These let you w
 ## Drizzle
 
 ```bash
-npm install @powersync/drizzle-driver drizzle-orm
+npm install @powersync/drizzle-driver@latest drizzle-orm
 ```
 
 ```ts
@@ -57,7 +57,7 @@ const { data } = useQuery(query);
 ## Kysely
 
 ```bash
-npm install @powersync/kysely-driver kysely
+npm install @powersync/kysely-driver@latest kysely
 ```
 
 ```ts

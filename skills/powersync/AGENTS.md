@@ -40,6 +40,17 @@ When the task is to add PowerSync to an app, follow this sequence in order:
 
 Do not start client-side debugging while the PowerSync service is still unconfigured. If the UI is stuck on `Syncing...`, the default diagnosis is incomplete backend setup, not a frontend bug.
 
+## Install Latest Dependencies
+
+Always install PowerSync packages with `@latest` to get critical fixes and the most current API:
+
+```bash
+npm install @powersync/web@latest        # or react-native, node, etc.
+npm install @journeyapps/wa-sqlite@latest
+```
+
+Never omit `@latest` for `@powersync/*` and `@journeyapps/*` packages. These packages release frequently and older cached versions can be missing critical fixes or new APIs the sync config depends on.
+
 ## Critical Footguns
 
 These apply to all paths. Domain-specific pitfalls are documented in the relevant reference files — only load those when working on that domain.

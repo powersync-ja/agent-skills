@@ -24,17 +24,17 @@ The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`
 ### Standard React Native (Recommended)
 
 ```bash
-npm install @powersync/react-native
+npm install @powersync/react-native@latest
 ```
 
 Then install a native SQLite adapter (required peer dependency):
 
 ```bash
 # OP-SQLite — recommended: built-in encryption, React Native New Architecture support
-npm install @powersync/op-sqlite
+npm install @powersync/op-sqlite@latest
 
 # OR: React Native Quick SQLite — original adapter
-npm install @journeyapps/react-native-quick-sqlite
+npm install @journeyapps/react-native-quick-sqlite@latest
 ```
 
 After installing native dependencies, rebuild your native app:
@@ -110,7 +110,7 @@ Expo Go is a sandbox that does not support native modules. To run PowerSync in E
 ### Install
 
 ```bash
-npm install @powersync/react-native @powersync/adapter-sql-js
+npm install @powersync/react-native@latest @powersync/adapter-sql-js@latest
 ```
 
 ### Usage

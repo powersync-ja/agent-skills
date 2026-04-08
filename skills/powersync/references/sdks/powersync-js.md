@@ -70,34 +70,34 @@ Framework-specific files (load alongside this file):
 
 ```bash
 # Web
-npm install @powersync/web
-npm install @journeyapps/wa-sqlite # Needed (peer-dependency)
+npm install @powersync/web@latest
+npm install @journeyapps/wa-sqlite@latest # Needed (peer-dependency)
 
 # React Native
-npm install @powersync/react-native
-npm install @powersync/powersync-op-sqlite  # Needed (peer-dependency)
+npm install @powersync/react-native@latest
+npm install @powersync/powersync-op-sqlite@latest  # Needed (peer-dependency)
 
 # Node.js
-npm install @powersync/node
+npm install @powersync/node@latest
 npm install better-sqlite3 # Needed (peer-dependency)
 
 # React integration
-npm install @powersync/react
+npm install @powersync/react@latest
 
 # Vue
-npm install @powersync/vue
+npm install @powersync/vue@latest
 
 # Nuxt (includes @powersync/vue — npm v7+ installs peers automatically)
-npm install @powersync/nuxt
+npm install @powersync/nuxt@latest
 
 # TanStack Query (React)
-npm install @powersync/tanstack-react-query
+npm install @powersync/tanstack-react-query@latest
 
 # TanStack DB
-npm install @tanstack/powersync-db-collection
+npm install @tanstack/powersync-db-collection@latest
 ```
 
-Always install packages by running these commands rather than writing versions into `package.json` manually. Using `"latest"` as a version string in `package.json` is incorrect — it bypasses the lockfile and can pull in breaking changes at any install.
+Always install packages using `@latest` as shown above — PowerSync releases frequently and older cached versions can be missing critical fixes. Do not write version strings into `package.json` manually.
 
 See the framework-specific files for full setup instructions per target.
 

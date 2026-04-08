@@ -134,7 +134,7 @@ PowerSync is tailored for client-side applications. Next.js evaluates code in a 
 ### Install
 
 ```bash
-npm install @powersync/web @journeyapps/wa-sqlite @powersync/react
+npm install @powersync/web@latest @journeyapps/wa-sqlite@latest @powersync/react@latest
 ```
 
 ### Copy Worker Assets (Turbopack)

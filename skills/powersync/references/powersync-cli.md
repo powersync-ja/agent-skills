@@ -39,6 +39,28 @@ Use these defaults unless the user explicitly wants something else:
 - Sync config validation or deploy failures often mean `powersync/sync-config.yaml` is missing the top-level `config: edition: 3` wrapper.
 - `powersync pull instance` silently overwrites local `service.yaml` and `sync-config.yaml`.
 
+## Mutating Commands — Confirm Before Running
+
+These commands change Cloud state or local config. On an existing project, do not run them without confirming the target instance and that the user has authorized the change.
+
+| Command | Effect | Required check |
+|---------|--------|----------------|
+| `powersync deploy` | Pushes `service.yaml` + `sync-config.yaml` to the linked instance | Confirm instance id and that user authorized deploying both files. If only sync streams changed, prefer `powersync deploy sync-config`. |
+| `powersync deploy service-config` | Replaces service config (replication, storage, auth) on the linked instance | Service-config edits are out-of-scope by default — get explicit user authorization in this conversation before running. |
+| `powersync deploy sync-config` | Replaces sync config on the linked instance | Confirm instance id + environment (dev/staging/prod) before running. Never deploy to a production instance the user has not approved. |
+| `powersync destroy --confirm=yes` | Permanently destroys the linked Cloud instance | Always require explicit, in-conversation confirmation naming the instance. Treat as one-shot authorization. |
+| `powersync stop --confirm=yes` | Stops the linked Cloud instance (clients lose sync) | Same as `destroy` — confirm instance and that the user accepts downtime. |
+| `powersync link cloud --create` | Creates a new Cloud instance | Only during initial bootstrap. Do not run on a project that already has a linked instance unless the user explicitly wants a second one. |
+| `powersync pull instance` | Overwrites local `service.yaml` and `sync-config.yaml` from the remote | Back up local files first. Do not run after local edits unless the user accepts losing them. |
+
+**How to confirm the target instance.** Before any command in the table:
+
+1. Run `powersync fetch instances` (or read `powersync/cli.yaml`) and tell the user the instance id, project id, and — if known from project memory — its environment.
+2. If the environment is production or unknown, ask before proceeding. Do not assume "linked" means "safe."
+3. One approval covers one command. Re-confirm for the next mutating command.
+
+**Default scope on existing projects.** Only edit and deploy `sync-config.yaml`. Leave `service.yaml` and `cli.yaml` alone unless the user has authorized service/infra changes in this conversation. See `AGENTS.md` § "Continuous Use & Guardrails".
+
 ## Recommended Cloud Sequence
 
 For the common Cloud path, use this order:
@@ -508,6 +530,8 @@ powersync deploy sync-config
 ```
 
 ## Common Commands
+
+> **Mutating commands** (`deploy`, `destroy`, `stop`, `link --create`, `pull instance`) require an instance + scope check before running — see "Mutating Commands — Confirm Before Running" above.
 
 | Command | Description |
 |---------|-------------|

@@ -23,6 +23,9 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 - **Backend before frontend.** Deploy sync config and verify the service before writing app code.
 - **Sync Streams for new projects.** Sync Rules are legacy.
 - **Persist credentials immediately.** Write all URLs and keys to `.env` as soon as they are available.
+- **Default scope on existing projects: sync-config only.** Do not edit `service.yaml` or `cli.yaml` unless the user explicitly authorized service/infra changes in this conversation.
+- **Confirm the target instance before any mutating command** (`deploy`, `destroy`, `stop`, `link --create`, `pull instance`). Never deploy to an instance you have not been authorized for. Treat production as off-limits unless explicitly approved.
+- **Use project memory.** If your harness supports it, persist the CLI invocation, sync-config path, authorized instance ids + environment (dev/staging/prod), and allowed scope of changes. Verify saved values still match reality before acting on them. See `AGENTS.md` § "Continuous Use & Guardrails".
 
 ## What to Load for Your Task
 

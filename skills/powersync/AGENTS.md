@@ -16,6 +16,39 @@ Use this skill to onboard a project onto PowerSync without trial-and-error. Trea
 
 If the user wants a shortcut, they must **say so explicitly** (e.g. “I can’t use the CLI, give dashboard steps only”).
 
+## Continuous Use & Guardrails (existing projects)
+
+The onboarding playbook below assumes a fresh project. When the project is **already set up**, the rules below take precedence. Continuous-use sessions on existing PowerSync projects are where agents do the most damage — assume nothing about the linked instance, scope of changes, or environment.
+
+### Default scope: sync streams only
+
+On an existing project, the default scope of changes is **`sync-config.yaml` (sync streams) only**. Do not touch `service.yaml` (replication connections, storage, ports, auth, instance name) or `cli.yaml` unless the user has explicitly asked for service or infra changes in this conversation. Sync stream edits are recoverable by re-deploying; service-config or wrong-instance link changes can break replication or take down a production app.
+
+If the user’s request seems to require a service-config change, **stop and confirm** before editing `service.yaml`. Do not silently broaden scope.
+
+### Confirm the target instance before any mutating command
+
+Before running any command that mutates Cloud state — `powersync deploy`, `powersync deploy service-config`, `powersync deploy sync-config`, `powersync destroy`, `powersync stop`, `powersync link cloud --create`, or `powersync pull instance` — confirm:
+
+1. **Which instance** the command will hit. Run `powersync fetch instances` or read `powersync/cli.yaml` and tell the user the instance id and project before proceeding.
+2. **Whether that instance is production.** If the user has not stated which instances are safe to touch, ask. Never deploy to an instance you have not been authorized for in this session or in saved project memory (see below).
+3. For `destroy`, `stop`, and any production-tagged instance: surface the command and the target, then wait for explicit confirmation. Treat “yes go ahead” for one command as authorization for that command only — not a blanket approval for future destructive actions.
+
+`powersync pull instance` silently overwrites local `service.yaml` and `sync-config.yaml`. Back up first; never run it after local edits unless the user confirms losing those edits is acceptable.
+
+### Save and reuse project memory
+
+Many of the inputs above are stable across sessions. If your harness has a project memory or persistent notes file, **record these once and reuse them** so the user is not asked the same questions every session and so you do not re-discover paths each turn. Save:
+
+- **CLI install path / invocation** — e.g. `powersync` on PATH, `npx powersync@<version>`, or a project-local install — whatever resolves in this repo. Avoids reinstalling or hunting for the binary.
+- **Config directory and sync-config path** — e.g. `powersync/sync-config.yaml`, or a non-default `--directory`. Avoids re-globbing.
+- **Authorized instances and their environment** — e.g. “`<instance-id-A>` = dev (safe to deploy), `<instance-id-B>` = prod (ask before any deploy/destroy/stop)”. Cite this list before running mutating commands.
+- **Allowed scope of changes** — e.g. “sync-config only” vs. “sync-config + service-config authorized”. Default to sync-config only until the user broadens it.
+
+Before acting on a saved entry that names a specific instance, file path, or CLI binary, verify it still matches reality (file exists, instance still in `powersync fetch instances`). If it has changed, update the memory rather than acting on a stale value. If saved memory says “prod = do not touch” and the user now asks you to deploy to prod, treat that as a scope expansion and confirm explicitly before proceeding.
+
+If your harness has no persistent memory, ask the user the relevant questions at session start and keep the answers in the active conversation.
+
 
 ## Always Use the PowerSync CLI
 

@@ -11,7 +11,7 @@ metadata:
 
 Use this recipe when onboarding any app onto PowerSync Cloud with a Supabase backend. This works for all platforms (web, React Native, Flutter, Kotlin, Swift, .NET, etc.).
 
-**CLI-first.** See `references/powersync-cli.md`. Fall back to the dashboard only if the CLI is unavailable or the user explicitly prefers it.
+**CLI-first.** See `references/powersync-cli.md`. Fall back to the dashboard only if the CLI is unavailable or the operator explicitly prefers it.
 
 ## Required Inputs
 
@@ -37,7 +37,7 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 2. **Write credentials to `.env` immediately.** As soon as Supabase project details are available, write `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI`, and `POWERSYNC_URL` to `.env`. Both `service.yaml` (via `!env` tags) and app code depend on these values. For how to get `POWERSYNC_URL`, see `references/powersync-cli.md` § "Getting POWERSYNC_URL".
 
-3. **Run the Supabase publication SQL.** The publication must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL. Present it to the user and ask them to confirm.
+3. **Run the Supabase publication SQL.** The publication must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL. Present it to the operator and ask them to confirm.
 
 4. **Scaffold and configure PowerSync.**
    - **New instance (CLI):** `powersync init cloud` → edit config → `powersync link cloud --create --project-id=<id>` → deploy

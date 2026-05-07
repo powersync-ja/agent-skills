@@ -25,7 +25,7 @@ The PowerSync CLI manages Cloud and self-hosted PowerSync instances from the com
 
 ## Recommended Defaults for Agents
 
-Use these defaults unless the user explicitly wants something else:
+Use these defaults unless the operator explicitly wants something else:
 
 - Prefer `PS_ADMIN_TOKEN` in autonomous or noninteractive environments.
 - **`powersync login` is Cloud-only** (stores a Cloud PAT). Do not present it as the auth path for self-hosted-only setups.
@@ -41,25 +41,25 @@ Use these defaults unless the user explicitly wants something else:
 
 ## Mutating Commands — Confirm Before Running
 
-These commands change Cloud state or local config. On an existing project, do not run them without confirming the target instance and that the user has authorized the change.
+These commands change Cloud state or local config. On an existing project, do not run them without confirming the target instance and that the operator has authorized the change.
 
 | Command | Effect | Required check |
 |---------|--------|----------------|
-| `powersync deploy` | Pushes `service.yaml` + `sync-config.yaml` to the linked instance | Confirm instance id and that user authorized deploying both files. If only sync streams changed, prefer `powersync deploy sync-config`. |
-| `powersync deploy service-config` | Replaces service config (replication, storage, auth) on the linked instance | Service-config edits are out-of-scope by default — get explicit user authorization in this conversation before running. |
-| `powersync deploy sync-config` | Replaces sync config on the linked instance | Confirm instance id + environment (dev/staging/prod) before running. Never deploy to a production instance the user has not approved. |
+| `powersync deploy` | Pushes `service.yaml` + `sync-config.yaml` to the linked instance | Confirm instance id and that the operator authorized deploying both files. If only sync streams changed, prefer `powersync deploy sync-config`. |
+| `powersync deploy service-config` | Replaces service config (replication, storage, auth) on the linked instance | Service-config edits are out-of-scope by default — get explicit operator authorization in this conversation before running. |
+| `powersync deploy sync-config` | Replaces sync config on the linked instance | Confirm instance id + environment (dev/staging/prod) before running. Never deploy to a production instance the operator has not approved. |
 | `powersync destroy --confirm=yes` | Permanently destroys the linked Cloud instance | Always require explicit, in-conversation confirmation naming the instance. Treat as one-shot authorization. |
-| `powersync stop --confirm=yes` | Stops the linked Cloud instance (clients lose sync) | Same as `destroy` — confirm instance and that the user accepts downtime. |
-| `powersync link cloud --create` | Creates a new Cloud instance | Only during initial bootstrap. Do not run on a project that already has a linked instance unless the user explicitly wants a second one. |
-| `powersync pull instance` | Overwrites local `service.yaml` and `sync-config.yaml` from the remote | Back up local files first. Do not run after local edits unless the user accepts losing them. |
+| `powersync stop --confirm=yes` | Stops the linked Cloud instance (clients lose sync) | Same as `destroy` — confirm instance and that the operator accepts downtime. |
+| `powersync link cloud --create` | Creates a new Cloud instance | Only during initial bootstrap. Do not run on a project that already has a linked instance unless the operator explicitly wants a second one. |
+| `powersync pull instance` | Overwrites local `service.yaml` and `sync-config.yaml` from the remote | Back up local files first. Do not run after local edits unless the operator accepts losing them. |
 
 **How to confirm the target instance.** Before any command in the table:
 
-1. Run `powersync fetch instances` (or read `powersync/cli.yaml`) and tell the user the instance id, project id, and — if known from project memory — its environment.
-2. If the environment is production or unknown, ask before proceeding. Do not assume "linked" means "safe."
-3. One approval covers one command. Re-confirm for the next mutating command.
+1. Run `powersync fetch instances` (or read `powersync/cli.yaml`) and tell the operator the instance id, project id, and — if known from project memory — its environment.
+2. Production or unknown environment? Ask before proceeding. Do not assume "linked" means "safe."
+3. One approval = one command. Re-confirm for the next mutating command.
 
-**Default scope on existing projects.** Only edit and deploy `sync-config.yaml`. Leave `service.yaml` and `cli.yaml` alone unless the user has authorized service/infra changes in this conversation. See `AGENTS.md` § "Continuous Use & Guardrails".
+**Default scope on existing projects.** Edit and deploy `sync-config.yaml` only. Leave `service.yaml` and `cli.yaml` alone unless the operator has authorized service/infra changes in this conversation. See `AGENTS.md` § "Continuous Use & Guardrails".
 
 ## Recommended Cloud Sequence
 
@@ -104,11 +104,11 @@ For Cloud, `--org-id` / `ORG_ID` is optional — omit it when your token has acc
 | **PowerSync Cloud** | `PS_ADMIN_TOKEN` (PAT) or token from **`powersync login`** |
 | **Self-hosted** | No `powersync login` for the running service. Use **`powersync init self-hosted`**, **`powersync docker configure` / `powersync docker start`**, and **`PS_ADMIN_TOKEN`** matching the self-hosted service’s admin API token (see self-hosted docs). |
 
-Do not tell users to run `powersync login` when they are **only** using a local self-hosted stack unless they also need Cloud CLI commands.
+Do not tell the operator to run `powersync login` when they are **only** using a local self-hosted stack unless they also need Cloud CLI commands.
 
 ---
 
-Cloud commands require a PowerSync personal access token (PAT). If the user does not have one, direct them to generate one at: https://dashboard.powersync.com/account/access-tokens
+Cloud commands require a PowerSync personal access token (PAT). If the operator does not have one, direct them to generate one at: https://dashboard.powersync.com/account/access-tokens
 
 Prefer `PS_ADMIN_TOKEN` when the environment is noninteractive or when the agent should avoid browser/device-login interruptions.
 
@@ -184,7 +184,7 @@ password: secret_ref: default_password
 
 ### New Cloud Instance
 
-**Information the agent must collect from the user before proceeding:**
+**Information the agent must collect from the operator before proceeding:**
 - PowerSync account (if they don't have one, direct to https://dashboard.powersync.com to sign up)
 - A project on the dashboard (required before creating an instance — if they don't have one, they must create one at https://dashboard.powersync.com first)
 - Project ID (find on dashboard or via `powersync fetch instances` after login)
@@ -201,7 +201,7 @@ powersync login                               # opens browser for PAT
 powersync init cloud                          # creates powersync/ with service.yaml and sync-config.yaml
 ```
 
-**After `powersync init cloud`:** Read the generated `powersync/service.yaml` and `powersync/sync-config.yaml`. These contain placeholder values. Prompt the user for their database connection details and edit the files before continuing.
+**After `powersync init cloud`:** Read the generated `powersync/service.yaml` and `powersync/sync-config.yaml`. These contain placeholder values. Prompt the operator for their database connection details and edit the files before continuing.
 
 ```bash
 # 3. Create instance and deploy
@@ -272,12 +272,12 @@ Write it to `.env` as `POWERSYNC_URL=https://<instance-id>.powersync.journeyapps
 
 ### Existing Cloud Instance
 
-**Information the agent must collect from the user:**
+**Information the agent must collect from the operator:**
 - Project ID
 - Instance ID
 - Org ID (only if token covers multiple orgs)
 
-The user can find these on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`.
+The operator can find these on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`.
 
 ```bash
 powersync login
@@ -331,10 +331,10 @@ The CLI manages a full Docker Compose stack for local development and testing.
 
 **Prerequisites:** Docker and Docker Compose V2 (2.20.3+).
 
-**Information the agent may need from the user:**
+**Information the agent may need from the operator:**
 - If using `--database external`: the source database URI (set as `PS_DATA_SOURCE_URI`)
 - If using `--storage external`: the storage database URI (set as `PS_STORAGE_SOURCE_URI`)
-- If using the default options: no user input needed — the CLI provisions local Postgres for both
+- If using the default options: no operator input needed — the CLI provisions local Postgres for both
 
 **Step-by-step:**
 
@@ -351,7 +351,7 @@ powersync docker configure
 powersync docker start                        # docker compose up -d --wait
 ```
 
-**After `powersync init self-hosted`:** Read the generated `powersync/service.yaml`. If the user is connecting to an external database, prompt them for the connection URI and update the file. The `powersync docker configure` command will merge Docker-specific settings into `service.yaml` and write `cli.yaml`.
+**After `powersync init self-hosted`:** Read the generated `powersync/service.yaml`. If the operator is connecting to an external database, prompt them for the connection URI and update the file. The `powersync docker configure` command will merge Docker-specific settings into `service.yaml` and write `cli.yaml`.
 
 ```bash
 # 4. Verify and use the instance
@@ -365,7 +365,7 @@ powersync generate token --subject=user-test-1
 
 For self-hosted instances already running (not managed by the CLI), the CLI can link to them for schema generation, token generation, and status checks.
 
-**Information the agent must collect from the user:**
+**Information the agent must collect from the operator:**
 - API URL of the running PowerSync instance
 - API token (must match a token configured in the instance's `api.tokens` setting)
 

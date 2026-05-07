@@ -11,7 +11,7 @@ metadata:
 
 Use this recipe when onboarding any app onto PowerSync with a **non-Supabase backend** — your own database, your own auth, and your own backend API. Works for all platforms (web, React Native, Flutter, Kotlin, Swift, .NET, etc.) and both Cloud and self-hosted.
 
-**CLI-first.** See `references/powersync-cli.md`. Fall back to the dashboard (Cloud) or manual Docker config (self-hosted) only if the CLI is unavailable or the user explicitly prefers it.
+**CLI-first.** See `references/powersync-cli.md`. Fall back to the dashboard (Cloud) or manual Docker config (self-hosted) only if the CLI is unavailable or the operator explicitly prefers it.
 
 ## Required Inputs
 
@@ -23,7 +23,7 @@ Collect before writing any code:
 - Whether a PowerSync instance already exists
 - PowerSync instance URL (if instance exists)
 - Project ID and instance ID (if using CLI with existing Cloud instance)
-- How the user wants to handle auth (custom JWT, third-party provider like Auth0/Firebase, or dev tokens)
+- How the operator wants to handle auth (custom JWT, third-party provider like Auth0/Firebase, or dev tokens)
 - Whether they have an existing backend API or need to create one
 
 Only ask for secrets (database password, private keys) when you are at the step that actually needs them.
@@ -36,7 +36,7 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 1. **Confirm the path.** Verify: PowerSync (Cloud or self-hosted) + custom backend + your platform.
 
-2. **Set up the source database.** Load `references/powersync-service.md` § "Source Database Setup" for the relevant quick start (Postgres, MongoDB, MySQL, or MSSQL). Present the exact SQL to the user and ask them to confirm it is done.
+2. **Set up the source database.** Load `references/powersync-service.md` § "Source Database Setup" for the relevant quick start (Postgres, MongoDB, MySQL, or MSSQL). Present the exact SQL to the operator and ask them to confirm it is done.
 
 3. **Write credentials to `.env` immediately.** As soon as database details are available:
    ```

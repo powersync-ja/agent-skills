@@ -208,7 +208,7 @@ See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersy
 
 ## Source Database Setup
 
-Important: For all database user creation below, generate a cryptographically secure password (e.g., `openssl rand -base64 32` or a password manager). Never use placeholder values like `secure_password`, `password`, or `admin123` in production—these are unsafe and must not be suggested to users.
+Important: For all database user creation below, generate a cryptographically secure password (e.g., `openssl rand -base64 32` or a password manager). Never use placeholder values like `secure_password`, `password`, or `admin123` in production — these are unsafe and must not be suggested to the operator.
 
 See [Source Database Setup](https://docs.powersync.com/configuration/source-db/setup.md) for more information about specific DB host requirements. 
 

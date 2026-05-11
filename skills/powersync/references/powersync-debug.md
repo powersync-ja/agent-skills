@@ -25,7 +25,7 @@ Before asking for console logs or editing app code, verify these in order:
 
 Only inspect frontend connector code or SDK state after all five checks pass.
 
-Before requesting browser console logs, ask the user to confirm:
+Before requesting browser console logs, ask the operator to confirm:
 
 - the instance exists
 - the DB connection was configured

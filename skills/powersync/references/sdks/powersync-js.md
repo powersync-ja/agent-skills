@@ -699,7 +699,7 @@ These advanced topics are in separate files — load only when needed:
 
 ### Sync Client Implementations
 
-The Rust-based sync client is now the default — no config needed. The legacy JS client (`SyncClientImplementation.JAVASCRIPT`) is deprecated. Do not downgrade the SDK after using the Rust client — older JS client versions can't read the Rust format.
+The Rust-based sync client is now the only sync client. The legacy JavaScript client (`SyncClientImplementation.JAVASCRIPT` / `@LegacySyncImplementation` APIs) has been removed from `@powersync/common`, `@powersync/web`, and `@powersync/react-native` and is no longer an option. Do not downgrade the SDK to a version that still shipped the JS client — older versions can't read the Rust client's storage format.
 
 ### QueryStore
 

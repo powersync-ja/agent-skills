@@ -55,28 +55,17 @@ Each of the PowerSync Client SDKs have the SyncStatus class that can be used to 
 
 Key fields to check: `connected`, `downloading`, `uploading`, `lastSyncedAt`, `hasSynced`, `downloadError`, `uploadError`.
 
-## Enable `newClientImplementation: false` (Swift SDK only)
-
-What it identifies: Authentication failures, JWT errors, and endpoint misconfigurations that are silently swallowed by the default WebSocket client on Apple platforms.
-
-Why: The default WebSocket-based sync client on iOS/macOS restricts logging due to platform constraints. Switching to `newClientImplementation: false` uses the HTTP streaming client instead, which produces full request/response logs including headers, status codes, and error bodies. The actual 401 + `PSYNC_S2101` error that pointed to a JWT key mismatch was only visible after this switch.
-
-How: In the `connect` function for each of the PowerSync Client SDKs, disable the Rust Sync Client / disable `newClientImplementation`.
-
-Revert after debugging: The default WebSocket client is preferred for production.
-
 ## Enable the Request Logger (Swift SDK)
 
-What it identifies: The exact HTTP request being made to the PowerSync Service to inspect the URL, method, headers, authorization token, and response status code.
+What it identifies: The exact HTTP request being made to the PowerSync Service to inspect the URL, method, headers, authorization token, and response status code. Use this when authentication failures, JWT errors, or endpoint misconfigurations need to be diagnosed on iOS/macOS.
 
-Why: Even with `newClientImplementation: false`, request details aren't logged by default. Adding a `SyncRequestLoggerConfiguration` gives you a full audit trail of every sync stream request, which lets you verify the `endpoint` URL is correct and the JWT is being sent.
+Why: The Rust-based sync client doesn't log request details by default. Adding a `SyncRequestLoggerConfiguration` gives a full audit trail of every sync stream request — `endpoint` URL, JWT, response status, and error bodies (including `PSYNC_S2101` JWT key-id mismatches).
 
 How:
 ```swift
 try await db.connect(
     connector: connector,
     options: ConnectOptions(
-        newClientImplementation: false,
         clientConfiguration: SyncClientConfiguration(
             requestLogger: SyncRequestLoggerConfiguration(
                 requestLevel: .headers

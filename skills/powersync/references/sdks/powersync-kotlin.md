@@ -45,17 +45,7 @@ commonMain.dependencies {
 }
 ```
 
-For iOS with Cocoapods (recommended over SPM for iOS targets):
-
-```kotlin
-cocoapods {
-    pod("powersync-sqlite-core") { linkOnly = true }
-    framework {
-        isStatic = true
-        export("com.powersync:core")
-    }
-}
-```
+From v1.12.0+ the PowerSync SQLite core extension is statically linked into `com.powersync:core` for all Apple targets (iOS, macOS, tvOS, watchOS), matching Android and JVM. **No CocoaPod or Swift Package dependency on `powersync-sqlite-core` is needed.** Upgrading from an older version? Remove any `pod("powersync-sqlite-core")` entry and any `powersync-sqlite-core-swift` SPM dependency.
 
 ## Quick Setup
 
@@ -449,8 +439,8 @@ Full example: [`demos/supabase-todolist/androidBackgroundSync`](https://github.c
 
 ## ORM Integrations
 
-- **Room** (alpha) — typed queries with compile-time validation: `com.powersync:powersync-room:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdk-references/kotlin-multiplatform/libraries/room.md)
-- **SQLDelight** (beta) — `PowerSyncDriver` implements `SqlDriver`: `com.powersync:powersync-sqldelight:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdk-references/kotlin-multiplatform/libraries/sqldelight.md)
+- **Room** (beta) — typed queries with compile-time validation: `com.powersync:powersync-room:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdks/orms/kotlin/room.md)
+- **SQLDelight** (beta) — `PowerSyncDriver` implements `SqlDriver`: `com.powersync:powersync-sqldelight:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdks/orms/kotlin/sqldelight.md)
 
 ## Additional Resources
 

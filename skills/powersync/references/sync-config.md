@@ -45,7 +45,7 @@ config:
 There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration.md#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
 
 IMPORTANT
-Client applications using a lower version than the `Rust Client Default` should make sure to enable the Rust Sync Client to use Sync Streams. 
+Recent SDK versions ship only the Rust sync client, so no opt-in is needed. On older SDKs (pre `Rust Client Default`), explicitly enable the Rust sync client to use Sync Streams.
 
 ## sync-config.yaml File Format
 

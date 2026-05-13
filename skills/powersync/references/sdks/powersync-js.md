@@ -699,7 +699,7 @@ These advanced topics are in separate files — load only when needed:
 
 ### Sync Client Implementations
 
-The Rust-based sync client is now the default — no config needed. The legacy JS client (`SyncClientImplementation.JAVASCRIPT`) is deprecated. Do not downgrade the SDK after using the Rust client — older JS client versions can't read the Rust format.
+The Rust-based sync client is now the only sync client. The legacy JavaScript client (`SyncClientImplementation.JAVASCRIPT` / `@LegacySyncImplementation` APIs) has been removed from `@powersync/common`, `@powersync/web`, and `@powersync/react-native` and is no longer an option. Do not downgrade the SDK to a version that still shipped the JS client — older versions can't read the Rust client's storage format.
 
 ### QueryStore
 
@@ -714,14 +714,14 @@ CRUD upload ops (`UpdateType`): `PUT`, `PATCH`, `DELETE` — what you see in `up
 
 See [Debugging Overview](https://docs.powersync.com/debugging/tools-and-techniques.md) for the full list of tools and techniques.
 
-### Diagnostics App
+### Sync Diagnostics Client
 
 https://diagnostics-app.powersync.com
 
 Connect this to a running PowerSync instance to inspect tables, rows, sync buckets, and run arbitrary SQL against the local database. This is the fastest way to isolate whether a problem is in the PowerSync service or in the client:
 
-- If the diagnostics app shows the correct data → the service is syncing correctly → the issue is in your client code (query, schema, rendering)
-- If the diagnostics app shows incorrect or missing data → the issue is in the PowerSync service configuration (sync rules, backend connector, permissions)
+- If the Sync Diagnostics Client shows the correct data → the service is syncing correctly → the issue is in your client code (query, schema, rendering)
+- If the Sync Diagnostics Client shows incorrect or missing data → the issue is in the PowerSync service configuration (sync rules, backend connector, permissions)
 
 ### Enable SDK Logging (Development)
 

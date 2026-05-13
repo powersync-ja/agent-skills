@@ -714,14 +714,14 @@ CRUD upload ops (`UpdateType`): `PUT`, `PATCH`, `DELETE` — what you see in `up
 
 See [Debugging Overview](https://docs.powersync.com/debugging/tools-and-techniques.md) for the full list of tools and techniques.
 
-### Diagnostics App
+### Sync Diagnostics Client
 
 https://diagnostics-app.powersync.com
 
 Connect this to a running PowerSync instance to inspect tables, rows, sync buckets, and run arbitrary SQL against the local database. This is the fastest way to isolate whether a problem is in the PowerSync service or in the client:
 
-- If the diagnostics app shows the correct data → the service is syncing correctly → the issue is in your client code (query, schema, rendering)
-- If the diagnostics app shows incorrect or missing data → the issue is in the PowerSync service configuration (sync rules, backend connector, permissions)
+- If the Sync Diagnostics Client shows the correct data → the service is syncing correctly → the issue is in your client code (query, schema, rendering)
+- If the Sync Diagnostics Client shows incorrect or missing data → the issue is in the PowerSync service configuration (sync rules, backend connector, permissions)
 
 ### Enable SDK Logging (Development)
 

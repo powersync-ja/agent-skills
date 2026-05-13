@@ -82,7 +82,7 @@ npx expo install @powersync/attachments-storage-react-native expo-file-system
 npm install @powersync/attachments-storage-react-native @dr.pogodin/react-native-fs
 ```
 
-**Flutter/Dart, Kotlin, Swift** — built in to the respective SDK, no additional package needed.
+**Flutter/Dart, Kotlin, Swift, .NET** — built in to the respective SDK, no additional package needed.
 
 ## Schema Setup
 
@@ -116,6 +116,21 @@ final schema = Schema([
 ```
 
 **Kotlin / Swift** — use `createAttachmentsTable("attachments")` / `createAttachmentTable(name: "attachments")` respectively. See [SDK demos](https://docs.powersync.com/client-sdks/advanced/attachments.md#sdk--demo-reference) for full examples.
+
+**.NET:**
+```csharp
+using PowerSync.Common.Attachments;
+using PowerSync.Common.DB.Schema;
+
+var users = new Table("users", new Dictionary<string, ColumnType>
+{
+    ["name"] = ColumnType.Text,
+    ["photo_id"] = ColumnType.Text,  // FK referencing attachment ID
+});
+
+// new Table(typeof(Attachment)) uses the built-in [Table("attachments", LocalOnly = true)] attribute
+var schema = new Schema(users, new Table(typeof(Attachment)));
+```
 
 ## Storage Adapters
 

@@ -185,10 +185,44 @@ Use them to help drill into specific errors to help debug an issue.
 
 See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 
+## Diagnosing Sync Latency
+
+What it identifies: Which stage of the downstream pipeline is slow — source database to PowerSync Service (replication), or PowerSync Service to client (sync session).
+
+Why: There is no single trace covering the full path. The upstream path (client write → backend API → source database) sits outside PowerSync; instrument your backend API directly for that leg. The downstream pipeline must be isolated per stage.
+
+### Measuring End-to-End Downstream Latency
+
+Put a timestamp in the data. When a row is written or updated in the source database, set a column to the current server time (e.g. `updated_at = NOW()`). On the client, compare that timestamp to the time the row appears in the local database. The difference measures source-commit to device-visible latency across both downstream stages combined.
+
+### Stage 1: Source Database to PowerSync Service
+
+Check the **Replication Lag** chart in the **Metrics** view of the [PowerSync Dashboard](https://dashboard.powersync.com/). Replicator logs in the **Logs** view surface errors that cause delays at this stage.
+
+For source-specific guidance (Postgres, MongoDB, MySQL, SQL Server) see [Replication Lag](https://docs.powersync.com/maintenance-ops/replication-lag) and [Replication Lag Debugging (Postgres)](#replication-lag-debugging-postgres) below.
+
+### Stage 2: PowerSync Service to Client
+
+Service/API logs record two events per sync session:
+
+- **Sync stream started** — logged when the client connects. Fields: `user_id`, `client_id`, `app_metadata` (if set), `client_params`, `user_agent`, `rid` (request ID).
+- **Sync stream complete** — logged when the session ends. Fields: `user_id`, `client_id`, `app_metadata` (if set), `operations_synced`, `operation_counts` (`put`, `remove`, `move`, `clear`), `data_synced_bytes`, `data_sent_bytes`, `stream_ms` (session duration), `close_reason`, `rid`.
+
+Both events share the same `rid`, so a started/complete pair can be matched by filtering on it. To find a specific user's sessions, filter on `user_id`.
+
+[Custom metadata](https://docs.powersync.com/maintenance-ops/monitoring-and-alerting#custom-metadata-in-sync-logs) set at `connect()` time appears in both events, enabling filtering by app version, environment, or other context.
+
+### Common Causes
+
+- **Large initial sync** — sync rules with a large dataset will slow the first sync after connecting. Inspect bucket sizes with the [Sync Diagnostics Client](https://diagnostics-app.powersync.com/).
+- **Upload queue blocking downloads** — by default, uploads are processed before downloads. Buckets and streams at [priority 0](https://docs.powersync.com/sync/advanced/prioritized-sync) are not blocked by uploads but carry trade-offs around sync consistency.
+- **Replication lag on the source database** — high write volume, long-running transactions, bulk updates, or backfills can cause replication to fall behind. See Stage 1 above.
+- **Too many buckets per user** — incremental sync overhead scales roughly linearly with bucket count per user.
+
 # Replication Lag Debugging (Postgres)
 
 What it identifies:
-- Sync rules deployment stuck in “processing” for many hours or days (e.g. 24–48+ hours)
+- Sync rules deployment stuck in "processing" for many hours or days (e.g. 24–48+ hours)
 - Replication logs show: Replication slot powersync_* is not valid anymore. invalidation_reason: unknown
 - Slot version numbers keep increasing (e.g. _27_, _28_, _30_) as reprocessing restarts
 - Storage usage spikes during reprocessing (expected, but can trigger limit alerts)
@@ -200,7 +234,7 @@ Why:
 - If replication lag exceeds `max_slot_wal_keep_size`, Postgres invalidates the slot (`wal_status = 'lost'`)
 - PowerSync detects the invalid slot, creates a new one, and restarts reprocessing
 - With the same limit, the new slot is invalidated again, causing a loop
-- Supabase’s default 4 GB is often too small for large datasets (e.g. 9+ hour initial replication)
+- Supabase's default 4 GB is often too small for large datasets (e.g. 9+ hour initial replication)
 
 How:
 Confirm the cause: Check replication slot status and lag.

@@ -1,13 +1,13 @@
 ---
 name: powersync-service
-description: PowerSync Service configuration — self-hosting, Docker, source database setup, bucket storage, authentication, and PowerSync Cloud
+description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, authentication, jwt, replication, configuration
+  tags: service, self-hosted, docker, kubernetes, helm, eks, postgresql, mongodb, mysql, mssql, authentication, jwt, replication, configuration
 ---
 
 # PowerSync Service
 
-> **Load this when** configuring the PowerSync service itself — self-hosting, Docker, source database connections, bucket storage, or authentication setup.
+> **Load this when** configuring the PowerSync service itself — self-hosting, Docker, Kubernetes, source database connections, bucket storage, or authentication setup.
 
 ## Table of Contents
 - [Sync Config](#sync-config)
@@ -173,6 +173,50 @@ replication:
 ```
 
 Without this, you will see: `Replication error postgres does not support ssl`.
+
+### Kubernetes / Helm Charts
+
+For Kubernetes deployments (including AWS EKS), use the community-maintained Helm chart. The chart packages the API, replication, compaction, and migration workloads with production defaults.
+
+**Chart repository (source of truth for values, install instructions, and upgrade notes):** https://github.com/powersync-community/powersync-helm-chart
+
+Deploy using standard Helm install/upgrade; configure via `values.yaml` overrides. The PowerSync CLI is not used for Kubernetes deployments.
+
+#### Key Constraints
+
+| Component | Constraint |
+|-----------|------------|
+| Replication | Default 2 replicas = warm standby. **Only one pod replicates at a time.** Do not add replicas to scale throughput — scale vertically instead. If you drop to `replicas: 1`, set the deployment strategy to `Recreate`. |
+| API | Target ~100 connections per pod; hard cap is **200**. Exceeding 200 triggers `PSYNC_S2304` errors. API is stateless — scale out via HPA, not up. |
+| `NODE_OPTIONS` | Leave `--max-old-space-size-percentage=80` as-is. V8 tracks the container memory limit automatically; no recalculation is needed when you change `resources.limits.memory`. |
+
+#### Ingress Requirements
+
+- Use a **dedicated subdomain** (e.g. `powersync.example.com`). PowerSync cannot share a host with other services.
+- Requires HTTP/2 and WebSocket support. Without HTTP/2, sync stream multiplexing degrades.
+- `proxy-buffering: "off"` is **required** for streaming sync — without it responses buffer and stall.
+- Set `proxy-read-timeout` and `proxy-send-timeout` to `3600` to keep long-lived sync streams open.
+- Terminate TLS at the ingress with a real certificate. The placeholder in `values.yaml` will not work in production.
+
+#### Scaling Beyond a Single Instance
+
+A single replication instance handles roughly 50,000–100,000 concurrent clients depending on row size. Past that, run [multiple instances](https://docs.powersync.com/maintenance-ops/self-hosting/multiple-instances) by installing the chart again under a separate Helm release name with its own bucket storage database. The same source database can be shared across installs.
+
+**Important:** Clients must be **pinned to a specific instance**. Each instance maintains its own copy of bucket data — a client switching instances triggers a full resync. Pin clients via your backend (pass the endpoint explicitly) or compute the endpoint deterministically (e.g. `hash(user_id) % n`). Do not load-balance multiple instances behind one host.
+
+#### Observability
+
+Prometheus metrics are exposed on port `9464`. Enable the chart's `NetworkPolicy` (`networkPolicy.enabled: true`) in production to allow scrapes on that port. Key signals:
+
+| Metric | Note |
+|--------|------|
+| `powersync_concurrent_connections` | Primary HPA driver. Alert when a pod nears the 200 hard cap. |
+| `powersync_replication_lag_seconds` | Alert on sustained spikes. |
+| `powersync_replication_storage_size_bytes` | Capacity-plan from the trend. |
+| `powersync_operation_storage_size_bytes` | Capacity-plan from the trend. |
+| `powersync_data_sent_bytes_total` | Egress cost driver. |
+
+See [Metrics](https://docs.powersync.com/maintenance-ops/self-hosting/metrics) for the full metric catalog.
 
 ### Bucket Storage Database
 This is required by PowerSync and can be configured in two different ways. This is separate from the source DB.

@@ -22,7 +22,8 @@ Collect before writing any code:
 - Database connection details (host, port, database, username, password or connection URI)
 - Whether a PowerSync instance already exists
 - PowerSync instance URL (if instance exists)
-- Project ID and instance ID (if using CLI with existing Cloud instance)
+- Instance ID (if using CLI with an existing Cloud instance)
+- Project ID (if using CLI to create a new Cloud instance via `powersync link cloud --create`); also Org ID if the PAT covers multiple organizations
 - How the operator wants to handle auth (custom JWT, third-party provider like Auth0/Firebase, or dev tokens)
 - Whether they have an existing backend API or need to create one
 

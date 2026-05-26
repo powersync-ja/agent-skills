@@ -433,6 +433,8 @@ type: cloud
 instance_id: !env MY_INSTANCE_ID
 ```
 
+> `powersync link cloud` writes `instance_id`, `org_id`, and `project_id` by default to skip an extra API call per command. The minimal form above is equivalent — project and org are resolved from the instance at runtime.
+
 `cli.yaml` (self-hosted):
 ```yaml
 type: self-hosted

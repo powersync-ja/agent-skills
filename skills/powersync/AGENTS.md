@@ -121,7 +121,8 @@ Collect the minimum for the chosen path before changing app code. Only ask for s
 - Backend/database (do not assume Supabase — ask if unspecified)
 - Whether the PowerSync instance already exists
 - PowerSync instance URL, if it exists
-- Project ID + instance ID, if using CLI with an existing instance
+- Instance ID, if using CLI with an existing instance
+- Project ID, if using CLI to create a new Cloud instance (`powersync link cloud --create`); also `--org-id` if the PAT covers multiple organizations
 - Source DB connection string, if PowerSync still needs it
 
 ### Additional for Supabase

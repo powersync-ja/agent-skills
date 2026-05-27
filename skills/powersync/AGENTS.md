@@ -11,17 +11,17 @@ If a sentence is ambiguous, default to the operator interpretation.
 
 ## Agent compliance (read first — non-negotiable)
 
-**Follow this file’s playbook in order.** Do not skip ahead, assume defaults, or substitute your own architecture to “save time.”
+**Follow this file's playbook in order.** Do not skip ahead, assume defaults, or substitute your own architecture to "save time."
 
-| Do | Don’t |
-|----|--------|
+| Do | Don't |
+|----|-----|
 | **Ask the operator** before doing anything: (1) **Cloud or self-hosted**, (2) **which database** (Supabase, Postgres, MongoDB, MySQL, MSSQL), and (3) **only if not Supabase**, whether they have a backend API or need to build one. Use the **PowerSync CLI** by default for all operations. | Assume any answer, pick a default (e.g. Supabase, Postgres, self-hosted Docker), skip a question, or ask about a backend API when the operator already chose Supabase (Supabase *is* the backend). Do not hand-write config files or use the dashboard unless the operator explicitly says they cannot use the CLI. |
 | Use the **PowerSync CLI** to scaffold, link (if cloud hosted), and deploy (`references/powersync-cli.md`) | Hand-write `service.yaml` / `sync-config.yaml` from scratch or invent compose files **unless** the operator explicitly says they cannot use the CLI |
 | **Stop and ask** when a step needs credentials or interactive Cloud login you cannot perform | Silently build an alternate stack (e.g. manual Docker) without operator confirmation |
 | Complete **backend readiness** (deployed sync config, auth, publication) **before** app code | Start React/client integration while sync is still unconfigured |
 | Use **Sync Streams** (`config: edition: 3`) for new projects | Generate legacy Sync Rules YAML for new projects |
 
-Shortcut requested? Operator must say so explicitly (e.g. “no CLI, dashboard only”).
+Shortcut requested? Operator must say so explicitly (e.g. "no CLI, dashboard only").
 
 ## Continuous Use & Guardrails (existing projects)
 
@@ -35,7 +35,7 @@ The onboarding playbook below assumes a fresh project. On an **existing** projec
 
 ### Confirm the target instance before any mutating command
 
-Mutating commands: `powersync deploy`, `deploy service-config`, `deploy sync-config`, `destroy`, `stop`, `link cloud --create`, `pull instance`.
+Mutating commands: `powersync deploy`, `deploy service-config`, `deploy sync-config`, `destroy`, `stop`, `compact`, `link cloud --create`, `pull instance`.
 
 Before running any of them:
 
@@ -56,7 +56,7 @@ If your harness has a project memory or persistent notes file, record these once
 | Authorized instances + env | `<id-A>=dev (safe)`, `<id-B>=prod (ask first)` | Cite this before mutating commands |
 | Allowed scope | `sync-config only` vs `sync-config + service-config authorized` | Default sync-config only until operator broadens |
 
-Before acting on a saved entry naming a specific instance, file, or binary: verify it still matches reality. Stale → update the memory, do not act on it. Saved “prod = do not touch” + operator now asks for prod deploy → treat as scope expansion, confirm explicitly.
+Before acting on a saved entry naming a specific instance, file, or binary: verify it still matches reality. Stale → update the memory, do not act on it. Saved "prod = do not touch" + operator now asks for prod deploy → treat as scope expansion, confirm explicitly.
 
 No persistent memory in your harness? Ask the operator at session start and keep answers in the active conversation.
 
@@ -182,7 +182,7 @@ Backend is Supabase? Also load `references/supabase-auth.md`.
 
 ### Path 3: Self-Hosted + CLI (Recommended)
 
-Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted op. Reminder: **`powersync login` is Cloud-only** — see `references/powersync-cli.md` § “Authentication” for self-hosted auth.
+Load `references/powersync-cli.md`, `references/powersync-service.md`, and `references/sync-config.md`. Prefer the CLI for Docker (`powersync docker run`, `powersync docker reset`), schema generation, and any supported self-hosted op. Reminder: **`powersync login` is Cloud-only** — see `references/powersync-cli.md` § "Authentication" for self-hosted auth.
 
 ### Path 4: Self-Hosted + Manual Docker
 

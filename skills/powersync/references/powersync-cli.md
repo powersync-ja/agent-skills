@@ -50,6 +50,7 @@ These commands change Cloud state or local config. On an existing project, do no
 | `powersync deploy sync-config` | Replaces sync config on the linked instance | Confirm instance id + environment (dev/staging/prod) before running. Never deploy to a production instance the operator has not approved. |
 | `powersync destroy --confirm=yes` | Permanently destroys the linked Cloud instance | Always require explicit, in-conversation confirmation naming the instance. Treat as one-shot authorization. |
 | `powersync stop --confirm=yes` | Stops the linked Cloud instance (clients lose sync) | Same as `destroy` — confirm instance and that the operator accepts downtime. |
+| `powersync compact` | Triggers bucket compacting on the linked Cloud instance; polls until complete | Confirm Cloud instance id and environment before running. Default 30-min timeout; pass `--timeout=<minutes>` to override, or `--timeout=0` to wait indefinitely. |
 | `powersync link cloud --create` | Creates a new Cloud instance | Only during initial bootstrap. Do not run on a project that already has a linked instance unless the operator explicitly wants a second one. |
 | `powersync pull instance` | Overwrites local `service.yaml` and `sync-config.yaml` from the remote | Back up local files first. Do not run after local edits unless the operator accepts losing them. |
 
@@ -102,7 +103,7 @@ For Cloud, `--org-id` / `ORG_ID` is optional — omit it when your token has acc
 | Hosting | How the CLI authenticates |
 |---------|---------------------------|
 | **PowerSync Cloud** | `PS_ADMIN_TOKEN` (PAT) or token from **`powersync login`** |
-| **Self-hosted** | No `powersync login` for the running service. Use **`powersync init self-hosted`**, **`powersync docker configure` / `powersync docker start`**, and **`PS_ADMIN_TOKEN`** matching the self-hosted service’s admin API token (see self-hosted docs). |
+| **Self-hosted** | No `powersync login` for the running service. Use **`powersync init self-hosted`**, **`powersync docker configure` / `powersync docker start`**, and **`PS_ADMIN_TOKEN`** matching the self-hosted service's admin API token (see self-hosted docs). |
 
 Do not tell the operator to run `powersync login` when they are **only** using a local self-hosted stack unless they also need Cloud CLI commands.
 
@@ -141,7 +142,7 @@ Self-hosted instances use `PS_ADMIN_TOKEN` as the API key (not accepted via flag
 Define your instance and sync config in YAML files so you can version them in git, review changes before deploying, and run `powersync validate` before `powersync deploy`. The CLI uses a config directory (default `powersync/`) containing:
 
 | File | Purpose |
-|------|---------|
+|------|--------|
 | `service.yaml` | Instance configuration: name, region, replication DB connection, client auth |
 | `sync-config.yaml` | Sync Streams (or Sync Rules) configuration |
 | `cli.yaml` | Link file (written by `powersync link`); ties this directory to an instance |
@@ -514,7 +515,7 @@ Keep `service.yaml` and `sync-config.yaml` in the repo (with secrets via `!env` 
 Required CI environment variables:
 
 | Variable | Purpose |
-|----------|---------|
+|----------|--------|
 | `PS_ADMIN_TOKEN` | PowerSync personal access token |
 | `INSTANCE_ID` | Target instance (if not using a linked directory) |
 | `PROJECT_ID` | Target project (if not using a linked directory) |
@@ -531,7 +532,7 @@ powersync deploy sync-config
 
 ## Common Commands
 
-> **Mutating commands** (`deploy`, `destroy`, `stop`, `link --create`, `pull instance`) require an instance + scope check before running — see "Mutating Commands — Confirm Before Running" above.
+> **Mutating commands** (`deploy`, `destroy`, `stop`, `compact`, `link --create`, `pull instance`) require an instance + scope check before running — see "Mutating Commands — Confirm Before Running" above.
 
 | Command | Description |
 |---------|-------------|
@@ -557,6 +558,7 @@ powersync deploy sync-config
 | `powersync generate token --subject=user-123` | Generate a development JWT (see Development Tokens below) |
 | `powersync destroy --confirm=yes` | [Cloud only] Permanently destroy the linked instance |
 | `powersync stop --confirm=yes` | [Cloud only] Stop the linked instance (restart with deploy) |
+| `powersync compact` | [Cloud only] Trigger bucket compacting on demand; polls until complete (default 30-min timeout). Pass `--timeout=<minutes>` to override, or `--timeout=0` to wait indefinitely. |
 
 For full usage and flags, run `powersync --help` or `powersync <command> --help`.
 
@@ -586,7 +588,7 @@ npm install -g @powersync/cli@0.8.0
 Otherwise, upgrade to the latest `powersync` package and follow this mapping:
 
 | Previous CLI | New CLI |
-|-------------|---------|
+|-------------|--------|
 | `npx powersync init` (enter token, org, project) | `powersync login` (token only). Then `powersync init cloud` to scaffold, or `powersync pull instance --project-id=... --instance-id=...` to pull an existing instance. |
 | `powersync instance set --instanceId=<id>` | `powersync link cloud --instance-id=<id> --project-id=<id>` (writes `cli.yaml`). Use `--directory` for a specific folder. |
 | `powersync instance deploy` (interactive or long flag list) | Edit `powersync/service.yaml` and `powersync/sync-config.yaml`, then `powersync deploy`. Config is in files, not command args. |

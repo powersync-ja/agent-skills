@@ -203,12 +203,12 @@ For source-specific guidance (Postgres, MongoDB, MySQL, SQL Server) see [Replica
 
 ### Stage 2: PowerSync Service to Client
 
-Service/API logs record two events per sync session:
+Sync & API logs record two events per sync session:
 
 - **Sync stream started** — logged when the client connects. Fields: `user_id`, `client_id`, `app_metadata` (if set), `client_params`, `user_agent`, `rid` (request ID).
 - **Sync stream complete** — logged when the session ends. Fields: `user_id`, `client_id`, `app_metadata` (if set), `operations_synced`, `operation_counts` (`put`, `remove`, `move`, `clear`), `data_synced_bytes`, `data_sent_bytes`, `stream_ms` (session duration), `close_reason`, `rid`.
 
-Both events share the same `rid`, so a started/complete pair can be matched by filtering on it. To find a specific user's sessions, filter on `user_id`.
+Both events share the same `rid`; to match a started/complete pair for a single session, search `rid:<request-id>` in the dashboard **Logs** view. To find a specific user's sessions, search `user_id:<user-id>`.
 
 [Custom metadata](https://docs.powersync.com/maintenance-ops/monitoring-and-alerting#custom-metadata-in-sync-logs) set at `connect()` time appears in both events, enabling filtering by app version, environment, or other context.
 

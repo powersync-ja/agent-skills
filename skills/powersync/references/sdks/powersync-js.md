@@ -52,11 +52,11 @@ Framework-specific files (load alongside this file):
 ## Package Coverage
 
 | Need | Package |
-|------|---------|
+|------|--------|
 | Web browser | `@powersync/web` |
 | React Native | `@powersync/react-native` |
 | Node.js/CLI | `@powersync/node` |
-| Capacitor | `@powersync/capacitor` |
+| Capacitor (beta) | `@powersync/capacitor` |
 | React hooks | `@powersync/react` |
 | Vue composables | `@powersync/vue` |
 | Nuxt module | `@powersync/nuxt` |
@@ -689,7 +689,7 @@ subscription.unsubscribe();
 These advanced topics are in separate files — load only when needed:
 
 | Topic | File | Load when… |
-|-------|------|-----------|
+|-------|------|----------|
 | Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
 | Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |
 

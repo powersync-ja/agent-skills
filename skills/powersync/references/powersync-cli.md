@@ -577,6 +577,12 @@ powersync generate token --subject=user-test-1
 
 Dev tokens are for development only. In production, `fetchCredentials()` must return a real JWT from your auth provider.
 
+**Test-client (`@powersync/service-test-client`):** If using `node dist/bin.js generate-token` instead of the CLI, and your `service.yaml` uses `!env PS_*` tags, the test-client reads those values from your shell by default. To load them from a dotenv file instead, pass `--env`:
+
+```bash
+node dist/bin.js generate-token --config path/to/service.yaml --env path/to/.env --sub test-user
+```
+
 ## Migrating from the Previous CLI (0.8.0 → 0.9.0)
 
 Version 0.9.0 is not backwards compatible with 0.8.0. To stay on the old CLI:

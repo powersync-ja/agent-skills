@@ -191,4 +191,10 @@ PowerSync supports [Drift](https://pub.dev/packages/drift) as an ORM via [drift_
 
 ## Flutter Web
 
-Supported in `powersync` v1.9.0+. See [Flutter Web Support](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for configuration requirements, OPFS setup for improved performance, and known limitations.
+Supported in `powersync` v1.9.0+.
+
+- If using SDK 2.2.0+: OPFS is supported on all major browsers (Chrome, Firefox, and Safari) without additional server headers. The SDK auto-selects OPFS when available, falling back to IndexedDB on older browsers or Safari private browsing.
+- If using SDK <2.2.0: enabling OPFS on Safari requires serving the app with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` response headers.
+- If upgrading to 2.2.0 from an older version that used those CORS headers: remove the headers from your server. Existing OPFS databases in Safari continue to work; users who had IndexedDB databases keep them with no data loss.
+
+See [Flutter Web Support](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for full setup details and known limitations.

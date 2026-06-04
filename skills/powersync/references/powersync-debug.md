@@ -183,6 +183,14 @@ These error codes are prefixed with `PSYNC_`, indicating a specific PowerSync re
 
 Use them to help drill into specific errors to help debug an issue.
 
+Key codes to recognize at runtime:
+
+| Code | Condition | Action |
+|------|-----------|--------|
+| `PSYNC_S1005` | Storage version not supported | Caused by a service downgrade; upgrade the PowerSync Service to match the stored version |
+| `PSYNC_S1146` | Replication slot invalidated (`wal_status = 'lost'`) | Use the recovery steps in [Replication Lag Debugging (Postgres)](#replication-lag-debugging-postgres) |
+| `PSYNC_S1601` | MSSQL: CDC capture instance dropped during polling | Re-enable CDC for the affected table; replication resumes automatically once CDC is active |
+
 See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 
 ## Diagnosing Sync Latency
@@ -223,10 +231,11 @@ Both events share the same `rid`; to match a started/complete pair for a single 
 
 What it identifies:
 - Sync rules deployment stuck in "processing" for many hours or days (e.g. 24–48+ hours)
-- Replication logs show: Replication slot powersync_* is not valid anymore. invalidation_reason: unknown
+- PowerSync logs or dashboard surface error `PSYNC_S1146`: `Replication slot powersync_1_xxxx was invalidated (reason: wal_removed). Increase max_slot_wal_keep_size on the source database and delete the existing slot to recover.`
 - Slot version numbers keep increasing (e.g. _27_, _28_, _30_) as reprocessing restarts
 - Storage usage spikes during reprocessing (expected, but can trigger limit alerts)
 - Source DB is Supabase or another Postgres with default max_slot_wal_keep_size (often 4 GB)
+- On self-hosted instances: `wal_status = 'lost'` in the Diagnostics API, or a WAL budget warning when `safe_wal_size` drops below 50% of `max_slot_wal_keep_size`
 
 Why:
 - `max_slot_wal_keep_size` limits how much WAL Postgres keeps for replication slots
@@ -237,6 +246,47 @@ Why:
 - Supabase's default 4 GB is often too small for large datasets (e.g. 9+ hour initial replication)
 
 How:
-Confirm the cause: Check replication slot status and lag.
+Confirm the cause — check `wal_status` and the configured WAL cap on the source database:
 
-See [Production Readiness Best Practices](https://docs.powersync.com/maintenance-ops/production-readiness-guide.md#managing-&-monitoring-replication-lag) for the queries and guidance on how to resolve this.
+```sql
+SHOW max_slot_wal_keep_size;
+
+SELECT slot_name, wal_status, safe_wal_size
+FROM pg_replication_slots;
+```
+
+If `wal_status` is `'lost'` (error `PSYNC_S1146`), follow these steps to recover:
+
+1. Increase `max_slot_wal_keep_size` on the source Postgres database. See [Managing and Monitoring Replication Lag](https://docs.powersync.com/maintenance-ops/production-readiness-guide#managing-and-monitoring-replication-lag) for sizing guidance.
+2. Drop the invalidated slot (replace `powersync_1_xxxx` with the actual slot name from the error message):
+```sql
+SELECT pg_drop_replication_slot('powersync_1_xxxx');
+```
+3. Restart the PowerSync Service. It creates a new slot and restarts replication from scratch.
+
+If the slot was invalidated before the initial snapshot completed, PowerSync will not auto-retry — drop the slot manually before the service can recover.
+
+If the invalidation reason is `idle_timeout` (Postgres 18+ only), the slot was invalidated due to inactivity rather than WAL growth. In that case, increase `idle_replication_slot_timeout` on the source database instead of `max_slot_wal_keep_size`.
+
+For proactive monitoring: PowerSync emits a WAL budget warning in the dashboard, Diagnostics API, and service logs when `safe_wal_size` drops below 50% of `max_slot_wal_keep_size`. Increase `max_slot_wal_keep_size` before the budget is exhausted and the slot is invalidated.
+
+## Diagnostics API: WAL Health Fields (Self-Hosted)
+
+When a self-hosted operator reports replication or WAL issues, check these fields in the Diagnostics API response (`POST /api/admin/v1/diagnostics`). Retrieve with the CLI: `powersync status --output=json | jq '.data.active_sync_rules'`
+
+Each entry in `active_sync_rules.connections[]` includes:
+
+| Field | What to look for |
+|-------|------------------|
+| `wal_status` | `'reserved'` or `'extended'` is healthy; `'lost'` means the slot is invalidated — use the recovery steps above |
+| `safe_wal_size` | Remaining WAL budget in bytes; if below 50% of `max_slot_wal_keep_size`, increase the limit proactively |
+| `max_slot_wal_keep_size` | Configured WAL cap on the source database |
+| `initial_replication_done` | If `false` during a long deployment, the initial snapshot is still in progress |
+| `replication_lag_bytes` | Current lag; sustained high lag increases invalidation risk |
+
+Warnings and errors appear in `active_sync_rules.errors[]`:
+- WAL budget warning when `safe_wal_size` < 50% of `max_slot_wal_keep_size`
+- Replication lag warning when no replicated commit received in > 5 minutes (warning) or > 15 minutes (fatal)
+- `PSYNC_S1146` when `wal_status = 'lost'`
+
+If a new sync config is currently deploying, check `deploying_sync_rules.connections[]` and `deploying_sync_rules.errors[]` — the same fields apply. PowerSync continues serving clients from `active_sync_rules` while `deploying_sync_rules` completes its initial snapshot.

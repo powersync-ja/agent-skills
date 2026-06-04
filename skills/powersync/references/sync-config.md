@@ -218,6 +218,19 @@ streams:
       WHERE tm.user_id = auth.user_id()
 ```
 
+For composite-key joins (multiple join columns), use implicit join syntax with multiple `WHERE` equality conditions:
+
+```yaml
+streams:
+  regional_comments:
+    query: |
+      SELECT comments.*
+      FROM comments, issues
+      WHERE comments.issue_id = issues.id
+        AND comments.region = issues.region
+        AND issues.user_id = auth.user_id()
+```
+
 ### Subquery
 
 Use `WHERE id IN (SELECT ...)` for indirect access through a related table:
@@ -397,7 +410,7 @@ There are examples available for each PowerSync Client SDK.
 ### Frameworks 
 
 | Framework                 | Client Usage Reference URL                                                                                         |
-|---------------------------|--------------------------------------------------------------------------------------------------------------------|
+|---------------------------|-----------------------------------------------------------------------------------------------------------------|
 | React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
 
 ## Advanced Topics

@@ -42,6 +42,7 @@ If a sentence is ambiguous, default to the operator interpretation. Full legend 
 | Custom backend (non-Supabase) | `references/onboarding-custom.md` | `references/custom-backend.md`, `references/sync-config.md`, SDK files |
 | New project setup | `references/powersync-cli.md` + `references/powersync-service.md` | `references/sync-config.md`, SDK files |
 | Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
+| Terraform / IaC provisioning | `references/terraform.md` | `references/sync-config.md`, `references/supabase-auth.md` (if Supabase source) |
 | Writing sync config | `references/sync-config.md` | — |
 | Debugging sync issues | `references/powersync-debug.md` | — |
 | Raw Tables (advanced) | `references/raw-tables.md` | — |

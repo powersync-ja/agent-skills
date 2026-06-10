@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks
+  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks
 ---
 
 # PowerSync Service
@@ -400,6 +400,65 @@ EXEC sys.sp_cdc_enable_table
 -- pollinginterval = 1: 1 second, good production compromise
 EXEC sys.sp_cdc_change_job @job_type = N'capture', @pollinginterval = 1;
 ```
+
+### Convex Quick Start
+
+> **Experimental.** The Convex replicator is experimental; APIs and behavior may change.
+
+PowerSync replicates from Convex via the Convex Streaming Export API (polling `document_deltas`), not CDC.
+
+**Before connecting PowerSync**, add the `powersync_checkpoints` table and `createCheckpoint` mutation to your Convex deployment. PowerSync calls this mutation to advance the replication cursor:
+
+```typescript
+// convex/schema.ts — add to your existing defineSchema
+import { defineSchema, defineTable } from 'convex/server';
+import { v } from 'convex/values';
+
+export default defineSchema({
+  // ... your other tables
+  powersync_checkpoints: defineTable({
+    last_updated: v.float64()
+  })
+});
+```
+
+```typescript
+// convex/powersync_checkpoints.ts
+import { mutation } from './_generated/server';
+
+export const createCheckpoint = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const existing = await ctx.db.query('powersync_checkpoints').first();
+    if (existing) {
+      await ctx.db.patch(existing._id, { last_updated: Date.now() });
+    } else {
+      await ctx.db.insert('powersync_checkpoints', { last_updated: Date.now() });
+    }
+  }
+});
+```
+
+**Deploy key:** In the Convex Dashboard → **Settings** → **General**, generate a deploy key with **Custom permissions** that include `deployment:data:view`. The **Deploy only** option does not provide sufficient access for replication.
+
+**Service YAML (self-hosted):**
+
+```yaml
+replication:
+  connections:
+    - type: convex
+      deployment_url: https://<your-deployment>.convex.cloud
+      deploy_key: <your-deploy-key>
+      # Optional:
+      # polling_interval_ms: 1000   # default; lower reduces replication lag
+      # request_timeout_ms: 60000   # default
+```
+
+**Client ID mapping:** Convex generates `_id` server-side; clients need a stable local ID before a write is uploaded. Use a client-generated UUID column named `id` in your Convex schema, and map relationship foreign keys via `<table>_uuid` columns rather than the Convex `_id`. In Sync Streams, select `uuid AS id`. See [Sync Streams: Convex with ID Mapping](https://docs.powersync.com/sync/streams/examples.md#convex-with-id-mapping) for a complete example.
+
+**Replication latency:** Convex replication is polling-based (default 1000ms interval). Lowering `polling_interval_ms` reduces lag but increases Convex API requests.
+
+**Dropping tables:** Deleting a Convex table in the dashboard does not emit per-document delete rows. If decommissioning a table, use **Clear Table** in the Convex dashboard (or delete documents via mutations) first, then delete the table after those removals have replicated.
 
 ## App Backend
 

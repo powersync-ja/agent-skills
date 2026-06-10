@@ -2,7 +2,7 @@
 name: sync-config
 description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
 metadata:
-  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex
 ---
 
 # Sync Config
@@ -425,6 +425,39 @@ Reference these when the standard patterns don't cover your use case:
 | [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
 | [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
+
+## Convex-Specific Patterns
+
+If the source database is Convex, apply these adjustments when writing Sync Streams:
+
+- **ID mapping:** Use `uuid AS id` instead of `_id AS id`. Convex generates `_id` server-side; clients need a stable local UUID before writes are uploaded. Use a client-generated UUID column as `id` and a `<table>_uuid` column for relationship joins rather than the Convex `_id` foreign key.
+- **Int64 casting:** Convex `Int64` values arrive as base-10 strings (`text` in SQLite). Cast to a SQLite integer when needed: `CAST(an_int64_column AS INTEGER) AS an_int64_column`.
+- **Convex Auth user ID extraction:** If using Convex Auth JWTs, the `sub` claim has the format `[32-character user ID]|[session ID]`. Extract just the user ID with `substring(auth.user_id(), 1, 32)`.
+- **Table names:** Do not qualify Convex table names with a schema prefix. If a qualifier is required, use the default `convex` schema.
+
+Example applying all of the above:
+
+```yaml
+config:
+  edition: 3
+
+streams:
+  user_data:
+    with:
+      user_lists: |
+        SELECT uuid FROM lists
+        WHERE owner_id = substring(auth.user_id(), 1, 32)
+    auto_subscribe: true
+    queries:
+      - SELECT uuid AS id, name, owner_id FROM lists WHERE uuid IN user_lists
+      - |
+        SELECT
+          uuid AS id,
+          list_uuid,
+          description,
+          CAST(an_int64_column AS INTEGER) AS an_int64_column
+        FROM todos WHERE list_uuid IN user_lists
+```
 
 # Sync Rules (Legacy, use Sync Streams for new applications)
 

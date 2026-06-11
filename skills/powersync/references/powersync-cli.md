@@ -92,7 +92,7 @@ The CLI needs to know which instance to operate against. It uses the first avail
 | 2 | Environment variables | `INSTANCE_ID`, `PROJECT_ID`, `API_URL`, etc. |
 | 3 (lowest) | Link file | `powersync/cli.yaml` written by `powersync link` |
 
-For Cloud, `--org-id` / `ORG_ID` is optional — omit it when your token has access to exactly one org. If the token covers multiple orgs, it must be provided.
+For Cloud, `--project-id` / `PROJECT_ID` and `--org-id` / `ORG_ID` are optional for most commands — the CLI resolves them automatically from the instance ID. Exception: `powersync link cloud --create` requires `--project-id` because no instance ID exists yet.
 
 ## Authentication
 
@@ -274,16 +274,13 @@ Write it to `.env` as `POWERSYNC_URL=https://<instance-id>.powersync.journeyapps
 ### Existing Cloud Instance
 
 **Information the agent must collect from the operator:**
-- Project ID
 - Instance ID
-- Org ID (only if token covers multiple orgs)
 
-The operator can find these on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`.
+The operator can find this on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`.
 
 ```bash
 powersync login
-powersync pull instance --project-id=<project-id> --instance-id=<instance-id>
-# Add --org-id=<org-id> only if token has multiple orgs
+powersync pull instance --instance-id=<instance-id>
 ```
 
 This creates `powersync/`, writes `cli.yaml`, and downloads `service.yaml` and `sync-config.yaml`.
@@ -319,7 +316,7 @@ Prefer targeted deploys when only one file changed.
 ```bash
 powersync login
 powersync fetch instances                          # see available instances and IDs
-powersync link cloud --instance-id=<id> --project-id=<id>
+powersync link cloud --instance-id=<id>
 powersync generate schema
 powersync generate token
 ```
@@ -393,9 +390,7 @@ Supported self-hosted commands: `status`, `generate schema`, `generate token`, `
 ```bash
 # Cloud
 powersync stop --confirm=yes \
-  --instance-id=<id> \
-  --project-id=<id>
-# Add --org-id=<id> only if token has multiple orgs
+  --instance-id=<id>
 
 # Self-hosted (API key from PS_ADMIN_TOKEN or cli.yaml)
 powersync status --api-url=https://powersync.example.com
@@ -406,8 +401,6 @@ powersync status --api-url=https://powersync.example.com
 ```bash
 # Cloud
 export INSTANCE_ID=<id>
-export PROJECT_ID=<id>
-# export ORG_ID=<id>   # only if token has multiple orgs
 powersync stop --confirm=yes
 
 # Self-hosted
@@ -416,7 +409,7 @@ export PS_ADMIN_TOKEN=your-api-key
 powersync status --output=json
 
 # Inline
-INSTANCE_ID=<id> PROJECT_ID=<id> powersync stop --confirm=yes
+INSTANCE_ID=<id> powersync stop --confirm=yes
 API_URL=https://... PS_ADMIN_TOKEN=... powersync status
 ```
 
@@ -518,15 +511,12 @@ Required CI environment variables:
 |----------|--------|
 | `PS_ADMIN_TOKEN` | PowerSync personal access token |
 | `INSTANCE_ID` | Target instance (if not using a linked directory) |
-| `PROJECT_ID` | Target project (if not using a linked directory) |
-| `ORG_ID` | Required only if token has multiple organizations |
 | `API_URL` | Self-hosted: PowerSync API base URL |
 
 ```bash
 # Example: deploy sync config on push
 PS_ADMIN_TOKEN=${{ secrets.PS_ADMIN_TOKEN }} \
 INSTANCE_ID=${{ vars.INSTANCE_ID }} \
-PROJECT_ID=${{ vars.PROJECT_ID }} \
 powersync deploy sync-config
 ```
 
@@ -541,10 +531,10 @@ powersync deploy sync-config
 | `powersync init cloud` | Scaffold Cloud config directory |
 | `powersync init self-hosted` | Scaffold self-hosted config directory |
 | `powersync configure ide` | Configure IDE for YAML schema validation and `!env` support |
-| `powersync link cloud --project-id=<id>` | Link to an existing Cloud instance |
+| `powersync link cloud --instance-id=<id>` | Link to an existing Cloud instance |
 | `powersync link cloud --create --project-id=<id>` | Create a new Cloud instance and link |
 | `powersync link self-hosted --api-url=<url>` | Link to a self-hosted instance by API URL |
-| `powersync pull instance --project-id=<id> --instance-id=<id>` | Download Cloud config into local files |
+| `powersync pull instance --instance-id=<id>` | Download Cloud config into local files |
 | `powersync deploy` | Deploy full config to linked Cloud instance |
 | `powersync deploy service-config` | Deploy only service config |
 | `powersync deploy sync-config` | Deploy only sync config (optional `--sync-config-file-path`) |
@@ -595,13 +585,13 @@ Otherwise, upgrade to the latest `powersync` package and follow this mapping:
 
 | Previous CLI | New CLI |
 |-------------|--------|
-| `npx powersync init` (enter token, org, project) | `powersync login` (token only). Then `powersync init cloud` to scaffold, or `powersync pull instance --project-id=... --instance-id=...` to pull an existing instance. |
-| `powersync instance set --instanceId=<id>` | `powersync link cloud --instance-id=<id> --project-id=<id>` (writes `cli.yaml`). Use `--directory` for a specific folder. |
+| `npx powersync init` (enter token, org, project) | `powersync login` (token only). Then `powersync init cloud` to scaffold, or `powersync pull instance --instance-id=...` to pull an existing instance. |
+| `powersync instance set --instanceId=<id>` | `powersync link cloud --instance-id=<id>` (writes `cli.yaml`). Use `--directory` for a specific folder. |
 | `powersync instance deploy` (interactive or long flag list) | Edit `powersync/service.yaml` and `powersync/sync-config.yaml`, then `powersync deploy`. Config is in files, not command args. |
 | `powersync instance config` | `powersync fetch config` (output as YAML or JSON with `--output`). |
 | Deploy only sync rules | `powersync deploy sync-config` |
 | `powersync instance schema` | `powersync generate schema --output=... --output-path=...` |
-| Org/project stored by init | Pass `--org-id` and `--project-id` when needed, or use `powersync link cloud` so they are stored in `powersync/cli.yaml`. For CI, use env vars: `PS_ADMIN_TOKEN`, `INSTANCE_ID`, `PROJECT_ID`, `ORG_ID`. |
+| Org/project stored by init | Not required separately. The CLI resolves the organization and project from the instance ID and caches their IDs in `cli.yaml`. For CI, set `PS_ADMIN_TOKEN` and `INSTANCE_ID`. |
 
 **Summary:** Authenticate with `powersync login` (or `PS_ADMIN_TOKEN` in CI). Use a config directory with `service.yaml` and `sync-config.yaml` as the source of truth. Link with `powersync link cloud` or `powersync pull instance`, then run `powersync deploy`. No more setting "current instance" separately from config — the directory and `cli.yaml` define the target.
 

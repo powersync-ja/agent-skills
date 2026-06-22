@@ -111,6 +111,7 @@ Additional footguns by area (do not load unless working there):
 - **React:** `references/sdks/powersync-js-react.md` (Strict Mode, Suspense, Next.js)
 - **Supabase:** `references/supabase-auth.md` (JWT signing keys, publication SQL, local Supabase)
 - **Custom backend:** `references/custom-backend.md` (upload endpoint rules, JWT pitfalls)
+- **SQLite extensions (vector search, custom tokenizers):** `references/sqlite-extensions.md`
 
 ## Required Inputs Before Coding
 

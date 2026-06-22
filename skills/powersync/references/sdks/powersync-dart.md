@@ -1,8 +1,8 @@
 ---
 name: powersync-dart
-description: PowerSync Dart SDK — schema, queries, sync lifecycle, backend connectors, Drift ORM, and Flutter Web support
+description: PowerSync Dart SDK — schema, queries, sync lifecycle, backend connectors, Drift ORM, Flutter Web support, and encryption
 metadata:
-  tags: dart, flutter, flutter-web, drift, orm, sqlite
+  tags: dart, flutter, flutter-web, drift, orm, sqlite, encryption, sqlcipher, sqlite3mc
 ---
 
 # PowerSync Dart SDK
@@ -198,3 +198,31 @@ Supported in `powersync` v1.9.0+.
 - If upgrading to 2.2.0 from an older version that used those CORS headers: remove the headers from your server. Existing OPFS databases in Safari continue to work; users who had IndexedDB databases keep them with no data loss.
 
 See [Flutter Web Support](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for full setup details and known limitations.
+
+## Encryption
+
+Two options are available for encrypting the local SQLite database at rest:
+
+| Option | Platforms |
+|--------|-----------|
+| [SQLite3MultipleCiphers](https://utelle.github.io/SQLite3MultipleCiphers) | Native + web |
+| [SQLCipher Community Edition](https://www.zetetic.net/sqlcipher/) | Native only |
+
+Configure the encryption library in `pubspec.yaml`:
+
+```yaml
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc  # or: sqlcipher
+```
+
+When choosing between them:
+
+- If the project targets Flutter Web, use `sqlite3mc`. SQLCipher is not available on web.
+- If the project targets both web and native, use `sqlite3mc` across all platforms for consistency.
+- If the project is native-only and needs better performance or compliance with [Apple export regulations](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations), prefer `sqlcipher`. It links OpenSSL or `Security.framework` on Apple targets instead of a built-in implementation.
+
+If upgrading from SDK v1.x: encryption setup changed in v2.0. Remove any dependency on `powersync_sqlcipher` and follow the migration steps in the docs.
+
+See [Data Encryption](https://docs.powersync.com/client-sdks/advanced/data-encryption) for full setup details.

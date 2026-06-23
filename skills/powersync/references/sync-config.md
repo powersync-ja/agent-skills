@@ -425,6 +425,7 @@ Reference these when the standard patterns don't cover your use case:
 | [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
 | [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
+| [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams; if `NOT NULL`, `substr()`, or `length()` behave unexpectedly, `unstable_sqlite_expression_engine` (Service ≥ 1.22.0, experimental — may be removed) routes evaluation through actual SQLite |
 
 # Sync Rules (Legacy, use Sync Streams for new applications)
 

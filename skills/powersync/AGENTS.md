@@ -107,6 +107,7 @@ These apply to all paths. Domain-specific pitfalls are in their reference files 
 
 Additional footguns by area (do not load unless working there):
 - **Config/CLI:** `references/powersync-cli.md`, `references/powersync-service.md`, `references/sync-config.md`
+- **Terraform/IaC:** `references/terraform.md` (credential handling, `sync_config_content` wrapper, do not mix CLI deploys with Terraform-managed instances)
 - **JS/TS SDK:** `references/sdks/powersync-js.md` (type-only imports, `connect()` semantics, `transaction.complete()`)
 - **React:** `references/sdks/powersync-js-react.md` (Strict Mode, Suspense, Next.js)
 - **Supabase:** `references/supabase-auth.md` (JWT signing keys, publication SQL, local Supabase)
@@ -187,6 +188,10 @@ Load `references/powersync-cli.md`, `references/powersync-service.md`, and `refe
 ### Path 4: Self-Hosted + Manual Docker
 
 Only when the CLI cannot be used. Load `references/powersync-service.md` and `references/sync-config.md`. Backend not Supabase? Also load `references/custom-backend.md`.
+
+### Path 5: Cloud + Terraform (IaC)
+
+If the operator is managing PowerSync Cloud alongside other infrastructure in Terraform, load `references/terraform.md`. The Terraform provider provisions projects and instances and deploys sync config — do not also run `powersync deploy` against the same instance. Auth uses `PS_PAT_TOKEN` (not `PS_ADMIN_TOKEN`). `sync_config_content` on the `powersync_instance` resource follows the same Sync Streams format as `sync-config.yaml` — load `references/sync-config.md` for the full reference.
 
 ## Architecture, Routing, SDK Tables & Key Rules
 

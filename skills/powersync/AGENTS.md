@@ -15,7 +15,7 @@ If a sentence is ambiguous, default to the operator interpretation.
 
 | Do | Don't |
 |----|-----|
-| **Ask the operator** before doing anything: (1) **Cloud or self-hosted**, (2) **which database** (Supabase, Postgres, MongoDB, MySQL, MSSQL), and (3) **only if not Supabase**, whether they have a backend API or need to build one. Use the **PowerSync CLI** by default for all operations. | Assume any answer, pick a default (e.g. Supabase, Postgres, self-hosted Docker), skip a question, or ask about a backend API when the operator already chose Supabase (Supabase *is* the backend). Do not hand-write config files or use the dashboard unless the operator explicitly says they cannot use the CLI. |
+| **Ask the operator** before doing anything: (1) **Cloud or self-hosted**, (2) **which database** (Supabase, Postgres, MongoDB, MySQL, MSSQL, or Convex), and (3) **only if not Supabase**, whether they have a backend API or need to build one. Use the **PowerSync CLI** by default for all operations. | Assume any answer, pick a default (e.g. Supabase, Postgres, self-hosted Docker), skip a question, or ask about a backend API when the operator already chose Supabase (Supabase *is* the backend). Do not hand-write config files or use the dashboard unless the operator explicitly says they cannot use the CLI. |
 | Use the **PowerSync CLI** to scaffold, link (if cloud hosted), and deploy (`references/powersync-cli.md`) | Hand-write `service.yaml` / `sync-config.yaml` from scratch or invent compose files **unless** the operator explicitly says they cannot use the CLI |
 | **Stop and ask** when a step needs credentials or interactive Cloud login you cannot perform | Silently build an alternate stack (e.g. manual Docker) without operator confirmation |
 | Complete **backend readiness** (deployed sync config, auth, publication) **before** app code | Start React/client integration while sync is still unconfigured |
@@ -72,8 +72,9 @@ No persistent memory in your harness? Ask the operator at session start and keep
 When the task is to add PowerSync to an app, follow this sequence:
 
 1. **Platform.** Cloud or self-hosted?
-2. **Backend.** If unspecified, ask (Supabase, custom Postgres, MongoDB, MySQL, MSSQL). Do not assume Supabase. Then load:
+2. **Backend.** If unspecified, ask (Supabase, custom Postgres, MongoDB, MySQL, MSSQL, or Convex). Do not assume Supabase. Then load:
    - Supabase → `references/onboarding-supabase.md`
+   - Convex → `references/powersync-service.md` § "Convex Quick Start"; writes go to Convex mutations from `uploadData()` — no custom REST API needed for the write path.
    - Anything else → `references/onboarding-custom.md` (must create a backend API with `uploadData`, token, and JWKS endpoints — do not skip this)
 3. **Supabase online or local?** If unclear from project/env, ask before choosing connection strings, auth config, or references.
 4. Collect required inputs before coding (see "Required Inputs Below").

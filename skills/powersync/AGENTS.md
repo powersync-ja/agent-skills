@@ -123,7 +123,7 @@ Collect the minimum for the chosen path before changing app code. Only ask for s
 - Backend/database (do not assume Supabase — ask if unspecified)
 - Whether the PowerSync instance already exists
 - PowerSync instance URL, if it exists
-- Project ID + instance ID, if using CLI with an existing instance
+- Instance ID, if using CLI with an existing instance (project and org IDs are resolved automatically)
 - Source DB connection string, if PowerSync still needs it
 
 ### Additional for Supabase

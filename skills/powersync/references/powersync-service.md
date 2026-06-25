@@ -42,6 +42,15 @@ Information on how to configure a PowerSync Service instance in a self-hosted en
 ### Docker Image
 The PowerSync Service Docker image is available on [Docker hub](https://hub.docker.com/r/journeyapps/powersync-service).
 
+Releases are published to two channels: Stable and Next. For self-hosted, select the channel by choosing the image tag. For PowerSync Cloud, configure the channel per instance in the Dashboard under Settings.
+
+| Channel | Example tags                         | Use for                   |
+| ------- | ------------------------------------ | ------------------------- |
+| Stable  | `1.23.0`, `1.23`, `1`                | Production                |
+| Next    | `1.23.0-next`, `1.23-next`, `1-next` | Testing upcoming releases |
+
+If generating a production Docker Compose or run command, use a pinned Stable tag (e.g. `1.23.0`) rather than `latest`. The `latest` tag tracks the current Stable release but can advance across major versions; treat it as development-only.
+
 Quick Start:
 ```
 docker run \
@@ -67,7 +76,7 @@ There are four configuration methods available:
 
 ```yaml
 powersync:
-  image: journeyapps/powersync-service:latest
+  image: journeyapps/powersync-service:latest  # For production, use a pinned tag (e.g. 1.23.0)
   ports:
     - "8080:8080"
   environment:

@@ -216,7 +216,7 @@ Sync & API logs record two events per sync session:
 - **Sync stream started** — logged when the client connects. Fields: `user_id`, `client_id`, `app_metadata` (if set), `client_params`, `user_agent`, `rid` (request ID).
 - **Sync stream complete** — logged when the session ends. Fields: `user_id`, `client_id`, `app_metadata` (if set), `operations_synced`, `operation_counts` (`put`, `remove`, `move`, `clear`), `data_synced_bytes`, `data_sent_bytes`, `stream_ms` (session duration), `close_reason`, `rid`.
 
-Both events share the same `rid`; to match a started/complete pair for a single session, search `rid:<request-id>` in the dashboard **Logs** view. To find a specific user's sessions, search `user_id:<user-id>`.
+Both events share the same `rid`; to match a started/complete pair for a single session, search `rid:<request-id>` in the dashboard **Logs** view. To find a specific user's sessions, search `user_id:<user-id>`. If a known error is producing noise, prefix the filter with `-` to exclude matching entries. For example, `-error:PSYNC_S2106` hides all entries with that error code.
 
 [Custom metadata](https://docs.powersync.com/maintenance-ops/monitoring-and-alerting#custom-metadata-in-sync-logs) set at `connect()` time appears in both events, enabling filtering by app version, environment, or other context.
 

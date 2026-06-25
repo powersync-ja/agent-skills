@@ -48,6 +48,7 @@ If a sentence is ambiguous, default to the operator interpretation. Full legend 
 | Raw Tables (advanced) | `references/raw-tables.md` | — |
 | Attachments | `references/attachments.md` | — |
 | Architecture overview | `references/powersync-overview.md` | — |
+| SQLite extensions (vector search, FTS5, custom tokenizers) | `references/sqlite-extensions.md` | — |
 
 ## SDK Reference Files
 
@@ -67,7 +68,7 @@ Always load `references/sdks/powersync-js.md` for any JS/TS project, then load t
 ### Other SDKs
 
 | Platform | File |
-|----------|------|
+|----------|
 | Dart / Flutter | `references/sdks/powersync-dart.md` |
 | .NET | `references/sdks/powersync-dotnet.md` |
 | Kotlin | `references/sdks/powersync-kotlin.md` |

@@ -259,6 +259,21 @@ streams:
         AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
 ```
 
+### ID Column Aliasing
+
+If a source table uses a different primary key name (e.g. MongoDB uses `_id`), alias it to `id` in the query. When the query also selects `*`, write `*` before the alias. The last column with a given name wins; if `*` comes after the alias and the source table has a column with the same name, `*` silently overwrites the alias.
+
+```yaml
+streams:
+  lists:
+    auto_subscribe: true
+    queries:
+      - SELECT *, _id as id FROM lists
+      - SELECT *, _id as id FROM todos WHERE archived = false
+```
+
+The same rule applies to composite IDs, e.g. `SELECT *, item_id || '.' || category_id as id FROM item_categories`.
+
 See [Writing Queries](https://docs.powersync.com/sync/streams/queries.md) for JOIN, subquery, and multiple queries per stream details.
 See [Examples & Demos](https://docs.powersync.com/sync/streams/examples.md) for complete working app patterns.
 

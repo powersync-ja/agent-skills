@@ -297,6 +297,18 @@ See [Source Database Setup](https://docs.powersync.com/configuration/source-db/s
 
 Both PowerSync Cloud and Self-hosted require the same base source database setup.
 
+### Minimum Supported Versions
+
+If the operator's source database version is below the minimum, advise them to upgrade before proceeding.
+
+| Database | Minimum Version |
+|----------|-----------------|
+| PostgreSQL | 11+ |
+| MongoDB | 6.0+ |
+| MySQL | 5.7+ |
+| SQL Server | 2019+ (15.0+), or Azure SQL Database |
+| Convex | — (alpha) |
+
 ### PostgreSQL Quick Start
 
 ```sql

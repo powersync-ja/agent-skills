@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks
+  tags: service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks
 ---
 
 # PowerSync Service
@@ -343,6 +343,35 @@ db.createUser({
 
 // Change streams are used automatically
 ```
+
+### Azure DocumentDB (Cosmos DB for MongoDB vCore)
+
+> **Experimental.** Azure DocumentDB support is experimental; APIs and behavior may change, and it is not yet covered by SLAs. See [Feature Status](https://docs.powersync.com/resources/feature-status) for production-readiness details.
+
+If the operator is connecting to Azure DocumentDB (formerly Azure Cosmos DB for MongoDB vCore), use `type: mongodb` and point it at the DocumentDB connection string. PowerSync detects DocumentDB automatically. Do not use a separate connector type.
+
+Setup, permissions, and connection steps are the same as MongoDB above. The one difference: `post_images` must be `off` (the default). The `auto_configure` and `read_only` Post Images modes fail on DocumentDB.
+
+#### Supported Variants
+
+Only the vCore engine is supported. If a source does not report as DocumentDB, PowerSync treats it as standard MongoDB.
+
+| Variant | Supported |
+| --- | --- |
+| Azure DocumentDB / Azure Cosmos DB for MongoDB vCore | Yes |
+| Azure Cosmos DB for MongoDB (RU-based) | No |
+| Azure Cosmos DB for NoSQL | No |
+| Self-hosted open-source DocumentDB engine (`documentdb-local`) | No |
+
+If the operator is on the RU-based model, direct them to the [Microsoft migration guide](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/how-to-migrate-documentdb) before connecting.
+
+#### Limitations to Flag Before Connecting
+
+- **Post-images are not supported.** Use `post_images: off` (the default). Updates and deletes still replicate correctly because DocumentDB always includes the full document on change events. Only the `auto_configure` and `read_only` consistency modes are unavailable.
+- **Collection drop and rename are not replicated.** If a replicated collection is dropped or renamed, already-synced rows remain under the old name. Recovery requires redeploying Sync Streams to trigger a resync.
+- **Documents at or above 15 MiB are dropped** with a logged error. This limit is more reachable on DocumentDB because every change event carries the full document. Large documents also replicate more slowly.
+- **Large initial snapshots require storage v3 or later.** On storage v1 or v2, a large or active source can exhaust its change-feed history window before the snapshot completes, causing replication to loop. Storage v3 avoids this by streaming during the snapshot.
+- **Do not drop `_powersync_checkpoints`** or delete its documents. Doing so disrupts replication.
 
 ### MySQL Quick Start
 

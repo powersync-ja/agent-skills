@@ -310,6 +310,7 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
+| InMemoryVFS               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-in-memory-vfs) |
 
 ```ts
 // Recommended — more reliable across browsers including Safari
@@ -325,6 +326,25 @@ const db = new PowerSyncDatabase({
 ```
 
 Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+
+If the user needs a non-persistent database, use `WASQLiteVFS.InMemoryVFS` (requires `@powersync/web` 1.39.0+). No data is persisted: local writes are lost if the tab closes before uploading. Use for development workflows where a fresh database on each load is desirable, or for online-only apps with frequent queries and small datasets. Do not use when offline support is required.
+
+On Chrome and Firefox Desktop, InMemoryVFS uses a shared worker by default, so all tabs share the same in-memory database and sync worker. To isolate tabs, pass `enableMultiTabs: false` and a unique `dbFilename` per tab:
+
+```js
+export const db = new PowerSyncDatabase({
+  schema: AppSchema,
+  database: new WASQLiteOpenFactory({
+    dbFilename: `memory-${crypto.randomUUID()}.db`,
+    vfs: WASQLiteVFS.InMemoryVFS
+  }),
+  flags: {
+    enableMultiTabs: false
+  }
+});
+```
+
+When InMemoryVFS is used in production, watch `SELECT * FROM ps_crud LIMIT 1` to detect outstanding local mutations and surface that state to the user. Consider a `beforeunload` listener that calls `preventDefault()` to prompt before closing a tab with unsynced writes.
 
 ## Query Patterns
 

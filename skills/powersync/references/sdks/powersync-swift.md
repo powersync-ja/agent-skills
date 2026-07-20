@@ -1,8 +1,8 @@
 ---
 name: powersync-swift
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, backend connectors, GRDB ORM support, and Swift Data community integration
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status
 ---
 
 # PowerSync Swift SDK
@@ -137,9 +137,49 @@ final class SystemManager {
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/swift.md#2-instantiate-the-powersync-database) for more information.
 
+### App Groups and Extensions (Experimental, v1.15+)
+
+If the database needs to be shared across multiple apps in an app group, pass an absolute path (starting with `/`) as `dbFilename`. The path should point to a file in the app group's [shared container](https://developer.apple.com/documentation/xcode/configuring-app-groups#Access-an-app-groups-shared-container). By default (relative path), the database is stored in `applicationSupportDirectory` with no cross-process sharing.
+
+```swift
+let db = PowerSyncDatabase(
+    schema: AppSchema,
+    dbFilename: "/path/to/app-group-container/powersync.sqlite"
+)
+```
+
+Multi-process access introduces constraints:
+
+- Call `connect()` in only one process. Two processes connecting to the PowerSync service for the same database wastes resources and can cause concurrency issues.
+- SQLite uses file locks for concurrent writes, but the SDK adds no coordination above that. Use [`PRAGMA busy_timeout`](https://sqlite.org/pragma.html#pragma_busy_timeout) to make SQLite wait longer; be ready to handle `SQLITE_BUSY` errors when multiple processes write at the same time.
+- Avoid running different Swift SDK versions against the same database file from separate processes. PowerSync-internal migrations can get reverted. App extensions released in the same bundle are not a concern, but separate app group members are.
+
 ## Sync Streams
 
 See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
+
+## Monitoring Sync Status in SwiftUI
+
+When displaying sync state in a SwiftUI view, use `powersync.currentStatus.observable` to get an `ObservableSyncStatus` instance. Store it as a `let` property on the view and read status values directly in `body`. Available from Swift SDK v1.15.
+
+```swift
+struct ConnectionIndicator: View {
+    private let status: ObservableSyncStatus
+
+    init(powersync: any PowerSyncDatabaseProtocol) {
+        self.status = powersync.currentStatus.observable
+    }
+
+    var body: some View {
+        let connected = status.connected
+        Image(systemName: connected ? "wifi" : "wifi.slash")
+    }
+}
+```
+
+For sync download progress, `status.downloadProgress` is available on the same `ObservableSyncStatus` instance.
+
+Do not use `@State` + `.task` to subscribe to `currentStatus.asFlow()` when targeting v1.15+. The `ObservableSyncStatus` approach does not require a separate async task or manual state management.
 
 ## Query Patterns
 

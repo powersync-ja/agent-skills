@@ -23,20 +23,11 @@ The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`
 
 Requires React Native 0.72 or later.
 
-### Standard React Native (Recommended)
+### Standard React Native
 
 ```bash
 npm install @powersync/react-native@latest
-```
-
-Then install a native SQLite adapter (required peer dependency):
-
-```bash
-# OP-SQLite — recommended: built-in encryption, React Native New Architecture support
-npm install @powersync/op-sqlite@latest
-
-# OR: React Native Quick SQLite — original adapter
-npm install @journeyapps/react-native-quick-sqlite@latest
+npm install @op-engineering/op-sqlite  # Required peer dependency
 ```
 
 After installing native dependencies, rebuild your native app:
@@ -77,7 +68,7 @@ export const db = new PowerSyncDatabase({
 });
 ```
 
-By default, `@powersync/react-native` uses OP-SQLite if installed, falling back to React Native Quick SQLite. No additional configuration is needed to select the adapter — the SDK detects which peer is present.
+The `database: { dbFilename: '...' }` config uses OP-SQLite via the `@op-engineering/op-sqlite` peer dependency. No additional configuration is needed.
 
 ## Expo
 
@@ -88,7 +79,7 @@ Requires Expo 49 or later. If the Expo version is 49, configure `expo-build-prop
 PowerSync works with Expo managed workflow. Native adapters (recommended) require a development build because they use native modules. If you need to run in Expo Go, use the JavaScript-only adapter instead. See the Expo Go section below.
 
 ```bash
-npx expo install @powersync/react-native @powersync/op-sqlite
+npx expo install @powersync/react-native @op-engineering/op-sqlite
 npx expo prebuild
 npx expo run:ios   # or run:android
 ```
@@ -125,7 +116,7 @@ import { PowerSyncDatabase, Schema } from '@powersync/react-native';
 
 export const powerSync = new PowerSyncDatabase({
   schema: new Schema({}), // define your schema here
-  database: new SQLJSOpenFactory({
+  factory: new SQLJSOpenFactory({
     dbFilename: 'app.db',
   }),
 });
@@ -137,27 +128,25 @@ Use `Constants.executionEnvironment` to select the adapter at runtime, allowing 
 
 ```tsx
 import { SQLJSOpenFactory } from '@powersync/adapter-sql-js';
-import { PowerSyncDatabase } from '@powersync/react-native';
+import { DatabaseSource, PowerSyncDatabase } from '@powersync/react-native';
 import Constants from 'expo-constants';
 
 const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
-export const powerSync = new PowerSyncDatabase({
-  schema: AppSchema,
-  database: isExpoGo
-    ? new SQLJSOpenFactory({ dbFilename: 'app.db' })
-    : { dbFilename: 'sqlite.db' }, // uses native adapter
-});
+const source: DatabaseSource = isExpoGo
+  ? { factory: new SQLJSOpenFactory({ dbFilename: 'app.db' }) }
+  : { database: { dbFilename: 'sqlite.db' } };
+
+export const powerSync = new PowerSyncDatabase({ schema: AppSchema, ...source });
 ```
 
 ### Moving Beyond Expo Go
 
 When moving to development builds or production, switch to a native adapter:
 
-- OP-SQLite (`@powersync/op-sqlite`) — recommended; encryption support, New Architecture compatible
-- React Native Quick SQLite (`@journeyapps/react-native-quick-sqlite`) — original adapter
+- OP-SQLite (`@op-engineering/op-sqlite`) — recommended; encryption support, New Architecture compatible
 
-These require native compilation and cannot run inside Expo Go's prebuilt container.
+This requires native compilation and cannot run inside Expo Go's prebuilt container.
 
 ## Common Pitfalls
 

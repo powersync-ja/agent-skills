@@ -75,7 +75,7 @@ npm install @journeyapps/wa-sqlite@latest # Needed (peer-dependency)
 
 # React Native
 npm install @powersync/react-native@latest
-npm install @powersync/powersync-op-sqlite@latest  # Needed (peer-dependency)
+npm install @op-engineering/op-sqlite  # Needed (peer-dependency)
 
 # Node.js
 npm install @powersync/node@latest
@@ -293,11 +293,9 @@ const db = new PowerSyncDatabase({
   schema,
   database: {
     dbFilename: 'app.db',
-    debugMode: true        // Logs all SQL to Chrome DevTools Performance timeline
-  },
-  flags: {
-    useWebWorker: true,    // Default true — runs DB in a web worker
-    enableMultiTabs: true  // Default true — shares sync worker across tabs
+    debugMode: true,           // Logs all SQL to Chrome DevTools Performance timeline
+    useWebWorker: true,        // Default true — runs DB in a web worker
+    enableMultiTabs: true      // Default true — shares sync worker across tabs
   }
 });
 ```
@@ -313,14 +311,14 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 
 ```ts
 // Recommended — more reliable across browsers including Safari
-import { WASQLiteOpenFactory, WASQLiteVFS } from '@powersync/web'
+import { WASQLiteVFS } from '@powersync/web'
 
 const db = new PowerSyncDatabase({
   schema,
-  database: new WASQLiteOpenFactory({
+  database: {
     dbFilename: 'app.db',
     vfs: WASQLiteVFS.OPFSCoopSyncVFS, // default: IDBBatchAtomicVFS
-  }),
+  },
 })
 ```
 
@@ -512,20 +510,17 @@ const status = useStatus();
 //   lastSyncedAt: Date | null,
 //   hasSynced: boolean,          // true after first full sync, persists across restarts
 //   isSyncing: boolean,
+//   uploading: boolean,
+//   downloading: boolean,
+//   uploadError: Error | undefined,    // set on upload failure, cleared on next success
+//   downloadError: Error | undefined,  // set on download/connect failure, cleared on next success
 //   downloadProgress: DownloadProgress | null,
-//   dataFlowStatus: {
-//     uploading: boolean,
-//     downloading: boolean,
-//     uploadError: Error | undefined,    // set on upload failure, cleared on next success
-//     downloadError: Error | undefined,  // set on download/connect failure, cleared on next success
-//     downloadProgress: ...
-//   }
 // }
 ```
 
 #### uploadError and downloadError
 
-`status.dataFlowStatus.uploadError` and `status.dataFlowStatus.downloadError` are the primary way to surface sync failures to users or logging systems.
+`status.uploadError` and `status.downloadError` are the primary way to surface sync failures to users or logging systems.
 
 - `uploadError` — set when an exception occurs during the CRUD upload loop. Cleared automatically on the next successful upload.
 - `downloadError` — set when an exception occurs during the streaming sync (including connection failures). Cleared on the next successful data download or checkpoint completion.
@@ -533,11 +528,11 @@ const status = useStatus();
 ```tsx
 const status = useStatus();
 
-if (status.dataFlowStatus?.uploadError) {
-  return <Banner>Failed to save changes: {status.dataFlowStatus.uploadError.message}</Banner>;
+if (status.uploadError) {
+  return <Banner>Failed to save changes: {status.uploadError.message}</Banner>;
 }
-if (status.dataFlowStatus?.downloadError) {
-  return <Banner>Sync error: {status.dataFlowStatus.downloadError.message}</Banner>;
+if (status.downloadError) {
+  return <Banner>Sync error: {status.downloadError.message}</Banner>;
 }
 ```
 
@@ -546,16 +541,16 @@ Register a status listener imperatively (useful for logging, not just UI):
 ```ts
 db.registerListener({
   statusChanged: (status) => {
-    if (status.dataFlowStatus?.downloadError) {
+    if (status.downloadError) {
       logger.error('PowerSync download failed', {
-        error: status.dataFlowStatus.downloadError,
+        error: status.downloadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
       });
     }
-    if (status.dataFlowStatus?.uploadError) {
+    if (status.uploadError) {
       logger.error('PowerSync upload failed', {
-        error: status.dataFlowStatus.uploadError,
+        error: status.uploadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
       });
@@ -726,11 +721,9 @@ Connect this to a running PowerSync instance to inspect tables, rows, sync bucke
 ### Enable SDK Logging (Development)
 
 ```ts
-import { createBaseLogger, LogLevel } from '@powersync/react'; // or @powersync/common
+import { createConsoleLogger, LogLevels } from '@powersync/react'; // or @powersync/common
 
-const logger = createBaseLogger();
-logger.useDefaults(); // output to console
-logger.setLevel(LogLevel.DEBUG); // DEBUG | INFO | WARN | ERROR | TRACE | OFF
+const logger = createConsoleLogger({ minLevel: LogLevels.debug }); // trace | debug | info | warn | error
 ```
 
 ### Production Logging
@@ -742,11 +735,9 @@ The key pattern is: use `WARN` level in production (captures errors and warnings
 Example using Sentry (substitute your own provider):
 
 ```ts
-import { createBaseLogger, LogLevel } from '@powersync/react-native';
+import { createConsoleLogger, LogLevels } from '@powersync/react-native';
 
-const logger = createBaseLogger();
-logger.useDefaults();
-logger.setLevel(LogLevel.WARN); // WARN and above in production
+const logger = createConsoleLogger({ minLevel: LogLevels.warn }); // warn and above in production
 
 logger.setHandler((messages, context) => {
   if (!context?.level) return;
@@ -776,17 +767,17 @@ Also register a status listener to capture `uploadError` and `downloadError` —
 ```ts
 db.registerListener({
   statusChanged: (status) => {
-    if (status.dataFlowStatus?.downloadError) {
+    if (status.downloadError) {
       logger.error('PowerSync download error', {
-        error: status.dataFlowStatus.downloadError,
+        error: status.downloadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
         sdkVersion: db.sdkVersion,
       });
     }
-    if (status.dataFlowStatus?.uploadError) {
+    if (status.uploadError) {
       logger.error('PowerSync upload error', {
-        error: status.dataFlowStatus.uploadError,
+        error: status.uploadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
         sdkVersion: db.sdkVersion,

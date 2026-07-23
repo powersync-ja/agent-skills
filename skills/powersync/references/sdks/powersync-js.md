@@ -37,6 +37,7 @@ Core patterns and guidance shared across all PowerSync JavaScript/TypeScript tar
 | [Capacitor SDK API Reference](https://powersync-ja.github.io/powersync-js/capacitor-sdk) | Full API reference for `@powersync/capacitor`, consult only when the inline examples don't cover your case. |
 | [Node.js Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js, consult for details beyond the inline examples. |
 | [Node.js SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | Full API reference for `@powersync/node`, consult only when the inline examples don't cover your case. |
+| [Common Package API Reference](https://powersync-ja.github.io/powersync-js/common) | Canonical API reference for `@powersync/common`. Use this for `CommonPowerSyncDatabase` (the public database interface, re-exported from all SDK packages) and `SyncStatus` (interface). In SDK v2, `PowerSyncDatabase` methods and `SyncStatus` properties are documented here rather than on SDK-specific class pages. |
 | [Supported Platforms - JS SDK](https://docs.powersync.com/resources/supported-platform.md#javascript-web-sdk) | Supported platforms and features, consult for compatibility details. |
 
 Framework-specific files (load alongside this file):

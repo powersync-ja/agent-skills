@@ -2,7 +2,7 @@
 name: powersync-kotlin
 description: PowerSync Kotlin SDK — schema, queries, sync lifecycle, and backend connectors
 metadata:
-  tags: kotlin, android, ios, sqlite, offline-first
+  tags: kotlin, android, ios, sqlite, offline-first, http-client, custom-headers
 ---
 
 # PowerSync Kotlin SDK
@@ -12,6 +12,7 @@ metadata:
 ## Table of Contents
 - [Installation](#installation)
 - [Quick Setup](#quick-setup)
+- [Custom HTTP Client](#custom-http-client)
 - [Query Patterns](#query-patterns)
 - [Writes and Transactions](#writes-and-transactions)
 - [Compose Integration](#compose-integration)
@@ -221,6 +222,45 @@ db.close()                                    // cannot be reused after this
 ```
 
 `disconnect()` — temporary offline, token refresh, app backgrounding. Safe to reconnect as the same user. `disconnectAndClear()` — user sign-out or account switch, prevents stale data leaking to the next user. `close()` — app termination, instance cannot be reused after this call.
+
+## Custom HTTP Client
+
+If the user needs to add custom HTTP headers or change the HTTP engine, configure `SyncOptions.clientConfiguration`.
+
+To extend the default ktor client (for example, to add request headers), use `SyncClientConfiguration.ExtendedConfig`:
+
+```kotlin
+import com.powersync.sync.SyncClientConfiguration
+import com.powersync.sync.SyncOptions
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
+
+db.connect(
+    connector,
+    options = SyncOptions(
+        clientConfiguration = SyncClientConfiguration.ExtendedConfig {
+            defaultRequest {
+                header("X-Custom-Header", "value")
+            }
+        }
+    )
+)
+```
+
+To use a fully custom HTTP engine, use `SyncClientConfiguration.ExistingClient`. Call `configureSyncHttpClient()` on it to install the plugins required by the sync client:
+
+```kotlin
+import com.powersync.sync.configureSyncHttpClient
+
+db.connect(
+    connector,
+    options = SyncOptions(
+        clientConfiguration = SyncClientConfiguration.ExistingClient(HttpClient(YourEngine) {
+            configureSyncHttpClient()
+        })
+    )
+)
+```
 
 ## Query Patterns
 

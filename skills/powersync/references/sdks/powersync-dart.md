@@ -2,7 +2,7 @@
 name: powersync-dart
 description: PowerSync Dart SDK — schema, queries, sync lifecycle, backend connectors, Drift ORM, Flutter Web support, and encryption
 metadata:
-  tags: dart, flutter, flutter-web, drift, orm, sqlite, encryption, sqlcipher, sqlite3mc
+  tags: dart, flutter, flutter-web, drift, orm, sqlite, encryption, sqlcipher, sqlite3mc, http-client, custom-headers
 ---
 
 # PowerSync Dart SDK
@@ -198,6 +198,36 @@ Supported in `powersync` v1.9.0+.
 - If upgrading to 2.2.0 from an older version that used those CORS headers: remove the headers from your server. Existing OPFS databases in Safari continue to work; users who had IndexedDB databases keep them with no data loss.
 
 See [Flutter Web Support](https://docs.powersync.com/client-sdks/frameworks/flutter-web-support.md) for full setup details and known limitations.
+
+## Custom HTTP Client
+
+If the user needs to add custom HTTP headers (for example, when the PowerSync Service runs behind a reverse proxy) or use a different HTTP implementation, pass a custom client factory via `SyncOptions.httpClient` when calling `connect()`:
+
+```dart
+import 'package:http/http.dart';
+import 'package:powersync/powersync.dart';
+
+final class _HeaderClient extends BaseClient {
+  final Client inner;
+  _HeaderClient([Client? inner]) : inner = inner ?? Client();
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) {
+    request.headers['x-my-custom-header'] = 'value';
+    return inner.send(request);
+  }
+
+  @override
+  void close() => inner.close();
+}
+
+await db.connect(
+  connector: connector,
+  options: SyncOptions(httpClient: _HeaderClient.new),
+);
+```
+
+On the web, sync runs in a shared worker. The worker proxies HTTP requests through a random tab, which can slow sync slightly.
 
 ## Encryption
 

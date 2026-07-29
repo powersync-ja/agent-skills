@@ -2,7 +2,7 @@
 name: powersync-swift
 description: PowerSync Swift SDK: schema, queries, sync lifecycle, backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, http-client, custom-headers
 ---
 
 # PowerSync Swift SDK
@@ -136,6 +136,25 @@ final class SystemManager {
 ```
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/swift.md#2-instantiate-the-powersync-database) for more information.
+
+## Custom HTTP Client
+
+If the user needs to add custom HTTP headers or configure URL session behavior, pass a custom `URLSession` via `ConnectOptions.clientConfiguration`. This is useful when the PowerSync Service runs behind a reverse proxy that requires specific headers:
+
+```swift
+let config = URLSessionConfiguration.ephemeral
+config.httpAdditionalHeaders = ["x-my-custom-header": "value"]
+let session = URLSession(configuration: config)
+
+try await db.connect(
+    connector: connector,
+    options: ConnectOptions(
+        clientConfiguration: SyncClientConfiguration(
+            urlSession: session
+        )
+    )
+)
+```
 
 ## Sync Streams
 

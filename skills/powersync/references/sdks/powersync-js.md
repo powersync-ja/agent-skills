@@ -52,7 +52,7 @@ Framework-specific files (load alongside this file):
 ## Package Coverage
 
 | Need | Package |
-|------|---------|
+|------|--------|
 | Web browser | `@powersync/web` |
 | React Native | `@powersync/react-native` |
 | Node.js/CLI | `@powersync/node` |
@@ -71,7 +71,6 @@ Framework-specific files (load alongside this file):
 ```bash
 # Web
 npm install @powersync/web@latest
-npm install @journeyapps/wa-sqlite@latest # Needed (peer-dependency)
 
 # React Native
 npm install @powersync/react-native@latest
@@ -689,7 +688,7 @@ subscription.unsubscribe();
 These advanced topics are in separate files — load only when needed:
 
 | Topic | File | Load when… |
-|-------|------|-----------|
+|-------|------|----------|
 | Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
 | Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |
 

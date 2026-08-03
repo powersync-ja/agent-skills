@@ -109,7 +109,7 @@ Use plain PowerSync (`.watch()` / `usePowerSyncQuery`) when:
 
 ```bash
 # Web
-npm install @tanstack/powersync-db-collection@latest @powersync/web@latest @journeyapps/wa-sqlite@latest
+npm install @tanstack/powersync-db-collection@latest @powersync/web@latest
 
 # React Native
 npm install @tanstack/powersync-db-collection@latest @powersync/react-native@latest

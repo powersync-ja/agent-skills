@@ -442,6 +442,49 @@ Reference these when the standard patterns don't cover your use case:
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
 | [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams; if `NOT NULL`, `substr()`, or `length()` behave unexpectedly, `unstable_sqlite_expression_engine` (Service ≥ 1.22.0, experimental — may be removed) routes evaluation through actual SQLite |
 
+### Multiple Client Versions
+
+When a schema change breaks older app versions still in use (for example, renaming or restructuring a table), define separate stream versions so each client receives the schema it expects.
+
+If the affected stream is manually subscribed (no `auto_subscribe: true`), prefer versioning by stream name. Define a new stream alongside the old one. New app versions subscribe to the new stream by name; older versions continue subscribing to the old stream. Remove the old stream once those versions are no longer in use.
+
+```yaml
+streams:
+  # Old stream, kept for backward compatibility.
+  # Remove once older app versions are no longer in use.
+  user_assets:
+    query: SELECT * FROM assets WHERE user_id = auth.user_id()
+
+  # New app versions subscribe to this stream.
+  # The alias maps the source table to the new client-side name.
+  user_assets_v2:
+    query: SELECT * FROM assets AS assets_v2 WHERE user_id = auth.user_id()
+```
+
+```js
+// New app versions subscribe to the new stream
+const subscription = await db.syncStream('user_assets_v2').subscribe();
+```
+
+If the stream uses `auto_subscribe: true`, clients cannot choose a stream by name. Use connection parameters instead: each client passes its version on connect, and stream queries filter on it.
+
+```yaml
+streams:
+  user_assets:
+    auto_subscribe: true
+    query: SELECT * FROM assets
+           WHERE user_id = auth.user_id()
+             AND connection.parameter('schema_version') = '1'
+
+  user_assets_v2:
+    auto_subscribe: true
+    query: SELECT * FROM assets AS assets_v2
+           WHERE user_id = auth.user_id()
+             AND connection.parameter('schema_version') = '2'
+```
+
+See [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) for full details including the legacy Sync Rules approach.
+
 ## Convex-Specific Patterns
 
 If the source database is Convex, apply these adjustments when writing Sync Streams:

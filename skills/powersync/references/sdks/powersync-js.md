@@ -52,7 +52,7 @@ Framework-specific files (load alongside this file):
 ## Package Coverage
 
 | Need | Package |
-|------|---------|
+|------|--------|
 | Web browser | `@powersync/web` |
 | React Native | `@powersync/react-native` |
 | Node.js/CLI | `@powersync/node` |
@@ -297,12 +297,12 @@ const db = new PowerSyncDatabase({
   },
   flags: {
     useWebWorker: true,    // Default true — runs DB in a web worker
-    enableMultiTabs: true  // Default true — shares sync worker across tabs
+    enableMultiTabs: true  // Default true (false on Android, iOS, and Safari) — shares sync worker across tabs
   }
 });
 ```
 
-Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
+Multi-tab behavior: `enableMultiTabs` defaults to `true` on most desktop browsers and `false` on Android, iOS, and Safari. When enabled, a shared sync worker connects to the PowerSync Service and applies changes on behalf of all tabs; only the most recently opened tab runs `fetchCredentials` and `uploadData`. When disabled or unavailable, one tab connects and syncs at a time. Since v2.1.0, broadcast channels share sync status, watched query update notifications, and sync stream subscriptions across tabs, though less reliably than shared workers.
 
 #### VFS Options
 
@@ -689,7 +689,7 @@ subscription.unsubscribe();
 These advanced topics are in separate files — load only when needed:
 
 | Topic | File | Load when… |
-|-------|------|-----------|
+|-------|------|----------|
 | Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
 | Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |
 
@@ -703,7 +703,7 @@ The Rust-based sync client is now the only sync client. The legacy JavaScript cl
 
 ### QueryStore
 
-`useSuspenseQuery` uses a `QueryStore` (one per `PowerSyncDatabase`, stored in a `WeakMap`). Caches `WatchedQuery` instances keyed by `"${sql} -- ${JSON.stringify(params)} -- ${JSON.stringify(options)}"`. Evicted when listener count reaches 0. `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`.
+`useSuspenseQuery` uses a `QueryStore` (one per `PowerSyncDatabase`, stored in a `WeakMap`). Caches `WatchedQuery` instances keyed by `"${sql} -- ${JSON.stringify(params)} -- ${JSON.stringify(options)}"`  . Evicted when listener count reaches 0. `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`.
 
 ### Op Types (Internal Sync vs CRUD)
 

@@ -2,7 +2,7 @@
 name: powersync-sqlite-extensions
 description: Loading custom SQLite extensions (vector search, FTS5 tokenizers, etc.) with PowerSync across all SDKs and platforms
 metadata:
-  tags: sqlite, extensions, vector-search, sqlite-vec, fts5, loadExtension, PersistentConnectionFactory, MDSQLiteOptions, wa-sqlite, wasm, dart-ffi, cinterops, custom-extension
+  tags: sqlite, extensions, vector-search, sqlite-vec, fts5, loadExtension, PersistentConnectionFactory, MDSQLiteOptions, LoadPowerSyncExtension, SqliteExtension, wa-sqlite, wasm, dart-ffi, cinterops, custom-extension
 ---
 
 # SQLite Extensions with PowerSync
@@ -118,7 +118,9 @@ Platform-specific bundling:
 
 ## .NET
 
-Pass extension file paths via `MDSQLiteOptions.Extensions`. You are responsible for building and bundling the extension files so they are resolvable at the paths you provide.
+Set `MDSQLiteOptions.Extensions` to an array of `SqliteExtension` objects to load custom extensions. You are responsible for building and bundling extension files so they can be loaded.
+
+If you need to disable auto-loading of the PowerSync core extension, set `MDSQLiteOptions.LoadPowerSyncExtension` to `false`. When doing so, one of the extensions in `MDSQLiteOptions.Extensions` must contain a build of the PowerSync core extension. Running the .NET SDK without the core extension, or with an outdated version, is not supported.
 
 ## Rust / Tauri
 

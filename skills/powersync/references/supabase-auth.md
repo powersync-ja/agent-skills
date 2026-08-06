@@ -37,6 +37,19 @@ When you add a new table that PowerSync should replicate, add it to the publicat
 CREATE PUBLICATION powersync FOR ALL TABLES;
 ```
 
+### Data API Grants
+
+From May 30, 2026, new Supabase projects no longer auto-expose `public` schema tables to the Data API. Without explicit grants, `supabase-js` returns `42501: permission denied for table <name>` before RLS is evaluated. Grant each table the client writes to:
+
+```sql
+-- Required for supabase-js write operations on new Supabase projects (May 2026+)
+-- Omitting this causes: 42501: permission denied for table <name>
+grant select, insert, update, delete on public.lists to authenticated;
+grant select, insert, update, delete on public.todos to authenticated;
+```
+
+Grants control which Postgres roles can reach a table through the Data API. RLS then filters which rows that role can read or modify. Both are required — a grant without RLS exposes all rows; RLS without a grant blocks all access.
+
 ## JWT Signing Key Types
 
 Supabase projects use one of two signing key types. **Check which your project uses** at [Project Settings → JWT](https://supabase.com/dashboard/project/_/settings/jwt) in the Supabase Dashboard before configuring PowerSync.
@@ -204,6 +217,8 @@ export const connector: PowerSyncBackendConnector = {
 };
 ```
 
+> **Publishable keys:** New Supabase projects use publishable keys (prefixed `sb_publishable_…`) in place of the legacy anon key. Use it as the value for `SUPABASE_ANON_KEY` — the `createClient()` call is unchanged.
+
 ### Anonymous Sign-In (JS/TS)
 
 Use this when you want sync to work without an explicit sign-in step. Requires **anonymous sign-ins to be enabled** in Supabase (Dashboard → Authentication → Providers → Anonymous). If disabled, `signInAnonymously()` returns an error and sync fails silently.
@@ -280,7 +295,7 @@ export const connector: PowerSyncBackendConnector = {
 };
 ```
 
-**Important:** RLS policies on your Supabase tables must allow the authenticated user to write their own rows. Ensure `INSERT`/`UPDATE`/`DELETE` policies exist — `SELECT`-only policies silently block all writes.
+**Important:** Your tables need both Data API grants and RLS policies. Without `grant … on public.<table> to authenticated`, `supabase-js` returns `42501: permission denied for table` before RLS is evaluated — see [Data API Grants](#data-api-grants). Without RLS policies, any authenticated user can read and write all rows.
 
 ### Getting the PowerSync Instance URL
 
@@ -331,7 +346,7 @@ val connector = SupabaseConnector(
 PowerSync cannot verify the JWT signature. Check the error logs for `Known keys` and `tokenDetails` to diagnose the mismatch.
 
 | Cause | Symptom | Solution |
-|-------|---------|---------|
+|-------|---------|----------|
 | **Local Supabase with `supabase_jwt_secret`** | Known keys show `HS256` but token uses `ES256` with a specific `kid` | Local Supabase uses ES256 asymmetric keys. Switch to manual JWKS config — see "Local Supabase" section above. |
 | Incomplete Supabase key migration | Token `alg` doesn't match keystore | Complete the "Rotate to asymmetric JWTs" step in the [Supabase migration guide](https://supabase.com/blog/jwt-signing-keys#start-using-asymmetric-jwts-today). |
 | Stale tokens after migration | Old tokens fail, new logins work | Have users sign out and back in to receive new tokens. |

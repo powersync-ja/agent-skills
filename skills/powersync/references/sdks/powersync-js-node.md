@@ -192,3 +192,16 @@ npx @electron/rebuild -f -w better-sqlite3
 ```
 
 Run this after any Electron version upgrade.
+
+### Encryption Key Escaping
+
+If the encryption key passed to `pragma key` may contain single quotes, use `replaceAll` to escape them, not `replace`. The `replace` method only replaces the first occurrence; a key with multiple single quotes will be incorrectly escaped, causing a decryption failure or SQL syntax error.
+
+```ts
+initializeConnection: async (db) => {
+  if (encryptionKey.length) {
+    const escapedKey = encryptionKey.replaceAll("'", "''");
+    await db.execute(`pragma key = '${escapedKey}'`);
+  }
+}
+```

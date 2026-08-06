@@ -50,6 +50,7 @@ These commands change Cloud state or local config. On an existing project, do no
 | `powersync deploy sync-config` | Replaces sync config on the linked instance | Confirm instance id + environment (dev/staging/prod) before running. Never deploy to a production instance the operator has not approved. |
 | `powersync destroy --confirm=yes` | Permanently destroys the linked Cloud instance | Always require explicit, in-conversation confirmation naming the instance. Treat as one-shot authorization. |
 | `powersync stop --confirm=yes` | Stops the linked Cloud instance (clients lose sync) | Same as `destroy` — confirm instance and that the operator accepts downtime. |
+| `powersync compact` | Triggers bucket compacting on the linked Cloud instance; polls until complete | Confirm Cloud instance id and environment before running. Default 30-min timeout; pass `--timeout=<minutes>` to override, or `--timeout=0` to wait indefinitely. |
 | `powersync link cloud --create` | Creates a new Cloud instance | Only during initial bootstrap. Do not run on a project that already has a linked instance unless the operator explicitly wants a second one. |
 | `powersync pull instance` | Overwrites local `service.yaml` and `sync-config.yaml` from the remote | Back up local files first. Do not run after local edits unless the operator accepts losing them. |
 
@@ -91,7 +92,7 @@ The CLI needs to know which instance to operate against. It uses the first avail
 | 2 | Environment variables | `INSTANCE_ID`, `API_URL`, etc. |
 | 3 (lowest) | Link file | `powersync/cli.yaml` written by `powersync link` |
 
-For Cloud, `--instance-id` (or `INSTANCE_ID`, or a linked `cli.yaml`) is all that is needed to identify the instance — project and org are resolved automatically. `--project-id` and `--org-id` are deprecated as manual flags and only required for `powersync link cloud --create` (creating a brand-new instance, when no instance ID exists yet). For `--create`, `--org-id` is only needed if your token covers multiple organizations.
+For Cloud, `--project-id` / `PROJECT_ID` and `--org-id` / `ORG_ID` are optional for most commands — the CLI resolves them automatically from the instance ID. Exception: `powersync link cloud --create` requires `--project-id` because no instance ID exists yet, and if your token covers multiple orgs, `--org-id` must be provided.
 
 ## Authentication
 
@@ -102,7 +103,7 @@ For Cloud, `--instance-id` (or `INSTANCE_ID`, or a linked `cli.yaml`) is all tha
 | Hosting | How the CLI authenticates |
 |---------|---------------------------|
 | **PowerSync Cloud** | `PS_ADMIN_TOKEN` (PAT) or token from **`powersync login`** |
-| **Self-hosted** | No `powersync login` for the running service. Use **`powersync init self-hosted`**, **`powersync docker configure` / `powersync docker start`**, and **`PS_ADMIN_TOKEN`** matching the self-hosted service’s admin API token (see self-hosted docs). |
+| **Self-hosted** | No `powersync login` for the running service. Use **`powersync init self-hosted`**, **`powersync docker configure` / `powersync docker start`**, and **`PS_ADMIN_TOKEN`** matching the self-hosted service's admin API token (see self-hosted docs). |
 
 Do not tell the operator to run `powersync login` when they are **only** using a local self-hosted stack unless they also need Cloud CLI commands.
 
@@ -141,7 +142,7 @@ Self-hosted instances use `PS_ADMIN_TOKEN` as the API key (not accepted via flag
 Define your instance and sync config in YAML files so you can version them in git, review changes before deploying, and run `powersync validate` before `powersync deploy`. The CLI uses a config directory (default `powersync/`) containing:
 
 | File | Purpose |
-|------|---------|
+|------|--------|
 | `service.yaml` | Instance configuration: name, region, replication DB connection, client auth |
 | `sync-config.yaml` | Sync Streams (or Sync Rules) configuration |
 | `cli.yaml` | Link file (written by `powersync link`); ties this directory to an instance |
@@ -275,7 +276,7 @@ Write it to `.env` as `POWERSYNC_URL=https://<instance-id>.powersync.journeyapps
 **Information the agent must collect from the operator:**
 - Instance ID
 
-The operator can find this on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`. Project and org are resolved automatically from the instance.
+The operator can find this on the PowerSync Dashboard or by running `powersync fetch instances` after `powersync login`.
 
 ```bash
 powersync login
@@ -387,7 +388,7 @@ Supported self-hosted commands: `status`, `generate schema`, `generate token`, `
 ### Via Flags
 
 ```bash
-# Cloud — project and org are resolved from --instance-id automatically
+# Cloud
 powersync stop --confirm=yes --instance-id=<id>
 
 # Self-hosted (API key from PS_ADMIN_TOKEN or cli.yaml)
@@ -506,9 +507,10 @@ Keep `service.yaml` and `sync-config.yaml` in the repo (with secrets via `!env` 
 Required CI environment variables:
 
 | Variable | Purpose |
-|----------|---------|
+|----------|--------|
 | `PS_ADMIN_TOKEN` | PowerSync personal access token |
-| `INSTANCE_ID` | Target instance (if not using a linked directory). Project and org are resolved from this automatically. |
+| `INSTANCE_ID` | Target instance (if not using a linked directory) |
+| `ORG_ID` | Required only if token has multiple organizations |
 | `API_URL` | Self-hosted: PowerSync API base URL |
 
 ```bash
@@ -520,7 +522,7 @@ powersync deploy sync-config
 
 ## Common Commands
 
-> **Mutating commands** (`deploy`, `destroy`, `stop`, `link --create`, `pull instance`) require an instance + scope check before running — see "Mutating Commands — Confirm Before Running" above.
+> **Mutating commands** (`deploy`, `destroy`, `stop`, `compact`, `link --create`, `pull instance`) require an instance + scope check before running — see "Mutating Commands — Confirm Before Running" above.
 
 | Command | Description |
 |---------|-------------|
@@ -546,6 +548,7 @@ powersync deploy sync-config
 | `powersync generate token --subject=user-123` | Generate a development JWT (see Development Tokens below) |
 | `powersync destroy --confirm=yes` | [Cloud only] Permanently destroy the linked instance |
 | `powersync stop --confirm=yes` | [Cloud only] Stop the linked instance (restart with deploy) |
+| `powersync compact` | [Cloud only] Trigger bucket compacting on demand; polls until complete (default 30-min timeout). Pass `--timeout=<minutes>` to override, or `--timeout=0` to wait indefinitely. |
 
 For full usage and flags, run `powersync --help` or `powersync <command> --help`.
 
@@ -563,6 +566,12 @@ powersync generate token --subject=user-test-1
 ```
 
 Dev tokens are for development only. In production, `fetchCredentials()` must return a real JWT from your auth provider.
+
+**Test-client (`@powersync/service-test-client`):** If using `node dist/bin.js generate-token` instead of the CLI, and your `service.yaml` uses `!env PS_*` tags, the test-client reads those values from your shell by default. To load them from a dotenv file instead, pass `--env`:
+
+```bash
+node dist/bin.js generate-token --config path/to/service.yaml --env path/to/.env --sub test-user
+```
 
 ## Migrating from the Previous CLI (0.8.0 → 0.9.0)
 
@@ -582,7 +591,7 @@ Otherwise, upgrade to the latest `powersync` package and follow this mapping:
 | `powersync instance config` | `powersync fetch config` (output as YAML or JSON with `--output`). |
 | Deploy only sync rules | `powersync deploy sync-config` |
 | `powersync instance schema` | `powersync generate schema --output=... --output-path=...` |
-| Org/project stored by init | Org and project are now resolved automatically from `--instance-id`. Use `powersync link cloud --instance-id=<id>` to store it in `powersync/cli.yaml`. For CI, set `PS_ADMIN_TOKEN` and `INSTANCE_ID`. |
+| Org/project stored by init | Not required separately. The CLI resolves the organization and project from the instance ID and caches their IDs in `cli.yaml`. For CI, set `PS_ADMIN_TOKEN` and `INSTANCE_ID`. |
 
 **Summary:** Authenticate with `powersync login` (or `PS_ADMIN_TOKEN` in CI). Use a config directory with `service.yaml` and `sync-config.yaml` as the source of truth. Link with `powersync link cloud` or `powersync pull instance`, then run `powersync deploy`. No more setting "current instance" separately from config — the directory and `cli.yaml` define the target.
 

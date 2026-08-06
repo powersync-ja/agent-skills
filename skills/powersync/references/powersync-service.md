@@ -1,18 +1,19 @@
 ---
 name: powersync-service
-description: PowerSync Service configuration — self-hosting, Docker, source database setup, bucket storage, authentication, and PowerSync Cloud
+description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, authentication, jwt, replication, configuration
+  tags: service, self-hosted, docker, postgresql, mongodb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks
 ---
 
 # PowerSync Service
 
-> **Load this when** configuring the PowerSync service itself — self-hosting, Docker, source database connections, bucket storage, or authentication setup.
+> **Load this when** configuring the PowerSync service itself — self-hosting, Docker, Kubernetes, source database connections, bucket storage, or authentication setup.
 
 ## Table of Contents
 - [Sync Config](#sync-config)
 - [Service Configuration (Self-hosted)](#service-configuration-self-hosted)
 - [PowerSync Cloud Setup](#powersync-cloud-setup)
+- [Private Endpoints](#private-endpoints)
 - [Source Database Setup](#source-database-setup)
 - [App Backend](#app-backend)
 - [Authentication](#authentication)
@@ -41,6 +42,15 @@ Information on how to configure a PowerSync Service instance in a self-hosted en
 ### Docker Image
 The PowerSync Service Docker image is available on [Docker hub](https://hub.docker.com/r/journeyapps/powersync-service).
 
+Releases are published to two channels: Stable and Next. For self-hosted, select the channel by choosing the image tag. For PowerSync Cloud, configure the channel per instance in the Dashboard under Settings.
+
+| Channel | Example tags                         | Use for                   |
+| ------- | ------------------------------------ | ------------------------- |
+| Stable  | `1.23.0`, `1.23`, `1`                | Production                |
+| Next    | `1.23.0-next`, `1.23-next`, `1-next` | Testing upcoming releases |
+
+If generating a production Docker Compose or run command, use a pinned Stable tag (e.g. `1.23.0`) rather than `latest`. The `latest` tag tracks the current Stable release but can advance across major versions; treat it as development-only.
+
 Quick Start:
 ```
 docker run \
@@ -66,7 +76,7 @@ There are four configuration methods available:
 
 ```yaml
 powersync:
-  image: journeyapps/powersync-service:latest
+  image: journeyapps/powersync-service:latest  # For production, use a pinned tag (e.g. 1.23.0)
   ports:
     - "8080:8080"
   environment:
@@ -174,6 +184,50 @@ replication:
 
 Without this, you will see: `Replication error postgres does not support ssl`.
 
+### Kubernetes / Helm Charts
+
+For Kubernetes deployments (including AWS EKS), use the community-maintained Helm chart. The chart packages the API, replication, compaction, and migration workloads with production defaults.
+
+**Chart repository (source of truth for values, install instructions, and upgrade notes):** https://github.com/powersync-community/powersync-helm-chart
+
+Deploy using standard Helm install/upgrade; configure via `values.yaml` overrides. The PowerSync CLI is not used for Kubernetes deployments.
+
+#### Key Constraints
+
+| Component | Constraint |
+|-----------|------------|
+| Replication | Default 2 replicas = warm standby. **Only one pod replicates at a time.** Do not add replicas to scale throughput — scale vertically instead. If you drop to `replicas: 1`, set the deployment strategy to `Recreate`. |
+| API | Target ~100 connections per pod; hard cap is **200**. Exceeding 200 triggers `PSYNC_S2304` errors. API is stateless — scale out via HPA, not up. |
+| `NODE_OPTIONS` | Leave `--max-old-space-size-percentage=80` as-is. V8 tracks the container memory limit automatically; no recalculation is needed when you change `resources.limits.memory`. |
+
+#### Ingress Requirements
+
+- Use a **dedicated subdomain** (e.g. `powersync.example.com`). PowerSync cannot share a host with other services.
+- Requires HTTP/2 and WebSocket support. Without HTTP/2, sync stream multiplexing degrades.
+- `proxy-buffering: "off"` is **required** for streaming sync — without it responses buffer and stall.
+- Set `proxy-read-timeout` and `proxy-send-timeout` to `3600` to keep long-lived sync streams open.
+- Terminate TLS at the ingress with a real certificate. The placeholder in `values.yaml` will not work in production.
+
+#### Scaling Beyond a Single Instance
+
+A single replication instance handles roughly 50,000–100,000 concurrent clients depending on row size. Past that, run [multiple instances](https://docs.powersync.com/maintenance-ops/self-hosting/multiple-instances) by installing the chart again under a separate Helm release name with its own bucket storage database. The same source database can be shared across installs.
+
+**Important:** Clients must be **pinned to a specific instance**. Each instance maintains its own copy of bucket data — a client switching instances triggers a full resync. Pin clients via your backend (pass the endpoint explicitly) or compute the endpoint deterministically (e.g. `hash(user_id) % n`). Do not load-balance multiple instances behind one host.
+
+#### Observability
+
+Prometheus metrics are exposed on port `9464`. Enable the chart's `NetworkPolicy` (`networkPolicy.enabled: true`) in production to allow scrapes on that port. Key signals:
+
+| Metric | Note |
+|--------|------|
+| `powersync_concurrent_connections` | Primary HPA driver. Alert when a pod nears the 200 hard cap. |
+| `powersync_replication_lag_seconds` | Alert on sustained spikes. |
+| `powersync_replication_storage_size_bytes` | Capacity-plan from the trend. |
+| `powersync_operation_storage_size_bytes` | Capacity-plan from the trend. |
+| `powersync_data_sent_bytes_total` | Egress cost driver. |
+
+See [Usage Reporting](https://docs.powersync.com/maintenance-ops/self-hosting/usage-reporting#whatiscollected) for the full metric catalog.
+
 ### Bucket Storage Database
 This is required by PowerSync and can be configured in two different ways. This is separate from the source DB.
 
@@ -206,6 +260,35 @@ For full CLI setup workflow, see `references/powersync-cli.md` → Cloud Usage.
 
 See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersync-service/cloud-instances.md) for detailed dashboard step-by-step instructions.
 
+## Private Endpoints
+
+> Load this section only when the operator needs to connect PowerSync Cloud to a source database over AWS PrivateLink without public internet exposure.
+
+Private Endpoints use AWS PrivateLink for private networking between your source database and PowerSync Cloud. Available on Team/Enterprise plans. **Dashboard-only — no CLI support yet.** Only AWS is supported; only Postgres (via custom Endpoint Service) and MongoDB Atlas are supported.
+
+**Setup flow:**
+
+1. **Configure an Endpoint Service** in front of your source database and copy its **Service Name** (`com.amazonaws.vpce.<region>.vpce-svc-<id>`):
+   - *MongoDB Atlas*: Security → Database & Network Access → Network Access → Private Endpoint → Dedicated Cluster → Create endpoint service. The Atlas cluster does not need to be in the same region as the PowerSync instance; add the PowerSync AWS region under Accepted Endpoint Regions so Atlas accepts connections from it.
+   - *Custom Postgres*: Create a Target Group (IP type, TCP, port 5432) → Network Load Balancer → VPC Endpoint Service. Allow principal `arn:aws:iam::131569880293:root` to connect.
+2. **Create the Private Endpoint in the Dashboard**: Dashboard → Organization Settings → Private Endpoints → Create. Provide a name, the Service Name from step 1, and the PowerSync region matching your instance. The endpoint starts in `Pending Acceptance` state.
+3. **Copy the VPC Endpoint ID** (`vpce-<id>`) from the Dashboard and accept the connection on the Endpoint Service:
+   - *Atlas*: Network Access → Private Endpoint → Add Endpoint → Connect Existing Endpoint → enter the VPC Endpoint ID.
+   - *Custom Postgres*: AWS Console → VPC → Endpoint Services → accept the connection request matching the VPC Endpoint ID (only needed if you required acceptance when creating the service).
+4. **Wait for `Available`** status in the Dashboard:
+
+| Status | Meaning |
+|--------|-------|
+| `Pending acceptance` | Waiting for you to accept the connection on the Endpoint Service. |
+| `Pending` | Being provisioned. |
+| `Available` | Ready to use. |
+| `Rejected` | Rejected by the Endpoint Service. |
+| `Failed` | Creation failed. |
+
+5. **Connect using the Private Endpoint**: Instance → Database Connections → select the endpoint in the Private Endpoint dropdown (only `Available` endpoints in the same region are selectable). For MongoDB Atlas, use the connection string from the Atlas Connect dialog with Private Endpoint selected as the connection type.
+
+**AWS regions supported:** `us-east-1`, `eu-west-1`, `sa-east-1`, `ap-northeast-1`, `ap-southeast-2`. The Private Endpoint must be in the same region as the PowerSync instance; the Endpoint Service itself can be in any AWS region, as long as it accepts connections from the PowerSync instance's region.
+
 ## Source Database Setup
 
 Important: For all database user creation below, generate a cryptographically secure password (e.g., `openssl rand -base64 32` or a password manager). Never use placeholder values like `secure_password`, `password`, or `admin123` in production — these are unsafe and must not be suggested to the operator.
@@ -213,6 +296,18 @@ Important: For all database user creation below, generate a cryptographically se
 See [Source Database Setup](https://docs.powersync.com/configuration/source-db/setup.md) for more information about specific DB host requirements. 
 
 Both PowerSync Cloud and Self-hosted require the same base source database setup.
+
+### Minimum Supported Versions
+
+If the operator's source database version is below the minimum, advise them to upgrade before proceeding.
+
+| Database | Minimum Version |
+|----------|-----------------|
+| PostgreSQL | 11+ |
+| MongoDB | 6.0+ |
+| MySQL | 5.7+ |
+| SQL Server | 2019+ (15.0+), or Azure SQL Database |
+| Convex | — (alpha) |
 
 ### PostgreSQL Quick Start
 
@@ -326,6 +421,65 @@ EXEC sys.sp_cdc_enable_table
 -- pollinginterval = 1: 1 second, good production compromise
 EXEC sys.sp_cdc_change_job @job_type = N'capture', @pollinginterval = 1;
 ```
+
+### Convex Quick Start
+
+> **Experimental.** The Convex replicator is experimental; APIs and behavior may change.
+
+PowerSync replicates from Convex via the Convex Streaming Export API (polling `document_deltas`), not CDC.
+
+**Before connecting PowerSync**, add the `powersync_checkpoints` table and `createCheckpoint` mutation to your Convex deployment. PowerSync calls this mutation to advance the replication cursor:
+
+```typescript
+// convex/schema.ts — add to your existing defineSchema
+import { defineSchema, defineTable } from 'convex/server';
+import { v } from 'convex/values';
+
+export default defineSchema({
+  // ... your other tables
+  powersync_checkpoints: defineTable({
+    last_updated: v.float64()
+  })
+});
+```
+
+```typescript
+// convex/powersync_checkpoints.ts
+import { mutation } from './_generated/server';
+
+export const createCheckpoint = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const existing = await ctx.db.query('powersync_checkpoints').first();
+    if (existing) {
+      await ctx.db.patch(existing._id, { last_updated: Date.now() });
+    } else {
+      await ctx.db.insert('powersync_checkpoints', { last_updated: Date.now() });
+    }
+  }
+});
+```
+
+**Deploy key:** In the Convex Dashboard → **Settings** → **General**, generate a deploy key with **Custom permissions** that include `deployment:data:view`. The **Deploy only** option does not provide sufficient access for replication.
+
+**Service YAML (self-hosted):**
+
+```yaml
+replication:
+  connections:
+    - type: convex
+      deployment_url: https://<your-deployment>.convex.cloud
+      deploy_key: <your-deploy-key>
+      # Optional:
+      # polling_interval_ms: 1000   # default; lower reduces replication lag
+      # request_timeout_ms: 60000   # default
+```
+
+**Client ID mapping:** Convex generates `_id` server-side; clients need a stable local ID before a write is uploaded. Use a client-generated UUID column named `id` in your Convex schema, and map relationship foreign keys via `<table>_uuid` columns rather than the Convex `_id`. In Sync Streams, select `uuid AS id`. See [Sync Streams: Convex with ID Mapping](https://docs.powersync.com/sync/streams/examples.md#convex-with-id-mapping) for a complete example.
+
+**Replication latency:** Convex replication is polling-based (default 1000ms interval). Lowering `polling_interval_ms` reduces lag but increases Convex API requests.
+
+**Dropping tables:** Deleting a Convex table in the dashboard does not emit per-document delete rows. If decommissioning a table, use **Clear Table** in the Convex dashboard (or delete documents via mutations) first, then delete the table after those removals have replicated.
 
 ## App Backend
 

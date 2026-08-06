@@ -2,7 +2,7 @@
 name: powersync-attachments
 description: PowerSync built-in attachment queue — offline-first file uploads/downloads, storage adapters, AttachmentQueue lifecycle, saveFile, watchAttachments, and error handling
 metadata:
-  tags: attachments, files, uploads, downloads, offline-first, storage, AttachmentQueue, saveFile, watchAttachments, images, blobs, media
+  tags: attachments, files, uploads, downloads, offline-first, storage, AttachmentQueue, saveFile, watchAttachments, images, blobs, media, mediaType
 ---
 
 # PowerSync Attachments
@@ -59,7 +59,7 @@ sequenceDiagram
 ### Attachment States
 
 | State | Meaning |
-|-------|---------|
+|-------|--------|
 | `QUEUED_UPLOAD` | Saved locally, waiting to upload |
 | `QUEUED_DOWNLOAD` | ID received from sync, file not yet downloaded |
 | `SYNCED` | File exists locally and in remote storage |
@@ -213,7 +213,8 @@ const attachmentQueue = new AttachmentQueue({
         onResult: async (result) => {
           const attachments = result.rows?._array.map(row => ({
             id: row.photo_id,
-            fileExtension: 'jpg',
+            fileExtension: 'jpg',    // names the local file (<id>.jpg); not a MIME type
+            mediaType: 'image/jpeg', // optional; preserved on download; never inferred from fileExtension (JS SDK only)
           })) ?? [];
           await onUpdate(attachments);
         },
@@ -351,6 +352,7 @@ const attachmentQueue = new AttachmentQueue({ /* ... */ errorHandler });
 - **`updateHook` is mandatory for atomicity** — always link the attachment ID to your data model inside `updateHook`, never in a separate write after `saveFile()`.
 - **Signed URLs only** — the remote storage adapter must fetch signed URLs from your backend. Never embed storage credentials in the client app.
 - **React Native needs a separate local storage package** — install `@powersync/attachments-storage-react-native` and the appropriate file system peer (`expo-file-system` for Expo 54+, `@dr.pogodin/react-native-fs` for bare RN).
-- **`fileExtension` is required in `watchAttachments`** — each item returned by `watchAttachments` must include both `id` and `fileExtension`; the queue uses the extension to name local files.
+- **`fileExtension` is required in `watchAttachments`** — each item returned by `watchAttachments` must include both `id` and `fileExtension`; the queue uses the extension to name local files (`<id>.ext`). It is not a MIME type and is never used as a Content-Type.
+- **`mediaType` is optional but never inferred** (JS SDK only) — if the MIME type is known, include `mediaType` in each `watchAttachments` entry; it is used as the `Content-Type` on upload and is preserved on the downloaded record. The queue does not infer `mediaType` from `fileExtension`.
 - **Check `state === 'SYNCED'` before using `local_uri`** — the record exists before the file is downloaded; accessing `local_uri` when state is `QUEUED_DOWNLOAD` will point to a file that doesn't exist yet.
 - **Migration from `@powersync/attachments`** — set a custom `viewName` on `AttachmentTable` (e.g. `'attachment_queue'`) to avoid a SQLite conflict with the legacy `attachments` table. Also update: `syncInterval` → `syncIntervalMs`, `cacheLimit` → `archivedCacheLimit`, `name` → `viewName` on `AttachmentTable`.

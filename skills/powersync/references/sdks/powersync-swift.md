@@ -1,8 +1,8 @@
 ---
 name: powersync-swift
-description: PowerSync Swift SDK — schema, queries, sync lifecycle, backend connectors, and GRDB ORM support
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data
 ---
 
 # PowerSync Swift SDK
@@ -19,7 +19,7 @@ Best practices and guidance for building apps with the PowerSync Swift SDK.
 ## Installation
 
 | Method | Instructions |
-|--------|-------------|
+|--------|--------------|
 | `Package.swift` | [Installation - Package.swift](https://docs.powersync.com/client-sdks/reference/swift.md#package-swift) |
 | Xcode | [Installation - Xcode](https://docs.powersync.com/client-sdks/reference/swift.md#xcode) |
 
@@ -185,7 +185,7 @@ try await db.writeTransaction { tx in
 
 ## ORM — GRDB
 
-PowerSync Swift supports GRDB as an ORM. Requires PowerSync Swift v1.9.0+.
+PowerSync Swift officially supports GRDB as an ORM. Requires PowerSync Swift v1.9.0+.
 
 Setup requires a `DatabasePool` with PowerSync config — see [GRDB Setup](https://docs.powersync.com/client-sdks/orms/swift/grdb.md#setup).
 
@@ -210,3 +210,7 @@ try await pool.write { db in
 ```
 
 See [GRDB Architecture](https://docs.powersync.com/client-sdks/orms/swift/grdb.md#architecture) for how the PowerSync + GRDB integration works.
+
+## ORM: Swift Data (Community)
+
+If the project uses Swift Data models, a community-contributed integration is available: [powersync-community/swift-data](https://github.com/powersync-community/swift-data). This integration is community-owned and not officially supported by PowerSync. For setup and usage, see the repository README.

@@ -21,6 +21,8 @@ The React hooks API (`useQuery`, `useStatus`, `usePowerSync`, `useSuspenseQuery`
 
 ## 1. Install
 
+Requires React Native 0.72 or later.
+
 ### Standard React Native (Recommended)
 
 ```bash
@@ -78,6 +80,8 @@ export const db = new PowerSyncDatabase({
 By default, `@powersync/react-native` uses OP-SQLite if installed, falling back to React Native Quick SQLite. No additional configuration is needed to select the adapter — the SDK detects which peer is present.
 
 ## Expo
+
+Requires Expo 49 or later. If the Expo version is 49, configure `expo-build-properties` to set `minSdkVersion: 24` and add `'mjs'` to Metro `sourceExts`. If the version is 50 or 51, set only `minSdkVersion: 24` in `expo-build-properties`. Expo 52 and later configure both settings automatically.
 
 ### Managed Workflow
 

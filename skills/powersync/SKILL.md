@@ -42,11 +42,13 @@ If a sentence is ambiguous, default to the operator interpretation. Full legend 
 | Custom backend (non-Supabase) | `references/onboarding-custom.md` | `references/custom-backend.md`, `references/sync-config.md`, SDK files |
 | New project setup | `references/powersync-cli.md` + `references/powersync-service.md` | `references/sync-config.md`, SDK files |
 | Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
+| Terraform / IaC provisioning | `references/terraform.md` | `references/sync-config.md`, `references/supabase-auth.md` (if Supabase source) |
 | Writing sync config | `references/sync-config.md` | — |
 | Debugging sync issues | `references/powersync-debug.md` | — |
 | Raw Tables (advanced) | `references/raw-tables.md` | — |
 | Attachments | `references/attachments.md` | — |
 | Architecture overview | `references/powersync-overview.md` | — |
+| SQLite extensions (vector search, FTS5, custom tokenizers) | `references/sqlite-extensions.md` | — |
 
 ## SDK Reference Files
 
@@ -66,7 +68,7 @@ Always load `references/sdks/powersync-js.md` for any JS/TS project, then load t
 ### Other SDKs
 
 | Platform | File |
-|----------|------|
+|----------|
 | Dart / Flutter | `references/sdks/powersync-dart.md` |
 | .NET | `references/sdks/powersync-dotnet.md` |
 | Kotlin | `references/sdks/powersync-kotlin.md` |

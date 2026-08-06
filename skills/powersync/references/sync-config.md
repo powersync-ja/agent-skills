@@ -2,7 +2,7 @@
 name: sync-config
 description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
 metadata:
-  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex
 ---
 
 # Sync Config
@@ -218,6 +218,19 @@ streams:
       WHERE tm.user_id = auth.user_id()
 ```
 
+For composite-key joins (multiple join columns), use implicit join syntax with multiple `WHERE` equality conditions:
+
+```yaml
+streams:
+  regional_comments:
+    query: |
+      SELECT comments.*
+      FROM comments, issues
+      WHERE comments.issue_id = issues.id
+        AND comments.region = issues.region
+        AND issues.user_id = auth.user_id()
+```
+
 ### Subquery
 
 Use `WHERE id IN (SELECT ...)` for indirect access through a related table:
@@ -245,6 +258,21 @@ streams:
       WHERE list_id = subscription.parameter('list_id')
         AND list_id IN (SELECT id FROM lists WHERE owner_id = auth.user_id())
 ```
+
+### ID Column Aliasing
+
+If a source table uses a different primary key name (e.g. MongoDB uses `_id`), alias it to `id` in the query. When the query also selects `*`, write `*` before the alias. The last column with a given name wins; if `*` comes after the alias and the source table has a column with the same name, `*` silently overwrites the alias.
+
+```yaml
+streams:
+  lists:
+    auto_subscribe: true
+    queries:
+      - SELECT *, _id as id FROM lists
+      - SELECT *, _id as id FROM todos WHERE archived = false
+```
+
+The same rule applies to composite IDs, e.g. `SELECT *, item_id || '.' || category_id as id FROM item_categories`.
 
 See [Writing Queries](https://docs.powersync.com/sync/streams/queries.md) for JOIN, subquery, and multiple queries per stream details.
 See [Examples & Demos](https://docs.powersync.com/sync/streams/examples.md) for complete working app patterns.
@@ -397,7 +425,7 @@ There are examples available for each PowerSync Client SDK.
 ### Frameworks 
 
 | Framework                 | Client Usage Reference URL                                                                                         |
-|---------------------------|--------------------------------------------------------------------------------------------------------------------|
+|---------------------------|-----------------------------------------------------------------------------------------------------------------|
 | React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
 
 ## Advanced Topics
@@ -412,6 +440,40 @@ Reference these when the standard patterns don't cover your use case:
 | [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
 | [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
+| [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams; if `NOT NULL`, `substr()`, or `length()` behave unexpectedly, `unstable_sqlite_expression_engine` (Service ≥ 1.22.0, experimental — may be removed) routes evaluation through actual SQLite |
+
+## Convex-Specific Patterns
+
+If the source database is Convex, apply these adjustments when writing Sync Streams:
+
+- **ID mapping:** Use `uuid AS id` instead of `_id AS id`. Convex generates `_id` server-side; clients need a stable local UUID before writes are uploaded. Use a client-generated UUID column as `id` and a `<table>_uuid` column for relationship joins rather than the Convex `_id` foreign key.
+- **Int64 casting:** Convex `Int64` values arrive as base-10 strings (`text` in SQLite). Cast to a SQLite integer when needed: `CAST(an_int64_column AS INTEGER) AS an_int64_column`.
+- **Convex Auth user ID extraction:** If using Convex Auth JWTs, the `sub` claim has the format `[32-character user ID]|[session ID]`. Extract just the user ID with `substring(auth.user_id(), 1, 32)`.
+- **Table names:** Do not qualify Convex table names with a schema prefix. If a qualifier is required, use the default `convex` schema.
+
+Example applying all of the above:
+
+```yaml
+config:
+  edition: 3
+
+streams:
+  user_data:
+    with:
+      user_lists: |
+        SELECT uuid FROM lists
+        WHERE owner_id = substring(auth.user_id(), 1, 32)
+    auto_subscribe: true
+    queries:
+      - SELECT uuid AS id, name, owner_id FROM lists WHERE uuid IN user_lists
+      - |
+        SELECT
+          uuid AS id,
+          list_uuid,
+          description,
+          CAST(an_int64_column AS INTEGER) AS an_int64_column
+        FROM todos WHERE list_uuid IN user_lists
+```
 
 # Sync Rules (Legacy, use Sync Streams for new applications)
 

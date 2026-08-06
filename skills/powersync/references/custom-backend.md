@@ -45,6 +45,8 @@ PowerSync Service <-------------- CDC / logical replication ---|
 
 Key rule: **client writes never go through PowerSync**. The upload queue sends writes to YOUR backend API. PowerSync only handles the read/sync path.
 
+> **Convex exception:** If the source database is Convex, `uploadData()` calls Convex mutations directly — no intermediate REST API is required for the write path. If using Convex Auth tokens for PowerSync client authentication, configure `client_auth.audience: [convex]` in `service.yaml`. See `references/powersync-service.md` § "Convex Quick Start".
+
 ## 1. Custom JWT Auth
 
 PowerSync verifies JWTs from client apps. Without Supabase, you must generate and serve your own JWTs and JWKS.

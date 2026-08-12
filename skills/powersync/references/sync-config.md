@@ -2,7 +2,7 @@
 name: sync-config
 description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
 metadata:
-  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant
 ---
 
 # Sync Config
@@ -245,6 +245,33 @@ streams:
       )
 ```
 
+### Schema-per-Tenant Data (Postgres)
+
+For multi-tenant Postgres databases with one identical schema per tenant, use a wildcard schema name and the `schema()` function. Prefix `schema()` with the table name or alias from the `FROM` clause. Filter by a JWT claim to restrict each client to its own schema:
+
+```yaml
+config:
+  edition: 3
+
+streams:
+  work_orders:
+    query: SELECT * FROM "%".work_orders WHERE work_orders.schema() = auth.parameter('tenant_schema')
+```
+
+`"%"` matches every schema; `"tenant_%"` matches every schema whose name starts with `tenant_`. Postgres system schemas are never matched. Rows from all matched schemas sync into a single client-side table named after the table in the query. Requires Sync Streams and PowerSync Service v1.24.0 or later.
+
+**Table metadata functions**: In Sync Streams, these functions return metadata about the source row. Prefix each call with the table name or alias from the `FROM` clause. For example, with `FROM "todos_%" AS todos`, write `todos.table_suffix()`. The functions are available in `WHERE` clauses, `SELECT` columns, and subqueries. Requires Service v1.24.0+.
+
+| Function | Returns |
+|----------|---------|
+| `schema()` | Source schema name; use with wildcard schemas |
+| `table_name()` | Source table name |
+| `table_suffix()` | Suffix matched by a wildcard table name; empty on tables without a wildcard name |
+
+If filtering on the wildcard suffix in Sync Streams, use `table_alias.table_suffix()`, not `_table_suffix`. The `_table_suffix` column is available in Sync Rules only.
+
+See [Wildcard Schemas](https://docs.powersync.com/sync/advanced/schemas-and-connections.md#wildcard-schemas-postgres) for setup requirements.
+
 ### On-demand with subscription parameter
 
 Client subscribes to a specific resource at runtime. Always include an auth guard.
@@ -273,46 +300,6 @@ streams:
 ```
 
 The same rule applies to composite IDs, e.g. `SELECT *, item_id || '.' || category_id as id FROM item_categories`.
-
-### Wildcard Table Names (Partitioned Tables)
-
-If the source database uses Postgres partitioned tables with a common prefix, use `%` as a wildcard at the end of the table name to match all partitions. Use the `table_suffix()` function (prefixed with the table alias from the `FROM` clause) to access the matched suffix. Do not use `_table_suffix`; that column name applies to Sync Rules only.
-
-```yaml
-config:
-  edition: 3
-
-streams:
-  active_todos:
-    query: SELECT * FROM "todos_%" AS todos WHERE todos.table_suffix() != 'archived'
-```
-
-Requires PowerSync Service v1.24.0 or later. See [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) for details.
-
-### Schema-per-Tenant (Postgres)
-
-For a Postgres database with one identical schema per tenant, use `%` as a wildcard in the schema name to match all tenant schemas. Filter each client to its own tenant by comparing `alias.schema()` against a JWT claim. Requires PowerSync Service v1.24.0 or later and Sync Streams only (Postgres only).
-
-```yaml
-config:
-  edition: 3
-
-streams:
-  work_orders:
-    query: SELECT * FROM "%".work_orders WHERE work_orders.schema() = auth.parameter('tenant_schema')
-```
-
-The `auth.parameter('tenant_schema')` value comes from the `tenant_schema` claim in the client's JWT. Rows from all matched schemas sync into a single client-side table named after the query's table. Postgres system schemas (`pg_*` and `information_schema`) are never matched. Each matched table must be in the PowerSync publication.
-
-For a prefix wildcard (matching only schemas starting with `tenant_`), use `"tenant_%"` instead of `"%"`.
-
-### Table Metadata Functions
-
-These functions return metadata about the table a row comes from. Prefix each call with the table name or alias from the `FROM` clause (the same way you qualify a column reference). They take no arguments and can appear in `WHERE` clauses, selected columns, and subqueries. All require PowerSync Service v1.24.0 or later and Sync Streams only.
-
-- `schema()` — returns the schema the row was replicated from. Use with a wildcard schema name to filter by source schema.
-- `table_name()` — returns the source table name (before any alias or output renaming).
-- `table_suffix()` — returns the part of the table name matched by the trailing `%` of a wildcard table name. On tables without a wildcard name, the result is always empty and the compiler reports a warning.
 
 See [Writing Queries](https://docs.powersync.com/sync/streams/queries.md) for JOIN, subquery, and multiple queries per stream details.
 See [Examples & Demos](https://docs.powersync.com/sync/streams/examples.md) for complete working app patterns.
@@ -476,11 +463,11 @@ Reference these when the standard patterns don't cover your use case:
 |-------|-------------|
 | [Client ID](https://docs.powersync.com/sync/advanced/client-id.md) | Filter or scope data by which specific client device is syncing |
 | [Sync Data by Time](https://docs.powersync.com/sync/advanced/sync-data-by-time.md) | Limit sync to a rolling time window (e.g. last 30 days) |
-| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Source data from multiple database schemas or connections |
+| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Use non-public Postgres schemas; wildcard schemas (`"tenant_%"`) for schema-per-tenant databases (Service v1.24.0+); HA/replica connections |
 | [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
-| [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables |
+| [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables; in Sync Streams, use `table_alias.table_suffix()` to filter on the matched suffix (not `_table_suffix`, which is Sync Rules only) |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
-| [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams; if `NOT NULL`, `substr()`, or `length()` behave unexpectedly, `unstable_sqlite_expression_engine` (Service >= 1.22.0, experimental — may be removed) routes evaluation through actual SQLite |
+| [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams; if `NOT NULL`, `substr()`, or `length()` behave unexpectedly, `unstable_sqlite_expression_engine` (Service ≥ 1.22.0, experimental — may be removed) routes evaluation through actual SQLite |
 
 ## Convex-Specific Patterns
 
@@ -687,3 +674,9 @@ bucket_definitions:
     data:
       - SELECT * FROM records WHERE tenant_id = bucket.tenant_id
 ```
+
+### Multiple Client Versions
+
+When a schema change affects a manually subscribed stream, define a new versioned stream alongside the old one. New app versions subscribe to the new stream by name; old versions continue with the old stream until they update.
+
+If the stream uses `auto_subscribe: true`, clients cannot choose by name. Use connection parameters filtered per stream instead, so each app version receives the variant matching its declared version.

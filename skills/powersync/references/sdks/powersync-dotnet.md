@@ -622,6 +622,7 @@ Only read these if the content above does not provide enough context for the tas
 
 - [NuGet packages](https://www.nuget.org/profiles/PowerSync) — published packages
 - [Full SDK reference](https://docs.powersync.com/client-sdk-references/dotnet.md) — full SDK documentation
+- [API reference](https://powersync-ja.github.io/powersync-dotnet/api/PowerSync.html) — generated API docs for all SDK types, methods, and properties
 - [CommandLine](https://github.com/powersync-ja/powersync-dotnet/tree/main/demos/CommandLine) — CLI app with real-time data sync example
 - [WPF](https://github.com/powersync-ja/powersync-dotnet/tree/main/demos/WPF) — Windows desktop to-do list app example
 - [MAUITodo](https://github.com/powersync-ja/powersync-dotnet/tree/main/demos/MAUITodo) — Cross-platform mobile and desktop to-do list example

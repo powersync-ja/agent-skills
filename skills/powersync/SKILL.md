@@ -1,13 +1,13 @@
 ---
 name: powersync
-description: Guided onboarding and best practices for building applications with PowerSync — Cloud and self-hosted setup, sync configuration, client SDK usage, backend integration (Supabase, custom Postgres, MongoDB, MySQL, MSSQL), and debugging. Use this skill whenever the user mentions PowerSync, offline-first sync, local-first architecture, sync rules, sync streams, uploadData, fetchCredentials, real-time data replication, or wants to add offline-capable sync to a mobile or web app — even if they don't explicitly name PowerSync.
+description: Guided onboarding and best practices for building applications with PowerSync — Cloud and self-hosted setup, sync configuration, client SDK usage, backend integration (Supabase, custom Postgres, MongoDB, MySQL, MSSQL), and debugging. Use this skill whenever the user mentions PowerSync, offline-first sync, local-first architecture, sync rules, sync streams, uploadData, fetchCredentials, real-time data replication, Electric Cloud migration, Electric Shapes, or wants to add offline-capable sync to a mobile or web app — even if they don't explicitly name PowerSync.
 license: MIT
 compatibility: Works with any skills-compatible agent. Some references include CLI commands requiring the @powersync/cli package.
 metadata:
   author: powersync
   version: "1.2.0"
   organization: PowerSync
-  tags: powersync, offline-first, local-first, sync-streams, sqlite, replication, uploadData, fetchCredentials, service-config, sync-config, cloud, cli, debugging, supabase, postgres, mongodb, mysql
+  tags: powersync, offline-first, local-first, sync-streams, sqlite, replication, uploadData, fetchCredentials, service-config, sync-config, cloud, cli, debugging, supabase, postgres, mongodb, mysql, electric, electric-migration
 ---
 
 # PowerSync Skills
@@ -41,6 +41,7 @@ If a sentence is ambiguous, default to the operator interpretation. Full legend 
 | Supabase + PowerSync | `references/onboarding-supabase.md` | `references/supabase-auth.md`, `references/sync-config.md`, SDK files |
 | Custom backend (non-Supabase) | `references/onboarding-custom.md` | `references/custom-backend.md`, `references/sync-config.md`, SDK files |
 | New project setup | `references/powersync-cli.md` + `references/powersync-service.md` | `references/sync-config.md`, SDK files |
+| Migrating from Electric Cloud | `references/migration-from-electric.md` | `references/sync-config.md`, SDK files |
 | Self-hosting / service config | `references/powersync-service.md` + `references/powersync-cli.md` | `references/sync-config.md` |
 | Terraform / IaC provisioning | `references/terraform.md` | `references/sync-config.md`, `references/supabase-auth.md` (if Supabase source) |
 | Writing sync config | `references/sync-config.md` | — |

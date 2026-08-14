@@ -39,7 +39,7 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 2. **Set up the source database.** Load `references/powersync-service.md` § "Source Database Setup" for the relevant quick start (Postgres, MongoDB, MySQL, or MSSQL). Present the exact SQL to the operator and ask them to confirm it is done.
 
-3. **Write credentials to `.env` immediately.** As soon as database details are available:
+3. **Keep credentials in `.env`, never hardcoded.** As soon as database details are available, record them there:
    ```
    POWERSYNC_URL=https://your-instance.powersync.journeyapps.com  # or http://localhost:8080 for self-hosted
    # Cloud service.yaml uses PS_DATABASE_URI; self-hosted Docker uses PS_DATA_SOURCE_URI

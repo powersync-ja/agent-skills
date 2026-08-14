@@ -258,15 +258,15 @@ The client-side `POWERSYNC_URL` follows the pattern `https://<instance-id>.power
 **New instance** — the instance ID is printed when you create it. Construct and save the URL immediately:
 ```bash
 powersync link cloud --create --project-id=<project-id>
-# Output: "Created Cloud instance 69c3d035b5b902d469b2b47f and updated powersync/cli.yaml."
-# → POWERSYNC_URL=https://69c3d035b5b902d469b2b47f.powersync.journeyapps.com
+# Output: "Created Cloud instance 69c3d0350000000000000001 and updated powersync/cli.yaml."
+# → POWERSYNC_URL=https://69c3d0350000000000000001.powersync.journeyapps.com
 ```
 
 **Existing instance** — retrieve the ID from `powersync fetch instances`:
 ```bash
 powersync fetch instances
-# Note the instance id, e.g. "69a961b47c4f8b306a18fb7e"
-# → POWERSYNC_URL=https://69a961b47c4f8b306a18fb7e.powersync.journeyapps.com
+# Note the instance id, e.g. "69a961b40000000000000002"
+# → POWERSYNC_URL=https://69a961b40000000000000002.powersync.journeyapps.com
 ```
 
 Write it to `.env` as `POWERSYNC_URL=https://<instance-id>.powersync.journeyapps.com` before writing any app code.

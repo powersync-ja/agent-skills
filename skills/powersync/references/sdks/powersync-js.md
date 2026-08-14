@@ -52,7 +52,7 @@ Framework-specific files (load alongside this file):
 ## Package Coverage
 
 | Need | Package |
-|------|---------|
+|------|--------|
 | Web browser | `@powersync/web` |
 | React Native | `@powersync/react-native` |
 | Node.js/CLI | `@powersync/node` |
@@ -296,9 +296,13 @@ const db = new PowerSyncDatabase({
     debugMode: true,           // Logs all SQL to Chrome DevTools Performance timeline
     useWebWorker: true,        // Default true — runs DB in a web worker
     enableMultiTabs: true      // Default true — shares sync worker across tabs
+    debugMode: true,              // Logs all SQL to Chrome DevTools Performance timeline
+    preparedStatementsCache: 64,  // LRU cache size per connection; omit to disable
   }
 });
 ```
+
+If statement preparation overhead appears in profiling, set `preparedStatementsCache` to a non-zero value. Each connection maintains its own independent LRU cache up to that size. For the Dart SDK equivalent, see `SqliteOptions.preparedStatementCacheSize`. See the [API reference](https://powersync-ja.github.io/powersync-js/web-sdk/globals#preparedStatementsCache-1) for details.
 
 Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
 
@@ -308,6 +312,7 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
+| InMemoryWriteAheadLogPool | Experimental — multi-threaded, in-memory; no persistence; requires cross-origin isolation | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#multi-threaded-in-memory-vfs) |
 
 ```ts
 // Recommended — more reliable across browsers including Safari
@@ -323,6 +328,31 @@ const db = new PowerSyncDatabase({
 ```
 
 Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+
+#### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
+
+Use `InMemoryWriteAheadLogPool` only when all of the following hold:
+- The app needs highly concurrent, high-performance queries.
+- The actively synced dataset is small (re-synced on every tab open).
+- Persistence is not required (data is lost when the tab closes).
+- Cross-origin isolation headers (`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`) can be enabled. Without `SharedArrayBuffer` support, the constructor throws.
+- Multiple tabs do not need to share offline state. Each tab opens an isolated database that cannot be named.
+
+If any condition does not hold, use `OPFSCoopSyncVFS` or the default `IDBBatchAtomicVFS` instead.
+
+Not bundled with `@powersync/web` — import from `@powersync/web/in-memory-wal-experiment` to avoid bundle size impact on apps that do not use it:
+
+```ts
+import { InMemoryWriteAheadLogPool } from '@powersync/web/in-memory-wal-experiment';
+import { PowerSyncDatabase } from '@powersync/web';
+
+const db = new PowerSyncDatabase({
+  schema: AppSchema,
+  opened: new InMemoryWriteAheadLogPool({
+    numWorkers: 3, // One writer, two additional read workers
+  }),
+});
+```
 
 ## Query Patterns
 
@@ -684,7 +714,7 @@ subscription.unsubscribe();
 These advanced topics are in separate files — load only when needed:
 
 | Topic | File | Load when… |
-|-------|------|-----------|
+|-------|------|----------|
 | Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
 | Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |
 

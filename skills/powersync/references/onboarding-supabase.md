@@ -19,7 +19,8 @@ Collect before editing app code:
 
 - Whether the PowerSync Cloud instance already exists
 - PowerSync instance URL (if instance exists)
-- Project ID and instance ID (if using CLI with existing instance)
+- Instance ID (if using CLI with an existing instance)
+- Project ID (if using CLI to create a new Cloud instance via `powersync link cloud --create`); also Org ID if the PAT covers multiple organizations
 - Supabase Postgres connection string (if source DB connection not yet configured)
 - `PS_ADMIN_TOKEN` or willingness to run `powersync login` (Cloud PAT only)
 
@@ -42,7 +43,7 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 4. **Scaffold and configure PowerSync.**
    - **New instance (CLI):** `powersync init cloud` → edit config → `powersync link cloud --create --project-id=<id>` → deploy
    - **New instance (Dashboard):** Create project/instance → connect database → deploy sync config → enable Supabase Auth
-   - **Existing instance (CLI):** `powersync pull instance --project-id=<id> --instance-id=<id>` → edit → deploy
+   - **Existing instance (CLI):** `powersync pull instance --instance-id=<id>` → edit → deploy
 
    See `references/powersync-cli.md` for full CLI workflow. Never run `powersync pull instance` after editing local config without backing up first.
 

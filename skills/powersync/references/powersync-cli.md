@@ -88,11 +88,11 @@ The CLI needs to know which instance to operate against. It uses the first avail
 
 | Priority | Method | How |
 |----------|--------|-----|
-| 1 (highest) | Flags | `--instance-id`, `--project-id`, `--api-url`, etc. |
-| 2 | Environment variables | `INSTANCE_ID`, `PROJECT_ID`, `API_URL`, etc. |
+| 1 (highest) | Flags | `--instance-id`, `--api-url`, etc. |
+| 2 | Environment variables | `INSTANCE_ID`, `API_URL`, etc. |
 | 3 (lowest) | Link file | `powersync/cli.yaml` written by `powersync link` |
 
-For Cloud, `--project-id` / `PROJECT_ID` and `--org-id` / `ORG_ID` are optional for most commands — the CLI resolves them automatically from the instance ID. Exception: `powersync link cloud --create` requires `--project-id` because no instance ID exists yet.
+For Cloud, `--project-id` / `PROJECT_ID` and `--org-id` / `ORG_ID` are optional for most commands — the CLI resolves them automatically from the instance ID. Exception: `powersync link cloud --create` requires `--project-id` because no instance ID exists yet, and if your token covers multiple orgs, `--org-id` must be provided.
 
 ## Authentication
 
@@ -389,8 +389,7 @@ Supported self-hosted commands: `status`, `generate schema`, `generate token`, `
 
 ```bash
 # Cloud
-powersync stop --confirm=yes \
-  --instance-id=<id>
+powersync stop --confirm=yes --instance-id=<id>
 
 # Self-hosted (API key from PS_ADMIN_TOKEN or cli.yaml)
 powersync status --api-url=https://powersync.example.com
@@ -433,9 +432,9 @@ Use one `powersync/` folder and vary instance info via environment variables. Bo
 ```yaml
 type: cloud
 instance_id: !env MY_INSTANCE_ID
-project_id: !env MY_PROJECT_ID
-org_id: !env MY_ORG_ID
 ```
+
+> `powersync link cloud` writes `instance_id`, `org_id`, and `project_id` by default to skip an extra API call per command. The minimal form above is equivalent — project and org are resolved from the instance at runtime.
 
 `cli.yaml` (self-hosted):
 ```yaml
@@ -511,6 +510,7 @@ Required CI environment variables:
 |----------|--------|
 | `PS_ADMIN_TOKEN` | PowerSync personal access token |
 | `INSTANCE_ID` | Target instance (if not using a linked directory) |
+| `ORG_ID` | Required only if token has multiple organizations |
 | `API_URL` | Self-hosted: PowerSync API base URL |
 
 ```bash
@@ -532,7 +532,7 @@ powersync deploy sync-config
 | `powersync init self-hosted` | Scaffold self-hosted config directory |
 | `powersync configure ide` | Configure IDE for YAML schema validation and `!env` support |
 | `powersync link cloud --instance-id=<id>` | Link to an existing Cloud instance |
-| `powersync link cloud --create --project-id=<id>` | Create a new Cloud instance and link |
+| `powersync link cloud --create --project-id=<id>` | Create a new Cloud instance and link (add `--org-id` only if token has multiple orgs) |
 | `powersync link self-hosted --api-url=<url>` | Link to a self-hosted instance by API URL |
 | `powersync pull instance --instance-id=<id>` | Download Cloud config into local files |
 | `powersync deploy` | Deploy full config to linked Cloud instance |
@@ -584,7 +584,7 @@ npm install -g @powersync/cli@0.8.0
 Otherwise, upgrade to the latest `powersync` package and follow this mapping:
 
 | Previous CLI | New CLI |
-|-------------|--------|
+|-------------|---------|
 | `npx powersync init` (enter token, org, project) | `powersync login` (token only). Then `powersync init cloud` to scaffold, or `powersync pull instance --instance-id=...` to pull an existing instance. |
 | `powersync instance set --instanceId=<id>` | `powersync link cloud --instance-id=<id>` (writes `cli.yaml`). Use `--directory` for a specific folder. |
 | `powersync instance deploy` (interactive or long flag list) | Edit `powersync/service.yaml` and `powersync/sync-config.yaml`, then `powersync deploy`. Config is in files, not command args. |

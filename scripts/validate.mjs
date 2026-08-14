@@ -159,7 +159,50 @@ function validateReferences(skillDir, skillName) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Validate marketplace.json
+// 3. Check for inline credentials in connection string examples
+// ---------------------------------------------------------------------------
+
+// Example URIs must not model the inline-password pattern (user:pass@host).
+// Local dev hosts are exempt: those are real, functional defaults
+// (e.g. local Supabase Postgres), not placeholders agents might copy.
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'host.docker.internal'];
+const CREDENTIAL_URI = /\b[a-zA-Z][a-zA-Z0-9+.-]*:\/\/([^/\s:@`"']+):([^/\s@`"']+)@([^/\s:`"']+)/g;
+
+function validateNoInlineCredentials() {
+  console.log('\n[Credentials] no inline passwords in example URIs');
+
+  const mdFiles = [];
+  function collectMd(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) collectMd(full);
+      else if (entry.name.endsWith('.md')) mdFiles.push(full);
+    }
+  }
+  collectMd(ROOT);
+
+  let found = 0;
+  for (const file of mdFiles) {
+    const lines = readFileSync(file, 'utf-8').split('\n');
+    const relFile = file.replace(ROOT + '/', '');
+    lines.forEach((line, i) => {
+      for (const m of line.matchAll(CREDENTIAL_URI)) {
+        const host = m[3];
+        if (LOCAL_HOSTS.includes(host)) continue;
+        error(`${relFile}:${i + 1} inline password in URI example ("${m[0]}"), use user@host instead`);
+        found++;
+      }
+    });
+  }
+
+  if (found === 0) {
+    pass(`no inline credentials in ${mdFiles.length} markdown files`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4. Validate marketplace.json
 // ---------------------------------------------------------------------------
 
 function validateMarketplace() {
@@ -253,6 +296,7 @@ if (!existsSync(skillsRoot)) {
   }
 }
 
+validateNoInlineCredentials();
 validateMarketplace();
 
 // Summary

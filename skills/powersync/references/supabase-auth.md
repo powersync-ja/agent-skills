@@ -191,7 +191,7 @@ client_auth:
 - If anonymous access is acceptable, use the anonymous sign-in pattern below.
 - If anonymous auth is disabled on your Supabase project, there is no silent fallback — the agent must gate `db.connect()` behind an explicit auth flow.
 
-`fetchCredentials()` in your backend connector should return the Supabase session JWT. The examples below use the JS Supabase client; equivalent patterns exist for [Dart](https://github.com/powersync-ja/powersync.dart/blob/9ef224175c8969f5602c140bcec6dd8296c31260/demos/supabase-todolist/lib/powersync.dart#L38) and [Kotlin](https://github.com/powersync-ja/powersync-kotlin/blob/main/connectors/supabase/src/commonMain/kotlin/com/powersync/connector/supabase/SupabaseConnector.kt).
+`fetchCredentials()` in your backend connector should return the Supabase session JWT. The examples below use the JS Supabase client; equivalent patterns exist for [Dart](https://github.com/powersync-ja/powersync.dart/blob/main/demos/supabase-todolist/lib/powersync.dart) and [Kotlin](https://github.com/powersync-ja/powersync-kotlin/blob/main/connectors/supabase/src/commonMain/kotlin/com/powersync/connector/supabase/SupabaseConnector.kt).
 
 ### Standard Supabase Auth (JS/TS)
 

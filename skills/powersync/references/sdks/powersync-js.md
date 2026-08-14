@@ -293,7 +293,8 @@ const db = new PowerSyncDatabase({
   schema,
   database: {
     dbFilename: 'app.db',
-    debugMode: true        // Logs all SQL to Chrome DevTools Performance timeline
+    debugMode: true,              // Logs all SQL to Chrome DevTools Performance timeline
+    preparedStatementsCache: 64,  // LRU cache size per connection; omit to disable
   },
   flags: {
     useWebWorker: true,    // Default true — runs DB in a web worker
@@ -301,6 +302,8 @@ const db = new PowerSyncDatabase({
   }
 });
 ```
+
+If statement preparation overhead appears in profiling, set `preparedStatementsCache` to a non-zero value. Each connection maintains its own independent LRU cache up to that size. For the Dart SDK equivalent, see `SqliteOptions.preparedStatementCacheSize`. See the [API reference](https://powersync-ja.github.io/powersync-js/web-sdk/globals#preparedStatementsCache-1) for details.
 
 Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
 

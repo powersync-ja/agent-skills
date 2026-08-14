@@ -80,7 +80,7 @@ powersync:
   ports:
     - "8080:8080"
   environment:
-    PS_DATA_SOURCE_URI: "postgresql://user:pass@host:5432/db"
+    PS_DATA_SOURCE_URI: "postgresql://user@host:5432/db"
     PS_STORAGE_URI: "mongodb://mongo:27017/powersync_storage"
     POWERSYNC_SYNC_CONFIG_B64: "<base64-encoded sync-config.yaml>"
   volumes:
@@ -108,7 +108,7 @@ Below is a minimal but complete `service.yaml` for a self-hosted instance. Pay c
 replication:
   connections:
     - type: postgresql
-      uri: !env PS_DATA_SOURCE_URI   # e.g. postgresql://user:pass@host:5432/db
+      uri: !env PS_DATA_SOURCE_URI   # e.g. postgresql://user@host:5432/db
 
 storage:
   type: mongodb
@@ -167,7 +167,7 @@ Only one source database connection is supported per instance. Example:
 replication:
   connections:
     - type: postgresql
-      uri: postgresql://user:pass@host:5432/db
+      uri: postgresql://user@host:5432/db
 ```
 
 #### SSL mode for local databases

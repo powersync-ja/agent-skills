@@ -29,7 +29,7 @@ If a sentence is ambiguous, default to the operator interpretation. Full legend 
 - **Ask, don't assume.** Ask the operator: Cloud vs self-hosted, and which backend (Supabase, Postgres, MongoDB, MySQL, MSSQL). Do not default to Supabase.
 - **Backend before frontend.** Deploy sync config and verify the service before writing app code.
 - **Sync Streams for new projects.** Sync Rules are legacy.
-- **Persist credentials immediately.** Write all URLs and keys to `.env` as soon as they are available.
+- **Keep credentials in `.env`, never hardcoded.** Record URLs and keys in `.env` as they become available; config (`!env`) and app code read from there.
 - **Default scope on existing projects: sync-config only.** Do not edit `service.yaml` or `cli.yaml` unless the operator explicitly authorized service/infra changes in this conversation.
 - **Confirm the target instance before any mutating command** (`deploy`, `destroy`, `stop`, `link --create`, `pull instance`). Never deploy to an instance not authorized by the operator. Treat production as off-limits unless explicitly approved.
 - **Use project memory.** If your harness supports it, persist the CLI invocation, sync-config path, authorized instance ids + environment (dev/staging/prod), and allowed scope of changes. Verify saved values still match reality before acting on them. See `AGENTS.md` § "Continuous Use & Guardrails".

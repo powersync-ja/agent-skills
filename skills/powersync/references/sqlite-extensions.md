@@ -2,7 +2,7 @@
 name: powersync-sqlite-extensions
 description: Loading custom SQLite extensions (vector search, FTS5 tokenizers, etc.) with PowerSync across all SDKs and platforms
 metadata:
-  tags: sqlite, extensions, vector-search, sqlite-vec, fts5, loadExtension, PersistentConnectionFactory, MDSQLiteOptions, wa-sqlite, wasm, dart-ffi, cinterops, custom-extension
+  tags: sqlite, extensions, vector-search, sqlite-vec, fts5, loadExtension, PersistentConnectionFactory, MDSQLiteOptions, LoadPowerSyncExtension, SqliteExtension, wa-sqlite, wasm, dart-ffi, cinterops, custom-extension
 ---
 
 # SQLite Extensions with PowerSync
@@ -112,13 +112,15 @@ internal class MyOpenFactory : DriverBasedInMemoryFactory<BundledSQLiteDriver>(
 
 Platform-specific bundling:
 
-- **JVM:** Bundle the extension as a resource. Use [`ClassLoader`](https://github.com/powersync-ja/powersync-kotlin/blob/cd8c6aede9f59f5c19fa2473798c1b2ccb035c3f/common/src/jvmMain/kotlin/com/powersync/ExtractLib.kt#L7-L46) to extract it to a temporary file before passing the path to `addExtension`.
+- **JVM:** Bundle the extension as a resource. Use [`ClassLoader`](https://github.com/powersync-ja/powersync-kotlin/blob/main/common/src/jvmMain/kotlin/com/powersync/ExtractLib.kt) to extract it to a temporary file before passing the path to `addExtension`.
 - **Android:** Build with the [Android NDK](https://developer.android.com/ndk) and pass the library name directly to `addExtension` (`System.loadLibrary` will resolve it).
-- **Kotlin/Native:** Use [cinterops](https://kotlinlang.org/docs/native-c-interop.html) to build the extension as a library. Call its entrypoint via [`sqlite3_auto_extension`](https://github.com/powersync-ja/powersync-kotlin/blob/cd8c6aede9f59f5c19fa2473798c1b2ccb035c3f/common/src/nativeMain/kotlin/com/powersync/ConnectionFactory.native.kt#L8-L14) before opening any PowerSync database.
+- **Kotlin/Native:** Use [cinterops](https://kotlinlang.org/docs/native-c-interop.html) to build the extension as a library. Call its entrypoint via [`sqlite3_auto_extension`](https://github.com/powersync-ja/powersync-kotlin/blob/main/common/src/nativeMain/kotlin/com/powersync/ConnectionFactory.native.kt) before opening any PowerSync database.
 
 ## .NET
 
-Pass extension file paths via `MDSQLiteOptions.Extensions`. You are responsible for building and bundling the extension files so they are resolvable at the paths you provide.
+Set `MDSQLiteOptions.Extensions` to an array of `SqliteExtension` objects to load custom extensions. You are responsible for building and bundling extension files so they can be loaded.
+
+If you need to disable auto-loading of the PowerSync core extension, set `MDSQLiteOptions.LoadPowerSyncExtension` to `false`. When doing so, one of the extensions in `MDSQLiteOptions.Extensions` must contain a build of the PowerSync core extension. Running the .NET SDK without the core extension, or with an outdated version, is not supported.
 
 ## Rust / Tauri
 
@@ -136,4 +138,4 @@ For other extensions:
 1. Write Swift Package Manager definitions to build and link the extension with your app.
 2. Depend on [PowerSync CSQLite](https://github.com/powersync-ja/CSQLite).
 3. Add a [module shim](https://github.com/powersync-ja/powersync-swift/tree/main/Sources/PowerSyncCoreShim) target to expose the extension from Swift.
-4. Import that target and CSQLite, then [load the extension statically](https://github.com/powersync-ja/powersync-swift/blob/ad9cf3d8c65dcbf059c4e5430dd35f3706ad5303/Sources/PowerSync/Implementation/sqlite3/registerPowerSyncCoreExtension.swift#L1-L17) before opening a PowerSync database.
+4. Import that target and CSQLite, then [load the extension statically](https://github.com/powersync-ja/powersync-swift/blob/main/Sources/PowerSync/Implementation/sqlite3/registerPowerSyncCoreExtension.swift) before opening a PowerSync database.

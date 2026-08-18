@@ -113,7 +113,7 @@ PowerSync automatically sets:
 ```yaml
 client_auth:
   supabase: true
-  supabase_jwt_secret: !env SUPABASE_JWT_SECRET
+  supabase_jwt_secret: !env PS_SUPABASE_JWT_SECRET
 ```
 
 Get the secret from Supabase → Project Settings → JWT. Use `!env` to avoid hardcoding secrets.
@@ -156,11 +156,14 @@ Key details:
 replication:
   connections:
     - type: postgresql
-      uri: postgresql://postgres:postgres@host.docker.internal:54322/postgres
+      uri: postgresql://postgres@host.docker.internal:54322/postgres
+      password: !env PS_SUPABASE_DB_PASSWORD
       sslmode: disable
 ```
 
 Without this you will see: `Replication error postgres does not support ssl`.
+
+Local Supabase database credentials are printed by `supabase status`. Supply the password to the PowerSync service container via the `PS_SUPABASE_DB_PASSWORD` environment variable. The service only substitutes `!env` variables whose names start with `PS_`.
 
 You can verify your local Supabase is using ES256 by checking:
 ```bash
@@ -191,7 +194,7 @@ client_auth:
 - If anonymous access is acceptable, use the anonymous sign-in pattern below.
 - If anonymous auth is disabled on your Supabase project, there is no silent fallback — the agent must gate `db.connect()` behind an explicit auth flow.
 
-`fetchCredentials()` in your backend connector should return the Supabase session JWT. The examples below use the JS Supabase client; equivalent patterns exist for [Dart](https://github.com/powersync-ja/powersync.dart/blob/9ef224175c8969f5602c140bcec6dd8296c31260/demos/supabase-todolist/lib/powersync.dart#L38) and [Kotlin](https://github.com/powersync-ja/powersync-kotlin/blob/main/connectors/supabase/src/commonMain/kotlin/com/powersync/connector/supabase/SupabaseConnector.kt).
+`fetchCredentials()` in your backend connector should return the Supabase session JWT. The examples below use the JS Supabase client; equivalent patterns exist for [Dart](https://github.com/powersync-ja/powersync.dart/blob/main/demos/supabase-todolist/lib/powersync.dart) and [Kotlin](https://github.com/powersync-ja/powersync-kotlin/blob/main/connectors/supabase/src/commonMain/kotlin/com/powersync/connector/supabase/SupabaseConnector.kt).
 
 ### Standard Supabase Auth (JS/TS)
 

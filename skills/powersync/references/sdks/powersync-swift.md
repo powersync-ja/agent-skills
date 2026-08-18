@@ -2,7 +2,8 @@
 name: powersync-swift
 description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, checkpoint-requests
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
 ---
 
 # PowerSync Swift SDK
@@ -158,28 +159,74 @@ Multi-process access introduces constraints:
 
 See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
 
-## Monitoring Sync Status in SwiftUI
+## Checkpoint Requests (Alpha)
 
-When displaying sync state in a SwiftUI view, use `powersync.currentStatus.observable` to get an `ObservableSyncStatus` instance. Store it as a `let` property on the view and read status values directly in `body`. Available from Swift SDK v1.15.
+Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
+
+Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. Support for other SDKs is planned.
 
 ```swift
-struct ConnectionIndicator: View {
-    private let status: ObservableSyncStatus
+try await database.connect(
+    connector: connector,
+    options: ConnectOptions(checkpointMode: .requests())
+)
+```
 
-    init(powersync: any PowerSyncDatabaseProtocol) {
-        self.status = powersync.currentStatus.observable
-    }
+Checkpoint requests are opt-in. Without `checkpointMode: .requests()`, calling `requestCheckpoint()` throws an error.
 
-    var body: some View {
-        let connected = status.connected
-        Image(systemName: connected ? "wifi" : "wifi.slash")
-    }
+### Waiting for the Latest Server Data
+
+Create a checkpoint request, then wait for it to resolve before reading the refreshed data:
+
+```swift
+let checkpoint = try await database.requestCheckpoint()
+try await checkpoint.waitForSync(timeout: 30)
+// Local queries now reflect server state from when requestCheckpoint() was called.
+```
+
+`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call suspends until the Service is reachable. Cancel the calling task to stop waiting. The `timeout` passed to `waitForSync(timeout:)` only limits waiting for the checkpoint to apply locally.
+
+### Error Handling
+
+Handle request creation and waiting errors separately when your app needs different recovery behavior:
+
+```swift
+do {
+    let checkpoint = try await database.requestCheckpoint()
+    try await checkpoint.waitForSync(timeout: 30)
+} catch CheckpointWaitError.timeout {
+    showRefreshMessage("The refresh timed out. Try again.")
+} catch CheckpointWaitError.disconnected {
+    showRefreshMessage("Reconnect before refreshing again.")
+} catch let error as any CheckpointError {
+    showRefreshMessage(error.localizedDescription)
 }
 ```
 
-For sync download progress, `status.downloadProgress` is available on the same `ObservableSyncStatus` instance.
+A request remains valid across a disconnect. After reconnecting with `.requests()`, call `waitForSync()` again on the same request. Discard request values after clearing the local PowerSync database, because clearing resets the persisted request state.
 
-Do not use `@State` + `.task` to subscribe to `currentStatus.asFlow()` when targeting v1.15+. The `ObservableSyncStatus` approach does not require a separate async task or manual state management.
+`waitForSync()` also fails if the sync client reports an upload or download error. Wait for sync to recover before retrying.
+
+### Relationship to Local Writes
+
+When `.requests()` mode is enabled, the SDK creates an internal request after each upload queue flush. You do not need to call `requestCheckpoint()` for your own writes. If you create a request while writes are pending, waiting on it also waits for those writes to upload and their results to sync back:
+
+```swift
+try await database.execute(
+    sql: "INSERT INTO tasks (id, description) VALUES (uuid(), ?)",
+    parameters: ["Review the project plan"]
+)
+
+let checkpoint = try await database.requestCheckpoint()
+try await checkpoint.waitForSync(timeout: 30)
+// The pending write has uploaded and its server state has synced locally.
+```
+
+This behavior relies on `uploadData()` returning only after your backend has committed the uploaded changes to the source database.
+
+### Async Upload Backends (Team/Enterprise)
+
+If `uploadData()` queues writes for later processing rather than committing them synchronously, use `CustomCheckpointRequestConnector`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
 
 ## Query Patterns
 

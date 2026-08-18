@@ -22,7 +22,8 @@ Collect before writing any code:
 - Database connection details (host, port, database, username, password or connection URI)
 - Whether a PowerSync instance already exists
 - PowerSync instance URL (if instance exists)
-- Project ID and instance ID (if using CLI with existing Cloud instance)
+- Instance ID (if using CLI with an existing Cloud instance)
+- Project ID (if using CLI to create a new Cloud instance via `powersync link cloud --create`); also Org ID if the PAT covers multiple organizations
 - How the operator wants to handle auth (custom JWT, third-party provider like Auth0/Firebase, or dev tokens)
 - Whether they have an existing backend API or need to create one
 
@@ -38,12 +39,12 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 2. **Set up the source database.** Load `references/powersync-service.md` § "Source Database Setup" for the relevant quick start (Postgres, MongoDB, MySQL, or MSSQL). Present the exact SQL to the operator and ask them to confirm it is done.
 
-3. **Write credentials to `.env` immediately.** As soon as database details are available:
+3. **Keep credentials in `.env`, never hardcoded.** As soon as database details are available, record them there:
    ```
    POWERSYNC_URL=https://your-instance.powersync.journeyapps.com  # or http://localhost:8080 for self-hosted
    # Cloud service.yaml uses PS_DATABASE_URI; self-hosted Docker uses PS_DATA_SOURCE_URI
-   PS_DATABASE_URI=postgresql://user:pass@host:5432/db      # Cloud
-   # PS_DATA_SOURCE_URI=postgresql://user:pass@host:5432/db # Self-hosted (set in powersync/docker/.env)
+   PS_DATABASE_URI=postgresql://user@host:5432/db      # Cloud
+   # PS_DATA_SOURCE_URI=postgresql://user@host:5432/db # Self-hosted (set in powersync/docker/.env)
    BACKEND_URL=http://localhost:3001
    ```
    Both `service.yaml` (via `!env` tags) and app code depend on these values.

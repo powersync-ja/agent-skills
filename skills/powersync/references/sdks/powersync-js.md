@@ -52,7 +52,7 @@ Framework-specific files (load alongside this file):
 ## Package Coverage
 
 | Need | Package |
-|------|---------|
+|------|--------|
 | Web browser | `@powersync/web` |
 | React Native | `@powersync/react-native` |
 | Node.js/CLI | `@powersync/node` |
@@ -75,7 +75,7 @@ npm install @journeyapps/wa-sqlite@latest # Needed (peer-dependency)
 
 # React Native
 npm install @powersync/react-native@latest
-npm install @powersync/powersync-op-sqlite@latest  # Needed (peer-dependency)
+npm install @op-engineering/op-sqlite  # Needed (peer-dependency)
 
 # Node.js
 npm install @powersync/node@latest
@@ -293,14 +293,16 @@ const db = new PowerSyncDatabase({
   schema,
   database: {
     dbFilename: 'app.db',
-    debugMode: true        // Logs all SQL to Chrome DevTools Performance timeline
-  },
-  flags: {
-    useWebWorker: true,    // Default true — runs DB in a web worker
-    enableMultiTabs: true  // Default true — shares sync worker across tabs
+    debugMode: true,           // Logs all SQL to Chrome DevTools Performance timeline
+    useWebWorker: true,        // Default true — runs DB in a web worker
+    enableMultiTabs: true      // Default true — shares sync worker across tabs
+    debugMode: true,              // Logs all SQL to Chrome DevTools Performance timeline
+    preparedStatementsCache: 64,  // LRU cache size per connection; omit to disable
   }
 });
 ```
+
+If statement preparation overhead appears in profiling, set `preparedStatementsCache` to a non-zero value. Each connection maintains its own independent LRU cache up to that size. For the Dart SDK equivalent, see `SqliteOptions.preparedStatementCacheSize`. See the [API reference](https://powersync-ja.github.io/powersync-js/web-sdk/globals#preparedStatementsCache-1) for details.
 
 Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
 
@@ -310,21 +312,47 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
+| InMemoryVFS               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-in-memory-vfs) |
 
 ```ts
 // Recommended — more reliable across browsers including Safari
-import { WASQLiteOpenFactory, WASQLiteVFS } from '@powersync/web'
+import { WASQLiteVFS } from '@powersync/web'
 
 const db = new PowerSyncDatabase({
   schema,
-  database: new WASQLiteOpenFactory({
+  database: {
     dbFilename: 'app.db',
     vfs: WASQLiteVFS.OPFSCoopSyncVFS, // default: IDBBatchAtomicVFS
-  }),
+  },
 })
 ```
 
 Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+
+#### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
+
+Use `InMemoryWriteAheadLogPool` only when all of the following hold:
+- The app needs highly concurrent, high-performance queries.
+- The actively synced dataset is small (re-synced on every tab open).
+- Persistence is not required (data is lost when the tab closes).
+- Cross-origin isolation headers (`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`) can be enabled. Without `SharedArrayBuffer` support, the constructor throws.
+- Multiple tabs do not need to share offline state. Each tab opens an isolated database that cannot be named.
+
+If any condition does not hold, use `OPFSCoopSyncVFS` or the default `IDBBatchAtomicVFS` instead.
+
+Not bundled with `@powersync/web` — import from `@powersync/web/in-memory-wal-experiment` to avoid bundle size impact on apps that do not use it:
+
+```ts
+import { InMemoryWriteAheadLogPool } from '@powersync/web/in-memory-wal-experiment';
+import { PowerSyncDatabase } from '@powersync/web';
+
+const db = new PowerSyncDatabase({
+  schema: AppSchema,
+  opened: new InMemoryWriteAheadLogPool({
+    numWorkers: 3, // One writer, two additional read workers
+  }),
+});
+```
 
 ## Query Patterns
 
@@ -512,20 +540,17 @@ const status = useStatus();
 //   lastSyncedAt: Date | null,
 //   hasSynced: boolean,          // true after first full sync, persists across restarts
 //   isSyncing: boolean,
+//   uploading: boolean,
+//   downloading: boolean,
+//   uploadError: Error | undefined,    // set on upload failure, cleared on next success
+//   downloadError: Error | undefined,  // set on download/connect failure, cleared on next success
 //   downloadProgress: DownloadProgress | null,
-//   dataFlowStatus: {
-//     uploading: boolean,
-//     downloading: boolean,
-//     uploadError: Error | undefined,    // set on upload failure, cleared on next success
-//     downloadError: Error | undefined,  // set on download/connect failure, cleared on next success
-//     downloadProgress: ...
-//   }
 // }
 ```
 
 #### uploadError and downloadError
 
-`status.dataFlowStatus.uploadError` and `status.dataFlowStatus.downloadError` are the primary way to surface sync failures to users or logging systems.
+`status.uploadError` and `status.downloadError` are the primary way to surface sync failures to users or logging systems.
 
 - `uploadError` — set when an exception occurs during the CRUD upload loop. Cleared automatically on the next successful upload.
 - `downloadError` — set when an exception occurs during the streaming sync (including connection failures). Cleared on the next successful data download or checkpoint completion.
@@ -533,11 +558,11 @@ const status = useStatus();
 ```tsx
 const status = useStatus();
 
-if (status.dataFlowStatus?.uploadError) {
-  return <Banner>Failed to save changes: {status.dataFlowStatus.uploadError.message}</Banner>;
+if (status.uploadError) {
+  return <Banner>Failed to save changes: {status.uploadError.message}</Banner>;
 }
-if (status.dataFlowStatus?.downloadError) {
-  return <Banner>Sync error: {status.dataFlowStatus.downloadError.message}</Banner>;
+if (status.downloadError) {
+  return <Banner>Sync error: {status.downloadError.message}</Banner>;
 }
 ```
 
@@ -546,16 +571,16 @@ Register a status listener imperatively (useful for logging, not just UI):
 ```ts
 db.registerListener({
   statusChanged: (status) => {
-    if (status.dataFlowStatus?.downloadError) {
+    if (status.downloadError) {
       logger.error('PowerSync download failed', {
-        error: status.dataFlowStatus.downloadError,
+        error: status.downloadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
       });
     }
-    if (status.dataFlowStatus?.uploadError) {
+    if (status.uploadError) {
       logger.error('PowerSync upload failed', {
-        error: status.dataFlowStatus.uploadError,
+        error: status.uploadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
       });
@@ -689,7 +714,7 @@ subscription.unsubscribe();
 These advanced topics are in separate files — load only when needed:
 
 | Topic | File | Load when… |
-|-------|------|-----------|
+|-------|------|----------|
 | Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
 | Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |
 
@@ -726,11 +751,9 @@ Connect this to a running PowerSync instance to inspect tables, rows, sync bucke
 ### Enable SDK Logging (Development)
 
 ```ts
-import { createBaseLogger, LogLevel } from '@powersync/react'; // or @powersync/common
+import { createConsoleLogger, LogLevels } from '@powersync/react'; // or @powersync/common
 
-const logger = createBaseLogger();
-logger.useDefaults(); // output to console
-logger.setLevel(LogLevel.DEBUG); // DEBUG | INFO | WARN | ERROR | TRACE | OFF
+const logger = createConsoleLogger({ minLevel: LogLevels.debug }); // trace | debug | info | warn | error
 ```
 
 ### Production Logging
@@ -742,11 +765,9 @@ The key pattern is: use `WARN` level in production (captures errors and warnings
 Example using Sentry (substitute your own provider):
 
 ```ts
-import { createBaseLogger, LogLevel } from '@powersync/react-native';
+import { createConsoleLogger, LogLevels } from '@powersync/react-native';
 
-const logger = createBaseLogger();
-logger.useDefaults();
-logger.setLevel(LogLevel.WARN); // WARN and above in production
+const logger = createConsoleLogger({ minLevel: LogLevels.warn }); // warn and above in production
 
 logger.setHandler((messages, context) => {
   if (!context?.level) return;
@@ -776,17 +797,17 @@ Also register a status listener to capture `uploadError` and `downloadError` —
 ```ts
 db.registerListener({
   statusChanged: (status) => {
-    if (status.dataFlowStatus?.downloadError) {
+    if (status.downloadError) {
       logger.error('PowerSync download error', {
-        error: status.dataFlowStatus.downloadError,
+        error: status.downloadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
         sdkVersion: db.sdkVersion,
       });
     }
-    if (status.dataFlowStatus?.uploadError) {
+    if (status.uploadError) {
       logger.error('PowerSync upload error', {
-        error: status.dataFlowStatus.uploadError,
+        error: status.uploadError,
         lastSyncedAt: status.lastSyncedAt,
         connected: status.connected,
         sdkVersion: db.sdkVersion,

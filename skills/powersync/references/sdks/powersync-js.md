@@ -71,7 +71,6 @@ Framework-specific files (load alongside this file):
 ```bash
 # Web
 npm install @powersync/web@latest
-npm install @journeyapps/wa-sqlite@latest # Needed (peer-dependency)
 
 # React Native
 npm install @powersync/react-native@latest

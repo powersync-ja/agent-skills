@@ -31,7 +31,7 @@ Vue-specific integration for the PowerSync JavaScript SDK. Use this reference al
 npm install @powersync/vue@latest
 
 # pnpm (must install peer dependencies explicitly)
-pnpm add @powersync/vue@latest @powersync/web@latest @journeyapps/wa-sqlite@latest
+pnpm add @powersync/vue@latest @powersync/web@latest
 ```
 
 ### 2. Plugin Setup

@@ -312,7 +312,7 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
-| InMemoryWriteAheadLogPool | Experimental — multi-threaded, in-memory; no persistence; requires cross-origin isolation | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#multi-threaded-in-memory-vfs) |
+| InMemoryVFS               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-in-memory-vfs) |
 
 ```ts
 // Recommended — more reliable across browsers including Safari

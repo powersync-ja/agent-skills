@@ -21,7 +21,7 @@ metadata:
 
 Best practices for building apps with the PowerSync Kotlin SDK.
 
-Supported targets: Android, JVM, iOS, macOS, watchOS, tvOS.
+Supported targets: Android, JVM, iOS, macOS, watchOS, tvOS. Web (JS and WebAssembly) targets have experimental support from v1.14.1. Web is not production-ready; use from a single tab only (multi-tab sync coordination is not functional in this version).
 
 ## Installation
 
@@ -46,6 +46,8 @@ commonMain.dependencies {
 ```
 
 From v1.12.0+ the PowerSync SQLite core extension is statically linked into `com.powersync:core` for all Apple targets (iOS, macOS, tvOS, watchOS), matching Android and JVM. **No CocoaPod or Swift Package dependency on `powersync-sqlite-core` is needed.** Upgrading from an older version? Remove any `pod("powersync-sqlite-core")` entry and any `powersync-sqlite-core-swift` SPM dependency.
+
+For web targets (JS and WebAssembly), use `WebConnectionFactory` to open a PowerSync database. Web support is experimental (added in v1.14.1) and not production-ready. Use from a single tab only; multi-tab sync coordination is not functional.
 
 ## Quick Setup
 
@@ -439,7 +441,7 @@ Full example: [`demos/supabase-todolist/androidBackgroundSync`](https://github.c
 
 ## ORM Integrations
 
-- **Room** (beta) — typed queries with compile-time validation: `com.powersync:powersync-room:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdks/orms/kotlin/room.md)
+- **Room** (beta) — typed queries with compile-time validation: `com.powersync:integration-room:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdks/orms/kotlin/room.md). If using v1.14.1 or later, upgrade Room to 3.0 before updating the integration.
 - **SQLDelight** (beta) — `PowerSyncDriver` implements `SqlDriver`: `com.powersync:powersync-sqldelight:$powersyncVersion` · [Docs](https://docs.powersync.com/client-sdks/orms/kotlin/sqldelight.md)
 
 ## Additional Resources

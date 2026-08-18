@@ -293,14 +293,13 @@ const db = new PowerSyncDatabase({
   schema,
   database: {
     dbFilename: 'app.db',
-    debugMode: true        // Logs all SQL to Chrome DevTools Performance timeline
-  },
-  flags: {
     useWebWorker: true,    // Default true — runs DB in a web worker
     enableMultiTabs: true  // Default true (false on Android, iOS, and Safari) — shares sync worker across tabs
   }
 });
 ```
+
+Note: `useWebWorker` and `enableMultiTabs` are properties of the `database` config object (the top-level `flags` object was removed in a prior SDK version).
 
 Multi-tab behavior: `enableMultiTabs` defaults to `true` on most desktop browsers and `false` on Android, iOS, and Safari. When enabled, a shared sync worker connects to the PowerSync Service and applies changes on behalf of all tabs; only the most recently opened tab runs `fetchCredentials` and `uploadData`. When disabled or unavailable, one tab connects and syncs at a time. Since v2.1.0, broadcast channels share sync status, watched query update notifications, and sync stream subscriptions across tabs, though less reliably than shared workers.
 
@@ -313,18 +312,18 @@ Multi-tab behavior: `enableMultiTabs` defaults to `true` on most desktop browser
 
 ```ts
 // Recommended — more reliable across browsers including Safari
-import { WASQLiteOpenFactory, WASQLiteVFS } from '@powersync/web'
+import { WASQLiteVFS } from '@powersync/web'
 
 const db = new PowerSyncDatabase({
   schema,
-  database: new WASQLiteOpenFactory({
+  database: {
     dbFilename: 'app.db',
     vfs: WASQLiteVFS.OPFSCoopSyncVFS, // default: IDBBatchAtomicVFS
-  }),
+  },
 })
 ```
 
-Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 
 ## Query Patterns
 
@@ -733,6 +732,25 @@ logger.useDefaults(); // output to console
 logger.setLevel(LogLevel.DEBUG); // DEBUG | INFO | WARN | ERROR | TRACE | OFF
 ```
 
+### Web: Worker Log Levels
+
+To control log verbosity inside web workers, pass `databaseWorkerLogLevel` and `sync.logLevel` at construction time:
+
+```ts
+import { LogLevels } from '@powersync/web';
+
+const db = new PowerSyncDatabase({
+  schema,
+  database: {
+    dbFilename: 'app.db',
+    databaseWorkerLogLevel: LogLevels.trace,
+  },
+  sync: {
+    logLevel: LogLevels.trace,
+  },
+});
+```
+
 ### Production Logging
 
 Enable PowerSync logging in production — it is extremely helpful for debugging sync issues reported by users. Use whatever logging provider your app already uses (Sentry, Datadog, Firebase Crashlytics, etc.).
@@ -797,16 +815,6 @@ db.registerListener({
 ```
 
 Context to include in logs: user/session ID, SDK version (`db.sdkVersion`), `lastSyncedAt`, `connected` status. Avoid logging sensitive row data.
-
-### Web: SQL Logging to Chrome Performance Timeline
-
-```ts
-const db = new PowerSyncDatabase({
-  schema,
-  database: { dbFilename: 'app.db', debugMode: true }
-});
-// All SQL appears in Chrome DevTools → Performance tab timeline
-```
 
 ### Check Sync Status Imperatively
 

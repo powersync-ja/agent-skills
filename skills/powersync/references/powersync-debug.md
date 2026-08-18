@@ -51,7 +51,7 @@ Each of the PowerSync Client SDKs have the SyncStatus class that can be used to 
 | Web             | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/web-sdk/classes/SyncStatus)                                                                                                          |
 | React Native    | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/react-native-sdk/classes/SyncStatus)                                                                                                |
 | Node.js         | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/node-sdk/classes/SyncStatus)                                                                                                         |
-| .NET (Alpha)    | [SyncStatus.cs](https://github.com/powersync-ja/powersync-dotnet/blob/2728eab0d13849686ff3f9a603040940744599e1/PowerSync/PowerSync.Common/DB/Crud/SyncStatus.cs)                                   |
+| .NET (Alpha)    | [SyncStatus.cs](https://github.com/powersync-ja/powersync-dotnet/blob/main/PowerSync/PowerSync.Common/DB/Crud/SyncStatus.cs)                                   |
 
 Key fields to check: `connected`, `downloading`, `uploading`, `lastSyncedAt`, `hasSynced`, `downloadError`, `uploadError`.
 
@@ -206,6 +206,23 @@ Put a timestamp in the data. When a row is written or updated in the source data
 ### Stage 1: Source Database to PowerSync Service
 
 Check the **Replication Lag** chart in the **Metrics** view of the [PowerSync Dashboard](https://dashboard.powersync.com/). Replicator logs in the **Logs** view surface errors that cause delays at this stage.
+
+When the user shares instance logs from the **Logs** view, look for `Flushed` entries. Each entry records one batch written to bucket storage and is the most direct view of replication throughput:
+
+```
+Flushed: 1200 ops, 30 index entries, 450 records. 512kb in 240ms. Last op_id: 88421. Replication lag: 3s
+```
+
+Structured log properties are available under `flushed` on each entry:
+
+| Property | What it measures |
+|----------|------------------|
+| `bucket_ops_count` | Operations appended to bucket operation history. One source row produces one operation per bucket it belongs to; rows shared across many buckets produce many operations. |
+| `parameter_indexes_count` | Parameter index entries written for rows feeding stream parameters. |
+| `source_records_count` | Source rows persisted with their bucket and lookup memberships. |
+| `size` | Flush size in bytes. |
+| `duration` | Write time in milliseconds. |
+| `replication_lag_seconds` | Age of the oldest uncommitted change in this batch, in seconds. Only present when the Service can determine this value. |
 
 For source-specific guidance (Postgres, MongoDB, MySQL, SQL Server) see [Replication Lag](https://docs.powersync.com/maintenance-ops/replication-lag) and [Replication Lag Debugging (Postgres)](#replication-lag-debugging-postgres) below.
 

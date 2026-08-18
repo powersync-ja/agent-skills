@@ -19,7 +19,8 @@ Collect before editing app code:
 
 - Whether the PowerSync Cloud instance already exists
 - PowerSync instance URL (if instance exists)
-- Project ID and instance ID (if using CLI with existing instance)
+- Instance ID (if using CLI with an existing instance)
+- Project ID (if using CLI to create a new Cloud instance via `powersync link cloud --create`); also Org ID if the PAT covers multiple organizations
 - Supabase Postgres connection string (if source DB connection not yet configured)
 - `PS_ADMIN_TOKEN` or willingness to run `powersync login` (Cloud PAT only)
 
@@ -35,14 +36,14 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 1. **Confirm the path.** PowerSync Cloud + Supabase + your platform.
 
-2. **Write credentials to `.env` immediately.** As soon as Supabase project details are available, write `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI`, and `POWERSYNC_URL` to `.env`. Both `service.yaml` (via `!env` tags) and app code depend on these values. For how to get `POWERSYNC_URL`, see `references/powersync-cli.md` § "Getting POWERSYNC_URL". New Supabase projects use publishable keys (prefixed `sb_publishable_…`) instead of the legacy anon key — use it as the value for `SUPABASE_ANON_KEY`.
+2. **Keep credentials in `.env`, never hardcoded.** As soon as Supabase project details are available, record `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI`, and `POWERSYNC_URL` in `.env`. Both `service.yaml` (via `!env` tags) and app code depend on these values. For how to get `POWERSYNC_URL`, see `references/powersync-cli.md` § "Getting POWERSYNC_URL". New Supabase projects use publishable keys (prefixed `sb_publishable_…`) instead of the legacy anon key — use it as the value for `SUPABASE_ANON_KEY`.
 
 3. **Run the Supabase publication SQL.** The publication must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL. Present it to the operator and ask them to confirm.
 
 4. **Scaffold and configure PowerSync.**
    - **New instance (CLI):** `powersync init cloud` → edit config → `powersync link cloud --create --project-id=<id>` → deploy
    - **New instance (Dashboard):** Create project/instance → connect database → deploy sync config → enable Supabase Auth
-   - **Existing instance (CLI):** `powersync pull instance --project-id=<id> --instance-id=<id>` → edit → deploy
+   - **Existing instance (CLI):** `powersync pull instance --instance-id=<id>` → edit → deploy
 
    See `references/powersync-cli.md` for full CLI workflow. Never run `powersync pull instance` after editing local config without backing up first.
 

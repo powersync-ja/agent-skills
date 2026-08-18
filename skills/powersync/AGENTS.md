@@ -79,7 +79,7 @@ When the task is to add PowerSync to an app, follow this sequence:
 3. **Supabase online or local?** If unclear from project/env, ask before choosing connection strings, auth config, or references.
 4. Collect required inputs before coding (see "Required Inputs Below").
 5. **Load `references/sync-config.md`** and generate sync config. Source DB setup (publication SQL, replication, CDC) → `references/powersync-service.md` § "Source Database Setup". Without sync config, nothing syncs.
-6. **Persist credentials to `.env` immediately.** When a CLI or dashboard returns DB credentials (host, port, db name, username, password, URI), write them to `.env` *before* deploying config or writing app code. `service.yaml` (`!env`) and app code (`fetchCredentials`) read from there. Minimum: `POWERSYNC_URL`, the Postgres URI (e.g. `PS_DATABASE_URI`), and any backend-specific keys.
+6. **Keep credentials in `.env`, never hardcoded.** When a CLI or dashboard returns DB credentials (host, port, db name, username, password, URI), record them in `.env` *before* deploying config or writing app code. `service.yaml` (`!env`) and app code (`fetchCredentials`) read from there. Minimum: `POWERSYNC_URL`, the Postgres URI (e.g. `PS_DATABASE_URI`), and any backend-specific keys.
 7. **Create/link the instance and deploy config before app code.** CLI only — do not hand-create config files.
    - Cloud: `powersync init cloud` → edit config → `powersync link cloud --create` → `powersync deploy`
    - Self-hosted: `powersync init self-hosted` → `powersync docker configure` → `powersync docker start`
@@ -103,7 +103,7 @@ Never omit `@latest` for `@powersync/*` and `@journeyapps/*`. They release frequ
 
 These apply to all paths. Domain-specific pitfalls are in their reference files — only load those when working in that domain.
 
-- After any CLI op that provisions or links a service (Supabase, PowerSync, any backend), write the resulting credentials and URLs to `.env` immediately. Downstream config and app code read from `.env` and break silently if values are missing.
+- After any CLI op that provisions or links a service (Supabase, PowerSync, any backend), record the returned URLs and keys in `.env` rather than hardcoding them. Downstream config and app code read from `.env` and break silently if values are missing.
 - `powersync pull instance` silently overwrites local `service.yaml` + `sync-config.yaml`. Back up before pulling.
 
 Additional footguns by area (do not load unless working there):
@@ -124,7 +124,8 @@ Collect the minimum for the chosen path before changing app code. Only ask for s
 - Backend/database (do not assume Supabase — ask if unspecified)
 - Whether the PowerSync instance already exists
 - PowerSync instance URL, if it exists
-- Instance ID, if using CLI with an existing instance (project and org IDs are resolved automatically)
+- Instance ID, if using CLI with an existing instance
+- Project ID, if using CLI to create a new Cloud instance (`powersync link cloud --create`); also `--org-id` if the PAT covers multiple organizations
 - Source DB connection string, if PowerSync still needs it
 
 ### Additional for Supabase

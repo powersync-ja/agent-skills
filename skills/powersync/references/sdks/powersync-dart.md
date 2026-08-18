@@ -124,6 +124,23 @@ Future<void> disconnect() async {
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/flutter.md#2-instantiate-the-powersync-database) for more information.
 
+### SQLite Options
+
+Pass `SqliteOptions` to tune low-level SQLite behavior:
+
+```dart
+db = PowerSyncDatabase(
+  schema: schema,
+  path: path,
+  sqliteOptions: SqliteOptions(
+    preparedStatementCacheSize: 64, // LRU cache per connection; omit to disable
+    maxReaders: 5,                  // Max concurrent read connections (default: 5)
+  ),
+);
+```
+
+If statement preparation overhead is visible in profiling, set `preparedStatementCacheSize` to a non-zero value. Each connection keeps its own independent LRU cache up to that size. For the JS SDK equivalent, see `database.preparedStatementsCache`. See the [API reference](https://pub.dev/documentation/powersync/latest/sqlite_async/SqliteOptions/preparedStatementCacheSize.html) for details.
+
 ## Sync Streams
 
 See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.

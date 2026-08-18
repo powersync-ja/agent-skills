@@ -1,8 +1,9 @@
 ---
 name: powersync-swift
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, checkpoint-requests
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, checkpoint-requests
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
 ---
 
 # PowerSync Swift SDK
@@ -136,6 +137,23 @@ final class SystemManager {
 ```
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/swift.md#2-instantiate-the-powersync-database) for more information.
+
+### App Groups and Extensions (Experimental, v1.15+)
+
+If the database needs to be shared across multiple apps in an app group, pass an absolute path (starting with `/`) as `dbFilename`. The path should point to a file in the app group's [shared container](https://developer.apple.com/documentation/xcode/configuring-app-groups#Access-an-app-groups-shared-container). By default (relative path), the database is stored in `applicationSupportDirectory` with no cross-process sharing.
+
+```swift
+let db = PowerSyncDatabase(
+    schema: AppSchema,
+    dbFilename: "/path/to/app-group-container/powersync.sqlite"
+)
+```
+
+Multi-process access introduces constraints:
+
+- Call `connect()` in only one process. Two processes connecting to the PowerSync service for the same database wastes resources and can cause concurrency issues.
+- SQLite uses file locks for concurrent writes, but the SDK adds no coordination above that. Use [`PRAGMA busy_timeout`](https://sqlite.org/pragma.html#pragma_busy_timeout) to make SQLite wait longer; be ready to handle `SQLITE_BUSY` errors when multiple processes write at the same time.
+- Avoid running different Swift SDK versions against the same database file from separate processes. PowerSync-internal migrations can get reverted. App extensions released in the same bundle are not a concern, but separate app group members are.
 
 ## Sync Streams
 

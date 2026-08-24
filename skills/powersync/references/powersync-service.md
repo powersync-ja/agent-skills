@@ -451,6 +451,15 @@ EXEC sys.sp_cdc_enable_table
 EXEC sys.sp_cdc_change_job @job_type = N'capture', @pollinginterval = 1;
 ```
 
+#### MSSQL Replication Constraints (v1.25.0+)
+
+When writing Sync Streams for a SQL Server source, apply these rules:
+
+- **No wildcard table names.** Every replicated table must be listed by name. Wildcard table names (`%`) are not supported; using one raises `PSYNC_R2201`.
+- **Every listed table must exist and have CDC enabled before replication starts.** A configured table that is unavailable or not CDC-enabled stops replication with `PSYNC_S1602`.
+- **Schema changes are not adopted automatically.** Each Sync Config deployment pins to the CDC capture instances that existed when it started. To adopt a schema change, deploy an updated Sync Config. See [SQL Server Schema Change Workflows](https://docs.powersync.com/maintenance-ops/implementing-schema-changes#sql-server-specifics) for step-by-step procedures.
+- **If a pinned capture instance is removed**, replication stops with `PSYNC_S1601`. Re-enabling CDC creates a new capture instance with a different object ID; a Sync Config redeployment is required before replication resumes.
+
 ### Convex Quick Start
 
 > **Experimental.** The Convex replicator is experimental; APIs and behavior may change.

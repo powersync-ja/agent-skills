@@ -187,9 +187,14 @@ Key codes to recognize at runtime:
 
 | Code | Condition | Action |
 |------|-----------|--------|
+| `PSYNC_R2201` | Wildcard (`%`) used in a table or schema name for a connector that does not support it | Replace the wildcard with explicit table names; SQL Server requires every replicated table to be listed by name |
 | `PSYNC_S1005` | Storage version not supported | Caused by a service downgrade; upgrade the PowerSync Service to match the stored version |
 | `PSYNC_S1146` | Replication slot invalidated (`wal_status = 'lost'`) | Use the recovery steps in [Replication Lag Debugging (Postgres)](#replication-lag-debugging-postgres) |
-| `PSYNC_S1601` | MSSQL: CDC capture instance dropped during polling | Re-enable CDC for the affected table; replication resumes automatically once CDC is active |
+| `PSYNC_S1601` | MSSQL: CDC capture instance the deployment was pinned to has been dropped | Deploy an updated Sync Config; re-enabling CDC alone is not enough because the new capture instance has a different object ID and the existing replication process will not adopt it |
+| `PSYNC_S1602` | MSSQL: a table in the Sync Config is not ready to be replicated (CDC not enabled or table does not exist) | For a table never replicated by this deployment, replication starts automatically once the table exists and CDC is enabled. For a table this deployment was already replicating, redeploy the Sync Config after re-enabling CDC. |
+| `PSYNC_S1603` | MSSQL: replicated table was dropped, renamed, recreated, or no longer matches the source identity the current replication process selected | Deploy an updated Sync Config; existing replicated data is retained until the new deployment becomes active |
+| `PSYNC_S1604` | MSSQL: connection configuration error | Check the connection string and credentials in the service config |
+| `PSYNC_S4106` | Sync Config reprocess blocked because another Sync Config is already deploying | Wait for the in-progress deployment to complete before triggering another |
 
 See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 

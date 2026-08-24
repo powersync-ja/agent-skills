@@ -172,6 +172,13 @@ The client's `uploadData()` sends pending writes to your backend API. Your backe
 2. Apply them to the database **synchronously** (do not queue for later processing).
 3. Return 2xx — even for validation errors.
 
+### Conflict resolution is backend-owned
+
+If the operator asks how PowerSync resolves write conflicts, do not describe a built-in default. PowerSync is unopinionated: the upload queue is an ordered log of client mutations that must be drained sequentially against endpoints the developer implements, and the app backend decides how those mutations are applied to the source database. PowerSync then replicates the resulting state back to clients. This is server-authoritative reconciliation.
+
+- If the backend applies incoming column values directly (the simple `INSERT ... ON CONFLICT DO UPDATE` and bare `UPDATE ... SET` pattern shown below), the observed system behavior is per-field last-write-wins (LWW), because `PATCH` operations carry only changed columns.
+- If the operator needs anything richer (merge rules, per-field precedence, CRDTs, reject-on-conflict), that logic lives in the backend upload handler, not in PowerSync. See [Handling Update Conflicts](https://docs.powersync.com/handling-writes/handling-update-conflicts.md) and [Custom Conflict Resolution](https://docs.powersync.com/handling-writes/custom-conflict-resolution.md).
+
 ### Request/Response Contract
 
 | Scenario | HTTP Status | Effect on Upload Queue |

@@ -340,10 +340,10 @@ Use `InMemoryWriteAheadLogPool` only when all of the following hold:
 
 If any condition does not hold, use `OPFSCoopSyncVFS` or the default `IDBBatchAtomicVFS` instead.
 
-Not bundled with `@powersync/web` — import from `@powersync/web/in-memory-wal-experiment` to avoid bundle size impact on apps that do not use it:
+Not bundled with `@powersync/web` — import from `@powersync/web/extra/shared-memory-pool` to avoid bundle size impact on apps that do not use it:
 
 ```ts
-import { InMemoryWriteAheadLogPool } from '@powersync/web/in-memory-wal-experiment';
+import { InMemoryWriteAheadLogPool } from '@powersync/web/extra/shared-memory-pool';
 import { PowerSyncDatabase } from '@powersync/web';
 
 const db = new PowerSyncDatabase({
@@ -713,7 +713,7 @@ subscription.unsubscribe();
 
 These advanced topics are in separate files — load only when needed:
 
-| Topic | File | Load when… |
+| Topic | File | Load when... |
 |-------|------|----------|
 | Drizzle / Kysely ORM | `references/sdks/powersync-js-orm.md` | Using Drizzle or Kysely for type-safe queries |
 | Raw Tables | `references/raw-tables.md` | Need native SQLite tables (SDK-agnostic — JS, Dart, Kotlin, Swift, Rust) |

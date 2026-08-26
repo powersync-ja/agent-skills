@@ -240,7 +240,20 @@ This is required by PowerSync and can be configured in two different ways. This 
 
 There are various options when configuring client authentication on a PowerSync Service instance, see [Client Authentication](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances.md#client-authentication) for more information on the options. The options include: JWKS URI, inline JWKs, Supabase Auth, Shared Secrets. Prefer asymmetric keys (RS256, EdDSA, ECDSA) over shared secrets (HS256).
 
-**Important:** There is no `dev: true` auth type in the `client_auth` config schema. It does not exist. For development tokens on self-hosted, configure a real signing key first, then use `powersync generate token`. On PowerSync Cloud, users need to enable development tokens via the dashboard in the Client Auth section of the instance. 
+**Important:** There is no `dev: true` auth type in the `client_auth` config schema. It does not exist. For development tokens on self-hosted, configure a real signing key first, then use `powersync generate token`. On PowerSync Cloud, users need to enable development tokens via the dashboard in the Client Auth section of the instance.
+
+### Per-User Sync Limits
+
+By default, each user connection is limited to 1,000 unique buckets and 1,000 parameter query results. Exceeding either limit fails sync with `PSYNC_S2305`. For self-hosted deployments, raise the limits by adding `api.parameters` to `service.yaml`:
+
+```yaml
+api:
+  parameters:
+    max_buckets_per_connection: 5000
+    max_parameter_query_results: 5000
+```
+
+Set both values. Raising one without the other leaves the connection capped at the limit you did not change. For PowerSync Cloud, request a limit increase (Team and Enterprise plans only). Before raising either limit, review the reduction strategies in [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count).
 
 
 ## PowerSync Cloud Setup

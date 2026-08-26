@@ -97,7 +97,7 @@ streams:
       - SELECT * FROM <table_b> WHERE ...
 ```
 
-> **Bucket limit**: Each unique `(stream name + parameter values)` combination creates one internal bucket. The default limit is **1,000 buckets per user**. If a stream with subscription parameters could create many combinations, use `queries:` (multiple queries inside one stream) instead of separate streams — this keeps everything in one bucket.
+> **Bucket limits**: Each unique `(stream name + parameter values)` combination creates one internal bucket. Two per-user limits apply, both defaulting to 1,000: unique bucket count and parameter lookup rows (counted before deduplication, across all streams). If a user exceeds either limit, their sync fails with `PSYNC_S2305`. Read the error message to determine which limit was reached, since the fix differs. To keep bucket count low, use `queries:` (multiple queries in one stream) instead of separate streams. See [Bucket Count](https://docs.powersync.com/sync/streams/bucket-count) for how both limits are calculated.
 
 ## Stream Options
 

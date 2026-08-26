@@ -190,6 +190,7 @@ Key codes to recognize at runtime:
 | `PSYNC_S1005` | Storage version not supported | Caused by a service downgrade; upgrade the PowerSync Service to match the stored version |
 | `PSYNC_S1146` | Replication slot invalidated (`wal_status = 'lost'`) | Use the recovery steps in [Replication Lag Debugging (Postgres)](#replication-lag-debugging-postgres) |
 | `PSYNC_S1601` | MSSQL: CDC capture instance dropped during polling | Re-enable CDC for the affected table; replication resumes automatically once CDC is active |
+| `PSYNC_S2305` | Too many buckets or too many parameter query results | Read the error message: `Too many buckets` means reduce unique bucket count; `Too many parameter query results` means reduce parameter lookup rows. See [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count). |
 
 See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 
@@ -242,7 +243,7 @@ Both events share the same `rid`; to match a started/complete pair for a single 
 - **Large initial sync** — sync rules with a large dataset will slow the first sync after connecting. Inspect bucket sizes with the [Sync Diagnostics Client](https://diagnostics-app.powersync.com/).
 - **Upload queue blocking downloads** — by default, uploads are processed before downloads. Buckets and streams at [priority 0](https://docs.powersync.com/sync/advanced/prioritized-sync) are not blocked by uploads but carry trade-offs around sync consistency.
 - **Replication lag on the source database** — high write volume, long-running transactions, bulk updates, or backfills can cause replication to fall behind. See Stage 1 above.
-- **Too many buckets per user** — incremental sync overhead scales roughly linearly with bucket count per user.
+- **Too many buckets or parameter results per user**: two per-user limits apply, both defaulting to 1,000. Exceeding either fails sync with `PSYNC_S2305`. High bucket counts also increase incremental sync overhead roughly linearly. See [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count).
 
 # Replication Lag Debugging (Postgres)
 

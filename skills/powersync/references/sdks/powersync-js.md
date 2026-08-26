@@ -312,7 +312,7 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
 | IDBBatchAtomicVFS         | Default             | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-idbbatchatomicvfs-default)     |
 | OPFSCoopSyncVFS           | Recommended         | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-opfs-based-alternatives)       |
-| InMemoryVFS               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-in-memory-vfs) |
+| InMemoryVfs               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-in-memory-vfs) |
 
 ```ts
 // Recommended — more reliable across browsers including Safari
@@ -340,10 +340,10 @@ Use `InMemoryWriteAheadLogPool` only when all of the following hold:
 
 If any condition does not hold, use `OPFSCoopSyncVFS` or the default `IDBBatchAtomicVFS` instead.
 
-Not bundled with `@powersync/web` — import from `@powersync/web/in-memory-wal-experiment` to avoid bundle size impact on apps that do not use it:
+The pool is in a separate package entry point so apps that don't use it don't include it in their main bundle. Import from `@powersync/web/extra/shared-memory-pool`:
 
 ```ts
-import { InMemoryWriteAheadLogPool } from '@powersync/web/in-memory-wal-experiment';
+import { InMemoryWriteAheadLogPool } from '@powersync/web/extra/shared-memory-pool';
 import { PowerSyncDatabase } from '@powersync/web';
 
 const db = new PowerSyncDatabase({

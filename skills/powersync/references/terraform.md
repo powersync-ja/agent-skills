@@ -7,7 +7,7 @@ metadata:
 
 # PowerSync Terraform Provider
 
-> **Load this when** the operator is using Terraform to provision or manage PowerSync Cloud infrastructure, or asks about managing PowerSync via IaC. This covers Cloud only — for self-hosted deployments, use `references/powersync-service.md` and `references/powersync-cli.md`.
+> **Load this when** the operator is using Terraform to provision or manage PowerSync Cloud infrastructure, or asks about managing PowerSync via IaC. This file covers the PowerSync Cloud Terraform provider. For self-hosted deployments without Terraform, use `references/powersync-service.md`. For IaC-managed self-hosting on AWS ECS, see the [Community Self-Hosting on AWS ECS](#community-self-hosting-on-aws-ecs) section below.
 
 Provider source: `powersync-ja/powersync` on the [Terraform Registry](https://registry.terraform.io/providers/powersync-ja/powersync/latest/docs). Minimum Terraform version: 1.5.
 
@@ -144,6 +144,15 @@ terraform destroy
 
 - Removes the instance and the project.
 - If the project contains instances not tracked by this Terraform state, destroy fails unless `force_destroy = true` is set on `powersync_project`.
+
+## Community Self-Hosting on AWS ECS
+
+If the operator wants to self-host PowerSync on AWS using Terraform as IaC, point them to [powersync-community/terraform-self-host-aws](https://github.com/powersync-community/terraform-self-host-aws) as a reference architecture. This example provisions ECS Fargate infrastructure for the PowerSync Service container. It is separate from the PowerSync Cloud Terraform provider documented above.
+
+Note the architectural defaults, which differ from the manual AWS ECS deployment guide:
+
+- Source and bucket storage databases both use Amazon RDS for Postgres. The manual guide uses MongoDB for bucket storage.
+- Observability includes Amazon Managed Prometheus, Managed Grafana, and OpenSearch.
 
 ## Critical Pitfalls
 

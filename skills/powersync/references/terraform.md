@@ -54,7 +54,7 @@ Organizations are not Terraform-managed resources — they exist when you sign u
 
 ```hcl
 data "powersync_organization" "main" {
-  id = "<org-id>"   # hex segment from the dashboard URL: /orgs/<id>/
+  id = "<org-id>"   # hex segment from the dashboard URL: /org/<id>/
 }
 ```
 

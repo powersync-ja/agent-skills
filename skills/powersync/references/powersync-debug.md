@@ -208,6 +208,8 @@ Put a timestamp in the data. When a row is written or updated in the source data
 
 Check the **Replication Lag** chart in the **Metrics** view of the [PowerSync Dashboard](https://dashboard.powersync.com/). Replicator logs in the **Logs** view surface errors that cause delays at this stage.
 
+On PowerSync Cloud, the **Logs** view also provides two additional log types. **Compact logs** record the daily automatic compacting job and any manually triggered runs. **Migration logs** record the migration job that prepares instance storage during a deploy. If a deploy fails at the migration step, check Migration logs first. If a compacting job is failing or taking longer than expected, check Compact logs.
+
 When the user shares instance logs from the **Logs** view, look for `Flushed` entries. Each entry records one batch written to bucket storage and is the most direct view of replication throughput:
 
 ```

@@ -46,6 +46,15 @@ function parseFrontmatter(content) {
   return fm;
 }
 
+// parseFrontmatter only captures unindented keys, so the nested metadata.version
+// needs its own lookup. The only indented `version:` line lives under `metadata:`.
+function skillMetadataVersion(content) {
+  const fmBlock = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmBlock) return null;
+  const m = fmBlock[1].match(/^[ \t]+version:[ \t]*["']?([^"'\n]+?)["']?[ \t]*$/m);
+  return m ? m[1].trim() : null;
+}
+
 function validateSkillMd(skillDir, skillName) {
   console.log(`\n[SKILL.md] ${skillName}`);
   const skillMdPath = join(skillDir, 'SKILL.md');
@@ -81,6 +90,17 @@ function validateSkillMd(skillDir, skillName) {
     if (fm.description.length > 1024) error(`description exceeds 1024 characters (${fm.description.length})`);
     if (fm.description.length < 50) warn(`description is short (${fm.description.length} chars) — consider adding more detail`);
     pass('description present');
+  }
+
+  // when_to_use (Claude Code extension): the skill listing shows description +
+  // when_to_use combined, capped at 1536 characters.
+  if (fm.when_to_use) {
+    const combined = (fm.description ? fm.description.length : 0) + fm.when_to_use.length;
+    if (combined > 1536) {
+      error(`description + when_to_use exceed 1536 characters (${combined}); Claude Code truncates the listing`);
+    } else {
+      pass(`description + when_to_use within listing budget (${combined}/1536)`);
+    }
   }
 
   // body length
@@ -266,6 +286,41 @@ function validateMarketplace() {
         } else {
           pass(`plugin "${plugin.name}" → ${skillPath}`);
         }
+      }
+
+      // Version parity: Claude Code only re-downloads an installed plugin when
+      // this version string changes, so it must move with the skill content.
+      for (const skillPath of plugin.skills) {
+        const skillMdPath = join(resolve(ROOT, skillPath), 'SKILL.md');
+        if (!existsSync(skillMdPath)) continue;
+        const skillVersion = skillMetadataVersion(readFileSync(skillMdPath, 'utf-8'));
+        if (!plugin.version) {
+          error(`Plugin "${plugin.name}" has no version; installs will never update`);
+        } else if (skillVersion && plugin.version !== skillVersion) {
+          error(`Plugin "${plugin.name}" version ${plugin.version} != ${skillPath}/SKILL.md metadata.version ${skillVersion}; bump both together`);
+        } else if (skillVersion) {
+          pass(`plugin "${plugin.name}" version matches SKILL.md metadata.version (${plugin.version})`);
+        } else {
+          warn(`${skillPath}/SKILL.md has no metadata.version to compare against plugin "${plugin.name}"`);
+        }
+      }
+    }
+    if (manifest.metadata?.version && plugin.version && manifest.metadata.version !== plugin.version) {
+      error(`marketplace metadata.version ${manifest.metadata.version} != plugin "${plugin.name}" version ${plugin.version}`);
+    }
+
+    // relevance block shape (Claude Code suggestion signals)
+    if (plugin.relevance !== undefined) {
+      const sig = plugin.relevance?.signals;
+      if (typeof plugin.relevance !== 'object' || !sig || Object.keys(sig).length === 0) {
+        error(`Plugin "${plugin.name}" relevance must be an object with a non-empty signals object`);
+      } else {
+        for (const dep of sig.manifestDeps ?? []) {
+          if (typeof dep?.file !== 'string' || typeof dep?.pattern !== 'string') {
+            error(`Plugin "${plugin.name}" relevance.signals.manifestDeps entries need string "file" and "pattern"`);
+          }
+        }
+        pass(`plugin "${plugin.name}" relevance signals: ${Object.keys(sig).join(', ')}`);
       }
     }
   }

@@ -1,18 +1,19 @@
 ---
 name: powersync
-description: Guided onboarding and best practices for building applications with PowerSync — Cloud and self-hosted setup, sync configuration, client SDK usage, backend integration (Supabase, custom Postgres, MongoDB, MySQL, MSSQL), and debugging. Use this skill whenever the user mentions PowerSync, offline-first sync, local-first architecture, sync rules, sync streams, uploadData, fetchCredentials, real-time data replication, Electric Cloud migration, Electric Shapes, or wants to add offline-capable sync to a mobile or web app — even if they don't explicitly name PowerSync.
+description: "Best practices for building and maintaining applications with PowerSync: Cloud and self-hosted setup, sync configuration, client SDK usage, backend integration (Supabase, custom Postgres, MongoDB, MySQL, MSSQL), schema changes, watch and reactive queries (useQuery), attachments, the upload queue, and debugging. Use this skill whenever the user mentions PowerSync, a @powersync/* package (@powersync/web, @powersync/react-native, @powersync/node), the powersync Flutter/Dart package, wa-sqlite, offline-first sync, local-first architecture, sync rules, sync streams, uploadData, fetchCredentials, disconnectAndClear, logout or user switching in a synced app, real-time data replication, Electric Cloud migration, Electric Shapes, an app stuck on Syncing, data not syncing, or wants to add offline-capable sync to a mobile or web app, even if they do not explicitly name PowerSync."
+when_to_use: "Load before any data, schema, sync, or auth change in a project that already uses PowerSync, even if the request never mentions sync. Examples: adding tables or columns, watch or useQuery results not updating, rows missing on a device, uploads stuck in the queue, a spinner stuck on Syncing, editing sync-config.yaml or service.yaml, running powersync CLI commands, migrating legacy sync configuration to Sync Streams, or implementing logout and account switching with disconnectAndClear."
 license: MIT
 compatibility: Works with any skills-compatible agent. Some references include CLI commands requiring the @powersync/cli package.
 metadata:
   author: powersync
-  version: "1.2.0"
+  version: "1.3.0"
   organization: PowerSync
-  tags: powersync, offline-first, local-first, sync-streams, sqlite, replication, uploadData, fetchCredentials, service-config, sync-config, cloud, cli, debugging, supabase, postgres, mongodb, mysql, electric, electric-migration
+  tags: powersync, offline-first, local-first, sync-streams, sqlite, replication, uploadData, fetchCredentials, service-config, sync-config, cloud, cli, debugging, supabase, postgres, mongodb, mysql, electric, electric-migration, watch-queries, useQuery, attachments, upload-queue, disconnectAndClear, schema, react-native, flutter, node, web, wa-sqlite
 ---
 
 # PowerSync Skills
 
-Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
+Use this skill to onboard a project onto PowerSync and to keep it healthy afterwards, without trial-and-error. Treat this as a guided workflow first and a reference library second.
 
 **Agents: Read [AGENTS.md](AGENTS.md) before proceeding.** It contains the mandatory compliance rules and onboarding playbook. The Quick Rules below are a reminder, not a substitute. **`powersync login`** is **PowerSync Cloud only** (PAT); self-hosted does not use it.
 

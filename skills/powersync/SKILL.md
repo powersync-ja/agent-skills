@@ -80,6 +80,7 @@ Always load `references/sdks/powersync-js.md` for any JS/TS project, then load t
 - Never define the `id` column in a PowerSync table schema; it is created automatically.
 - Use `column.integer` for booleans and `column.text` for ISO date strings.
 - `connect()` is fire-and-forget. Use `waitForFirstSync()` if you need readiness.
+- Call `.connect()` once per session. Do not call it again on window focus events, token refreshes, or network changes; redundant calls open additional sync connections.
 - `transaction.complete()` is mandatory or the upload queue stalls permanently.
-- `disconnectAndClear()` is required on logout or user switch when local data must be wiped.
+- On user sign-out, use `disconnectAndClear()` when another user may access the device or security requires wiping local data. If the same user will return to their own device and retaining local data is safe, use `disconnect()` instead. The client resumes from its saved sync position rather than re-downloading everything. Never retain one user's data for a different user.
 - A 4xx response from `uploadData` blocks the upload queue permanently; return 2xx for validation errors.

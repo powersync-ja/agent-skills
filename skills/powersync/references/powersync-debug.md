@@ -172,8 +172,8 @@ What it identifies: Whether stale data from a previous user is polluting the loc
 Why: `disconnect()` closes the sync connection but keeps all local data. If you call `disconnect()` on logout and then `connect()` with a new user, the new user's UI will initially display the old user's data until sync completes. `disconnectAndClear()` wipes the local database first, so the new user starts from a clean state.
 
 When to use each:
-- `disconnect()` — temporary offline, token refresh, app backgrounding. Safe to reconnect as the same user.
-- `disconnectAndClear()` — user logout, user account switch. Required to prevent data leakage between users.
+- `disconnect()` — temporary offline, token refresh, app backgrounding, or a same-user sign-out where retaining local data is safe. The client resumes from its saved sync position on the next `.connect()`.
+- `disconnectAndClear()` — user account switch, or any sign-out where another user can access the device or security requires wiping local data. Never retain one user's local data for a different user.
 
 ## PSYNC Error Codes
 

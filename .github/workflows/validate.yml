@@ -5,15 +5,28 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-      - run: node scripts/validate.mjs
+          node-version-file: ".node-version"
+      - uses: pnpm/action-setup@v5
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate repository metadata and references
+        run: pnpm validate
+      - name: Build discovery release artifacts
+        env:
+          GITHUB_SERVER_URL: https://github.com
+          GITHUB_REPOSITORY: powersync-ja/agent-skills
+          RELEASE_TAG: v0.0.0-test
+        run: pnpm build:release
 
       - name: Validate SKILL.md (Agent Skills spec)
         uses: Flash-Brew-Digital/validate-skill@v1

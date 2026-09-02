@@ -14,6 +14,15 @@ Agent skills that help developers build applications with [PowerSync](https://po
 
 PowerSync skills follow the [Agent Skills](https://agentskills.io/) specification.
 
+## `.well-known` discovery
+
+Every GitHub Release includes two machine-readable assets for the [Agent Skills Discovery specification](https://github.com/cloudflare/agent-skills-discovery-rfc):
+
+- `index.json`, which lists each published skill, its archive URL, and SHA-256 digest.
+- `powersync.tar.gz`, a self-contained archive with `SKILL.md` at its root.
+
+Release Please keeps the repository's versions aligned and the release workflow builds both assets from the tagged commit. A website can expose the latest `index.json` at `/.well-known/agent-skills/index.json`; the archive itself remains an immutable GitHub Release asset, so it does not need to be copied into the website repository.
+
 ## Installation
 
 ### skills.sh (Cursor, Codex, Copilot, Windsurf, and most other agents)

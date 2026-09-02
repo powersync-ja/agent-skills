@@ -109,7 +109,7 @@ The skill has a single version declared in four places that must always match:
 
 Why this matters: Claude Code re-downloads an installed plugin only when the marketplace plugin `version` string changes. Content merged without a version bump never reaches existing plugin installs.
 
-Release Please owns these version fields. Do not edit them by hand. Instead, use a [Conventional Commit](https://www.conventionalcommits.org/) prefix in the PR title (and therefore the squash commit on `main`) to declare the release impact:
+Release Please owns these version fields. Do not edit them by hand or remove the `x-release-please-version` marker from `SKILL.md`. Instead, use a [Conventional Commit](https://www.conventionalcommits.org/) prefix in the PR title (and therefore the squash commit on `main`) to declare the release impact:
 
 - `fix:` creates a patch release for corrections and small content updates.
 - `feat:` creates a minor release for new reference files, SDK coverage, or trigger changes.

@@ -51,8 +51,14 @@ function parseFrontmatter(content) {
 function skillMetadataVersion(content) {
   const fmBlock = content.match(/^---\n([\s\S]*?)\n---/);
   if (!fmBlock) return null;
-  const m = fmBlock[1].match(/^[ \t]+version:[ \t]*["']?([^"'\n]+?)["']?[ \t]*$/m);
+  const m = fmBlock[1].match(/^[ \t]+version:[ \t]*["']?([^"'\s#]+)["']?[ \t]*(?:#.*)?$/m);
   return m ? m[1].trim() : null;
+}
+
+function hasReleasePleaseVersionMarker(content) {
+  const fmBlock = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmBlock) return false;
+  return /^[ \t]+version:.*#\s*x-release-please-version\s*$/m.test(fmBlock[1]);
 }
 
 function validateSkillMd(skillDir, skillName) {
@@ -101,6 +107,12 @@ function validateSkillMd(skillDir, skillName) {
     } else {
       pass(`description + when_to_use within listing budget (${combined}/1536)`);
     }
+  }
+
+  if (!hasReleasePleaseVersionMarker(content)) {
+    error('metadata.version must include the x-release-please-version marker');
+  } else {
+    pass('Release Please version marker present');
   }
 
   // body length

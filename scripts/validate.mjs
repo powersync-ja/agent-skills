@@ -228,6 +228,7 @@ function validateNoInlineCredentials() {
 function validateMarketplace() {
   console.log('\n[Marketplace] .claude-plugin/marketplace.json');
   const manifestPath = join(ROOT, '.claude-plugin', 'marketplace.json');
+  const packagePath = join(ROOT, 'package.json');
 
   if (!existsSync(manifestPath)) {
     warn('marketplace.json not found — skipping');
@@ -235,11 +236,27 @@ function validateMarketplace() {
   }
 
   let manifest;
+  let packageJson;
   try {
     manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
   } catch (e) {
     error(`Invalid JSON: ${e.message}`);
     return;
+  }
+
+  try {
+    packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
+  } catch (e) {
+    error(`Invalid package.json: ${e.message}`);
+    return;
+  }
+
+  if (!packageJson.version) {
+    error('package.json has no version');
+  } else if (manifest.metadata?.version !== packageJson.version) {
+    error(`package.json version ${packageJson.version} != marketplace metadata.version ${manifest.metadata?.version}`);
+  } else {
+    pass(`package.json version matches marketplace metadata.version (${packageJson.version})`);
   }
 
   // name
@@ -307,6 +324,9 @@ function validateMarketplace() {
     }
     if (manifest.metadata?.version && plugin.version && manifest.metadata.version !== plugin.version) {
       error(`marketplace metadata.version ${manifest.metadata.version} != plugin "${plugin.name}" version ${plugin.version}`);
+    }
+    if (packageJson.version && plugin.version && packageJson.version !== plugin.version) {
+      error(`package.json version ${packageJson.version} != plugin "${plugin.name}" version ${plugin.version}`);
     }
 
     // relevance block shape (Claude Code suggestion signals)

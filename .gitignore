@@ -1,6 +1,7 @@
 .env
 .DS_Store
 node_modules/
+/dist/
 .claude
 .vscode
 /powersync

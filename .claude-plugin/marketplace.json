@@ -7,15 +7,17 @@
   },
   "metadata": {
     "description": "Add PowerSync Skills to your Claude Code agent",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "plugins": [
     {
       "name": "powersync-skills",
       "description": "Agent skills that help developers build and maintain applications with PowerSync",
       "source": "./",
-      "skills": ["./skills/powersync"],
-      "version": "1.3.0",
+      "skills": [
+        "./skills/powersync"
+      ],
+      "version": "1.4.0",
       "author": {
         "name": "PowerSync"
       },
@@ -38,7 +40,9 @@
       "relevance": {
         "topic": "PowerSync",
         "signals": {
-          "cli": ["powersync"],
+          "cli": [
+            "powersync"
+          ],
           "filesRead": [
             "**/sync-config.yaml",
             "**/sync-rules.yaml",
@@ -46,11 +50,26 @@
             "**/powersync/cli.yaml"
           ],
           "manifestDeps": [
-            { "file": "[/\\\\]package\\.json$", "pattern": "\"@powersync/" },
-            { "file": "[/\\\\]package\\.json$", "pattern": "\"@journeyapps/wa-sqlite\"" },
-            { "file": "[/\\\\]pubspec\\.yaml$", "pattern": "powersync" },
-            { "file": "[/\\\\]build\\.gradle(\\.kts)?$", "pattern": "com\\.powersync" },
-            { "file": "[/\\\\]Package\\.swift$", "pattern": "powersync" }
+            {
+              "file": "[/\\\\]package\\.json$",
+              "pattern": "\"@powersync/"
+            },
+            {
+              "file": "[/\\\\]package\\.json$",
+              "pattern": "\"@journeyapps/wa-sqlite\""
+            },
+            {
+              "file": "[/\\\\]pubspec\\.yaml$",
+              "pattern": "powersync"
+            },
+            {
+              "file": "[/\\\\]build\\.gradle(\\.kts)?$",
+              "pattern": "com\\.powersync"
+            },
+            {
+              "file": "[/\\\\]Package\\.swift$",
+              "pattern": "powersync"
+            }
           ]
         }
       }

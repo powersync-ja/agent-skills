@@ -21,3 +21,6 @@ jobs:
           path: ./skills/powersync
           validate-references: true
           fail-on-warning: true
+          # when_to_use is a Claude Code extension, not part of the agentskills.io
+          # spec, so the action's unknown-field warning must not fail the build.
+          ignore-rules: unknown-field

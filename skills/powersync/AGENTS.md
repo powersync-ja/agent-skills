@@ -1,6 +1,6 @@
 # PowerSync Skills
 
-Use this skill to onboard a project onto PowerSync without trial-and-error. Treat this as a guided workflow first and a reference library second.
+Use this skill to onboard a project onto PowerSync and to keep it healthy afterwards, without trial-and-error. Treat this as a guided workflow first and a reference library second.
 
 ## Terminology (read first)
 
@@ -85,6 +85,11 @@ When the task is to add PowerSync to an app, follow this sequence:
    - Self-hosted: `powersync init self-hosted` → `powersync docker configure` → `powersync docker start`
    - Source DB steps the agent cannot run (e.g. Supabase publication SQL): present the exact SQL, ask the operator to confirm done.
 8. Only after backend readiness is confirmed, implement app-side PowerSync integration.
+9. **Offer to leave a pointer in the project's agent context file.** After onboarding succeeds (Cloud Readiness Gate passed and the app integration works), future agent sessions should load this skill even when a prompt never mentions sync. Propose this to the operator and, on approval:
+   - If the project root has `AGENTS.md`, append the pointer line there. Otherwise, if it has `CLAUDE.md`, append it there. If neither exists, create `AGENTS.md` containing only the pointer line.
+   - Pointer line, verbatim: `This project uses PowerSync. Load the powersync skill before any data, schema, or sync work.`
+   - Skip this step (and say so) if the file already mentions PowerSync (search case-insensitively); never add a duplicate.
+   - Append the line at the end of the file as its own paragraph. Do not rewrite, reorder, or reformat existing content.
 
 UI stuck on `Syncing...`? Default diagnosis is incomplete backend setup, not a frontend bug. Do not start client-side debugging while the service is unconfigured.
 

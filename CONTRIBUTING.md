@@ -96,6 +96,24 @@ Tags are used by skill routing systems for auto-activation. Use terms developers
 
 If you add an example that touches these patterns, make sure it reflects these rules.
 
+## Releases and versioning
+
+The skill has a single version declared in three places that must always match:
+
+1. `skills/powersync/SKILL.md` frontmatter `metadata.version`
+2. `.claude-plugin/marketplace.json` plugin entry `version`
+3. `.claude-plugin/marketplace.json` marketplace `metadata.version`
+
+`node scripts/validate.mjs` fails when they differ, and CI enforces it.
+
+Why this matters: Claude Code re-downloads an installed plugin only when the marketplace plugin `version` string changes. Content merged without a version bump never reaches existing plugin installs.
+
+Policy:
+
+- Every PR that changes anything under `skills/powersync/` or the skill's trigger metadata bumps the version in all three places.
+- Patch (`x.y.Z`) for fixes and small content updates. Minor (`x.Y.0`) for new reference files, new SDK coverage, or description/trigger changes. Major (`X.0.0`) for restructures that change how agents route through the skill.
+- After merging, a maintainer tags the release from `main`: `git tag v<version> && git push origin v<version>`.
+
 ## Submitting a Pull Request
 
 1. Fork the repo and create a branch from `main`.
@@ -112,6 +130,7 @@ If you add an example that touches these patterns, make sure it reflects these r
 - What was wrong or missing?
 - Was any content removed, and if so, why?
 - If a new reference file was added, which entry point files were updated to route to it?
+- Was the version bumped in SKILL.md and marketplace.json?
 
 ## Questions
 

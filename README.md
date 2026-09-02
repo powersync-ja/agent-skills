@@ -1,5 +1,7 @@
 # PowerSync Agent Skills
 
+[![skills.sh installs](https://skills.sh/b/powersync-ja/agent-skills)](https://skills.sh/powersync-ja/agent-skills)
+
 Agent skills that help developers build applications with [PowerSync](https://powersync.com).
 
 ![PowerSync Agent Skills](assets/sync-dino.png)
@@ -14,16 +16,41 @@ PowerSync skills follow the [Agent Skills](https://agentskills.io/) specificatio
 
 ## Installation
 
-### Skills.sh
+### skills.sh (Cursor, Codex, Copilot, Windsurf, and most other agents)
+
 ```
 npx skills add powersync-ja/agent-skills
 ```
 
-### Claude Code
+The installer detects your agent. To target a specific agent:
+
+```
+npx skills add powersync-ja/agent-skills --agent cursor
+npx skills add powersync-ja/agent-skills --agent codex
+npx skills add powersync-ja/agent-skills --agent github-copilot
+npx skills add powersync-ja/agent-skills --agent claude-code
+```
+
+### Claude Code (plugin)
+
 ```
 /plugin marketplace add powersync-ja/agent-skills
-/plugin install powersync-skills
+/plugin install powersync-skills@powersync
 ```
+
+### Gemini CLI
+
+```
+gemini skills install https://github.com/powersync-ja/agent-skills.git --path skills/powersync
+```
+
+## Updating
+
+Installed skills do not update themselves. To get the latest release:
+
+- skills.sh installs: `npx skills update`
+- Claude Code plugin: `/plugin marketplace update powersync`, then `/plugin update powersync-skills@powersync`
+- Gemini CLI: `gemini skills uninstall powersync`, then reinstall
 
 ## Usage
 

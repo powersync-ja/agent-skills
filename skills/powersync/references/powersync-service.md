@@ -135,6 +135,9 @@ For PowerSync Cloud, the minimal shape depends on your auth provider.
 replication:
   connections:
     - type: postgresql
+      # Username must be the dedicated powersync_replication user, e.g.
+      # postgresql://powersync_replication@db.<project-ref>.supabase.co:5432/postgres
+      # See references/supabase-auth.md § "Supabase Database Setup"
       uri: !env PS_DATABASE_URI
 
 client_auth:
@@ -324,12 +327,16 @@ If the operator's source database version is below the minimum, advise them to u
 
 ### PostgreSQL Quick Start
 
+> **Supabase:** skip this quick start and follow `references/supabase-auth.md` § "Supabase Database Setup" instead — it creates `powersync_replication` with `BYPASSRLS` (Supabase enables row-level security by default) and logical replication is already enabled.
+
 ```sql
 -- 1. Enable logical replication (skip this step for Supabase — it is already enabled)
 ALTER SYSTEM SET wal_level = 'logical';
 -- Restart PostgreSQL after this
 
 -- 2. Create replication user (replace with a generated secure password—do NOT use "secure_password")
+-- Add BYPASSRLS if any replicated table has row-level security enabled,
+-- otherwise the initial snapshot is silently filtered by RLS policies.
 CREATE USER powersync_replication WITH REPLICATION PASSWORD 'YOUR_GENERATED_PASSWORD';
 
 -- 3. Grant read access

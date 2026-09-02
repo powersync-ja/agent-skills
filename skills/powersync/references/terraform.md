@@ -90,7 +90,7 @@ resource "powersync_instance" "main" {
     name     = "main"
     hostname = "db.<project-ref>.supabase.co"
     port     = 5432
-    username = "powersync_role"
+    username = "powersync_replication"
     password = var.replication_password
     database = "postgres"
     sslmode  = "verify-full"
@@ -150,4 +150,4 @@ terraform destroy
 - Never inline credentials in HCL or state. Use `TF_VAR_*` environment variables for sensitive Terraform variables.
 - `sync_config_content` must include the `config: edition: 3` wrapper — the same requirement as `sync-config.yaml` for the CLI. Missing this wrapper causes validation/deploy failures.
 - Terraform manages the full instance lifecycle. Do not mix CLI deploys (`powersync deploy`) against the same instance managed by Terraform — the two tools will overwrite each other's changes.
-- For Supabase source databases, the Supabase publication and `powersync_role` still need to be configured separately (Terraform does not manage source-DB-side replication setup). See `references/supabase-auth.md`.
+- For Supabase source databases, the Supabase publication and `powersync_replication` still need to be configured separately (Terraform does not manage source-DB-side replication setup). See `references/supabase-auth.md`.

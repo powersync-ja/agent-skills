@@ -83,7 +83,7 @@ When the task is to add PowerSync to an app, follow this sequence:
 7. **Create/link the instance and deploy config before app code.** CLI only — do not hand-create config files.
    - Cloud: `powersync init cloud` → edit config → `powersync link cloud --create` → `powersync deploy`
    - Self-hosted: `powersync init self-hosted` → `powersync docker configure` → `powersync docker start`
-   - Source DB steps the agent cannot run (e.g. Supabase publication SQL): present the exact SQL, ask the operator to confirm done.
+   - Source DB steps the agent cannot run (e.g. Supabase `powersync_replication` user + publication SQL): present the exact SQL, ask the operator to confirm done.
 8. Only after backend readiness is confirmed, implement app-side PowerSync integration.
 9. **Offer to leave a pointer in the project's agent context file.** After onboarding succeeds (Cloud Readiness Gate passed and the app integration works), future agent sessions should load this skill even when a prompt never mentions sync. Propose this to the operator and, on approval:
    - If the project root has `AGENTS.md`, append the pointer line there. Otherwise, if it has `CLAUDE.md`, append it there. If neither exists, create `AGENTS.md` containing only the pointer line.
@@ -152,7 +152,7 @@ Do not proceed to app-side code until **all** items below are verified:
 - Sync config is deployed
 - Client auth is configured
 - Instance URL is available for `fetchCredentials()`
-- Source database replication/publication setup is complete
+- Source database replication/publication setup is complete, including the dedicated replication user (`powersync_replication` for Supabase/Postgres — never connect as a superuser)
 - All credentials and URLs are in `.env` (e.g. `POWERSYNC_URL`, `PS_DATABASE_URI`, plus any backend-specific keys)
 
 Missing item? Finish service setup first. Use the CLI to verify and complete. For steps the agent cannot perform (e.g. running SQL in the source DB), present the exact commands and ask the operator to confirm completion before writing app code.

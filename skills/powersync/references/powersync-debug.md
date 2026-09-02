@@ -21,7 +21,7 @@ Before asking for console logs or editing app code, verify these in order:
 2. The PowerSync service has a valid source DB connection.
 3. Sync config was deployed and starts with `config: edition: 3`.
 4. Client auth is configured correctly (Supabase auth, custom JWKS, or other provider).
-5. Source database replication/publication/CDC is set up for the synced tables.
+5. Source database replication/publication/CDC is set up for the synced tables, and the replication user can read them (see [Replication User Permission Errors (Postgres)](#replication-user-permission-errors-postgres)).
 
 Only inspect frontend connector code or SDK state after all five checks pass.
 
@@ -244,6 +244,26 @@ Both events share the same `rid`; to match a started/complete pair for a single 
 - **Upload queue blocking downloads** — by default, uploads are processed before downloads. Buckets and streams at [priority 0](https://docs.powersync.com/sync/advanced/prioritized-sync) are not blocked by uploads but carry trade-offs around sync consistency.
 - **Replication lag on the source database** — high write volume, long-running transactions, bulk updates, or backfills can cause replication to fall behind. See Stage 1 above.
 - **Too many buckets or parameter results per user**: two per-user limits apply, both defaulting to 1,000. Exceeding either fails sync with `PSYNC_S2305`. High bucket counts also increase incremental sync overhead roughly linearly. See [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count).
+
+# Replication User Permission Errors (Postgres)
+
+The PowerSync connection uses a dedicated read-only role (`powersync_replication`). Two failure modes are specific to that limited role:
+
+**`permission denied for table <name>` in service replicator logs.** The replication role is missing `SELECT` on a table referenced by the sync config. Common cause: the table was created after initial setup by a role other than the one that ran `ALTER DEFAULT PRIVILEGES`, so the automatic `SELECT` grant did not apply. Also occurs for tables outside the `public` schema (needs `GRANT USAGE ON SCHEMA` too). Fix by running the missing grant as an admin user, e.g.:
+
+```sql
+GRANT SELECT ON public.<table> TO powersync_replication;
+```
+
+Then redeploy or wait for the service to retry the snapshot.
+
+**Rows missing (some or all) with no errors, RLS enabled on source tables.** The replication role lacks `BYPASSRLS`, so the initial snapshot's `SELECT`s are filtered by RLS policies. Verify with `SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname = 'powersync_replication';` and fix with:
+
+```sql
+ALTER ROLE powersync_replication BYPASSRLS;
+```
+
+A resync (redeploy sync config) is required after fixing, since already-snapshotted tables stay filtered.
 
 # Replication Lag Debugging (Postgres)
 

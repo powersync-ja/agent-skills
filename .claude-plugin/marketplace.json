@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Add PowerSync Skills to your Claude Code agent",
-    "version": "1.3.0"
+    "version": "1.3.1"
   },
   "plugins": [
     {
@@ -15,7 +15,7 @@
       "description": "Agent skills that help developers build and maintain applications with PowerSync",
       "source": "./",
       "skills": ["./skills/powersync"],
-      "version": "1.3.0",
+      "version": "1.3.1",
       "author": {
         "name": "PowerSync"
       },

@@ -1,8 +1,8 @@
 ---
 name: supabase-auth
-description: Configuring PowerSync with Supabase — database publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
+description: Configuring PowerSync with Supabase — database user (powersync_replication) and publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
 metadata:
-  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256, publication, replica-identity
+  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256, publication, replica-identity, powersync_replication, replication-user, bypassrls
 ---
 
 # PowerSync + Supabase Auth
@@ -21,9 +21,41 @@ PowerSync verifies Supabase JWTs directly when connected to a Supabase-hosted Po
 
 ## Supabase Database Setup
 
-Supabase already has logical replication enabled at the WAL level. You still need to create a publication so PowerSync knows which tables to replicate, and set `REPLICA IDENTITY FULL` on each table so that DELETE operations include the full row (required for PowerSync to sync deletes to clients).
+Supabase already has logical replication enabled at the WAL level. Two things must still exist before PowerSync connects: a dedicated database user for the PowerSync connection, and a publication listing the tables to replicate. Run both in the Supabase SQL Editor **after creating your tables**, in this order.
 
-Run this in the Supabase SQL Editor **after creating your tables**:
+### 1. Create the PowerSync database user
+
+PowerSync connects as a dedicated role, **not** as the `postgres` superuser. Generate a secure password first (e.g. `openssl rand -base64 32` or a password manager), then run:
+
+```sql
+-- Create a role/user with replication privileges for PowerSync
+-- (replace with the generated password — do NOT use a placeholder value)
+CREATE ROLE powersync_replication WITH REPLICATION BYPASSRLS LOGIN PASSWORD 'YOUR_GENERATED_PASSWORD';
+
+-- Read-only access is all PowerSync needs — it never writes to Supabase.
+-- Client writes go through uploadData() → supabase-js as the end user.
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO powersync_replication;
+
+-- Also cover tables created in the future
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO powersync_replication;
+```
+
+Why each attribute matters:
+
+- `REPLICATION` — required to create the logical replication slot.
+- `BYPASSRLS` — Supabase enables row-level security on most tables. Without it, the initial snapshot (plain `SELECT`s) is filtered by RLS policies and rows silently never reach clients.
+- `LOGIN` + `SELECT` only — least privilege. Do not grant write access; nothing in PowerSync needs it.
+
+**Use these credentials for the PowerSync connection:**
+
+- **CLI / self-hosted:** the connection username is `powersync_replication`, e.g. `PS_DATABASE_URI=postgresql://powersync_replication@db.<project-ref>.supabase.co:5432/postgres` in `.env`, with the password supplied separately (`password: secret: !env PS_DATABASE_PASSWORD` for Cloud — see `references/powersync-cli.md` § "Cloud Secrets").
+- **Dashboard:** paste Supabase's connection string, then update the **Username** and **Password** fields to `powersync_replication` and its password.
+- Use Supabase's **Direct connection** string (port 5432), not the transaction pooler — the pooler does not support logical replication. PowerSync includes Supabase's CA certificate, so `sslmode: verify-full` works without extra configuration.
+- `client_auth: supabase: true` auto-detection is unaffected by the role — it reads the project ref from the hostname, not the username.
+
+### 2. Create the publication
+
+Create a publication so PowerSync knows which tables to replicate, and set `REPLICA IDENTITY FULL` on each table so that DELETE operations include the full row (required for PowerSync to sync deletes to clients).
 
 ```sql
 -- Create the PowerSync publication (required)
@@ -36,6 +68,17 @@ When you add a new table that PowerSync should replicate, add it to the publicat
 ```sql
 CREATE PUBLICATION powersync FOR ALL TABLES;
 ```
+
+### Keeping `powersync_replication` grants intact
+
+The limited role can lose read access as the schema evolves. Two cases to watch:
+
+- **Tables created by a different role.** `ALTER DEFAULT PRIVILEGES` only covers tables created by the role that ran it (`postgres` when using the SQL Editor or Supabase CLI migrations). A table created by any other role needs an explicit `GRANT SELECT ON public.<table> TO powersync_replication;`.
+- **Tables outside `public`.** The grants above cover only the `public` schema. For another schema: `GRANT USAGE ON SCHEMA <schema> TO powersync_replication;` plus `GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO powersync_replication;`.
+
+A missing grant surfaces as `permission denied for table <name>` in the PowerSync service logs when the table is snapshotted (first deploy referencing it, or a resync). Fix by running the missing `GRANT` — see `references/powersync-debug.md`.
+
+**Local Supabase (`supabase start`):** the default `postgres` user is fine for local development — the dedicated role matters for hosted projects. The local examples below intentionally use `postgres`.
 
 ### Data API Grants
 

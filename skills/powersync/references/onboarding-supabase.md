@@ -21,7 +21,7 @@ Collect before editing app code:
 - PowerSync instance URL (if instance exists)
 - Instance ID (if using CLI with an existing instance)
 - Project ID (if using CLI to create a new Cloud instance via `powersync link cloud --create`); also Org ID if the PAT covers multiple organizations
-- Supabase Postgres connection string (if source DB connection not yet configured)
+- Supabase Postgres **direct** connection string (if source DB connection not yet configured) — PowerSync connects as the dedicated `powersync_replication` user created in step 3, never as the `postgres` superuser
 - `PS_ADMIN_TOKEN` or willingness to run `powersync login` (Cloud PAT only)
 
 Only ask for the Postgres connection string when you reach the service configuration step.
@@ -38,7 +38,11 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 2. **Keep credentials in `.env`, never hardcoded.** As soon as Supabase project details are available, record `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI`, and `POWERSYNC_URL` in `.env`. Both `service.yaml` (via `!env` tags) and app code depend on these values. For how to get `POWERSYNC_URL`, see `references/powersync-cli.md` § "Getting POWERSYNC_URL". New Supabase projects use publishable keys (prefixed `sb_publishable_…`) instead of the legacy anon key — use it as the value for `SUPABASE_ANON_KEY`.
 
-3. **Run the Supabase publication SQL.** The publication must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL. Present it to the operator and ask them to confirm.
+3. **Create the PowerSync database user and publication.** Both must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL, in this order:
+   1. Create the `powersync_replication` user (`REPLICATION BYPASSRLS LOGIN` + `SELECT` grants). Have the operator generate a secure password; record it in `.env` (e.g. `PS_DATABASE_PASSWORD`).
+   2. Create the `powersync` publication.
+
+   Present the SQL to the operator and ask them to confirm it ran. `PS_DATABASE_URI` must then use `powersync_replication` as the username with Supabase's **direct** connection host (not the pooler).
 
 4. **Scaffold and configure PowerSync.**
    - **New instance (CLI):** `powersync init cloud` → edit config → `powersync link cloud --create --project-id=<id>` → deploy
@@ -64,7 +68,7 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 Do not proceed to app code until all items are verified:
 
 - [ ] PowerSync instance exists and is running
-- [ ] Source database connection is configured
+- [ ] Source database connection is configured and uses the dedicated `powersync_replication` user (not `postgres`)
 - [ ] Supabase publication exists for synced tables
 - [ ] Sync config is deployed with `config: edition: 3`
 - [ ] Client auth is configured for Supabase

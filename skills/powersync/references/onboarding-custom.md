@@ -7,7 +7,7 @@ metadata:
 
 # Custom Backend + PowerSync Onboarding
 
-> **Load this when** onboarding an app onto PowerSync with a non-Supabase backend (custom Postgres, MongoDB, MySQL, MSSQL).
+> **Load this when** onboarding an app onto PowerSync with a non-Supabase backend (custom Postgres, MongoDB, Azure DocumentDB, MySQL, MSSQL).
 
 Use this recipe when onboarding any app onto PowerSync with a **non-Supabase backend** — your own database, your own auth, and your own backend API. Works for all platforms (web, React Native, Flutter, Kotlin, Swift, .NET, etc.) and both Cloud and self-hosted.
 
@@ -18,7 +18,7 @@ Use this recipe when onboarding any app onto PowerSync with a **non-Supabase bac
 Collect before writing any code:
 
 - **Cloud or self-hosted** — which PowerSync hosting model
-- **Database type** — Postgres, MongoDB, MySQL, or MSSQL
+- **Database type** — Postgres, MongoDB, Azure DocumentDB, MySQL, or MSSQL
 - Database connection details (host, port, database, username, password or connection URI)
 - Whether a PowerSync instance already exists
 - PowerSync instance URL (if instance exists)
@@ -37,7 +37,7 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 1. **Confirm the path.** Verify: PowerSync (Cloud or self-hosted) + custom backend + your platform.
 
-2. **Set up the source database.** Load `references/powersync-service.md` § "Source Database Setup" for the relevant quick start (Postgres, MongoDB, MySQL, or MSSQL). Present the exact SQL to the operator and ask them to confirm it is done.
+2. **Set up the source database.** Load `references/powersync-service.md` § "Source Database Setup" for the relevant quick start (Postgres, MongoDB, Azure DocumentDB, MySQL, or MSSQL). Present the exact SQL to the operator and ask them to confirm it is done.
 
 3. **Keep credentials in `.env`, never hardcoded.** As soon as database details are available, record them there:
    ```

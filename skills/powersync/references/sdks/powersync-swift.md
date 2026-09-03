@@ -163,7 +163,7 @@ See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Str
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. Support for other SDKs is planned.
+Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. JavaScript, Dart, and Kotlin SDKs also support checkpoint requests; .NET and Rust do not yet.
 
 ```swift
 try await database.connect(
@@ -184,7 +184,7 @@ try await checkpoint.waitForSync(timeout: 30)
 // Local queries now reflect server state from when requestCheckpoint() was called.
 ```
 
-`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call suspends until the Service is reachable. Cancel the calling task to stop waiting. The `timeout` passed to `waitForSync(timeout:)` only limits waiting for the checkpoint to apply locally.
+`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call suspends until the Service is reachable. Cancel the calling task to stop waiting. Aborting `waitForSync(timeout:)` or reaching the timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
 
 ### Error Handling
 

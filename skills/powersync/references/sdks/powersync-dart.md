@@ -2,7 +2,7 @@
 name: powersync-dart
 description: PowerSync Dart SDK — schema, queries, sync lifecycle, backend connectors, Drift ORM, Flutter Web support, and encryption
 metadata:
-  tags: dart, flutter, flutter-web, drift, orm, sqlite, encryption, sqlcipher, sqlite3mc
+  tags: dart, flutter, flutter-web, drift, orm, sqlite, encryption, sqlcipher, sqlite3mc, checkpoint-requests
 ---
 
 # PowerSync Dart SDK
@@ -145,6 +145,88 @@ If statement preparation overhead is visible in profiling, set `preparedStatemen
 
 See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
 
+## Checkpoint Requests (Alpha)
+
+Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
+
+Requires PowerSync Service v1.24.0+. .NET and Rust SDKs do not yet support checkpoint requests.
+
+To opt in, pass `checkpointMode: .requests()` in `SyncOptions` to `connect()`:
+
+```dart
+await db.connect(
+  connector: connector,
+  options: SyncOptions(checkpointMode: .requests()),
+);
+```
+
+Without this option, calling `requestCheckpoint()` throws an error. Checkpoint IDs are represented as strings in the Dart SDK to match the JavaScript SDK's representation (large int64 values exceed the safe integer range for JavaScript numbers).
+
+### Waiting for the Latest Server Data
+
+```dart
+final checkpoint = await database.requestCheckpoint();
+await checkpoint.waitForSync(
+  abortTrigger: Future.delayed(Duration(seconds: 30)),
+);
+// Local queries now reflect server state from when requestCheckpoint() was called.
+```
+
+`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call suspends until the Service is reachable. Aborting `waitForSync` does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+
+### Error Handling
+
+```dart
+try {
+  final checkpoint = await database.requestCheckpoint();
+  await checkpoint.waitForSync(
+    abortTrigger: Future.delayed(Duration(seconds: 30)),
+  );
+} on AbortException {
+  showRefreshMessage('The refresh timed out. Try again.');
+} catch (e) {
+  showRefreshMessage('Could not wait for checkpoint: $e');
+}
+```
+
+### Relationship to Local Writes
+
+When checkpoint requests are enabled, the SDK creates an internal request after each upload queue flush. You do not need to call `requestCheckpoint()` for your own writes. If you create a request while local writes are pending, waiting on it also waits for those writes to upload and their results to sync back:
+
+```dart
+await database.execute(
+  'INSERT INTO tasks (id, description) VALUES (uuid(), ?)',
+  ['Review the project plan'],
+);
+final checkpoint = await database.requestCheckpoint();
+await checkpoint.waitForSync();
+// The pending write has uploaded and its server state has synced locally.
+```
+
+This behavior relies on `uploadData()` returning only after your backend has committed the changes to the source database.
+
+### Async Upload Backends (Team/Enterprise)
+
+If `uploadData()` queues writes for later processing rather than committing them synchronously, mix in `CustomCheckpointRequestConnector` and implement `postCheckpointRequest`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
+
+```dart
+final class MyBackendConnector extends PowerSyncBackendConnector
+    with CustomCheckpointRequestConnector {
+  // ... also implement fetchCredentials and uploadData
+
+  @override
+  Future<String> postCheckpointRequest(
+    String clientId,
+    String requestId,
+  ) async {
+    final response = await myBackend.createCheckpointRequest(clientId, requestId);
+    return response.checkpointRequestId;
+  }
+}
+```
+
+See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+
 ## Query Patterns
 
 See [Using PowerSync: CRUD](https://docs.powersync.com/client-sdks/reference/flutter.md#using-powersync-crud-functions) for the full API reference.
@@ -221,7 +303,7 @@ See [Flutter Web Support](https://docs.powersync.com/client-sdks/frameworks/flut
 Two options are available for encrypting the local SQLite database at rest:
 
 | Option | Platforms |
-|--------|-----------|
+|--------|----------|
 | [SQLite3MultipleCiphers](https://utelle.github.io/SQLite3MultipleCiphers) | Native + web |
 | [SQLCipher Community Edition](https://www.zetetic.net/sqlcipher/) | Native only |
 

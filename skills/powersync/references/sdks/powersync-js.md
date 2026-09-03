@@ -2,7 +2,7 @@
 name: powersync-js
 description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, sqlite, offline-first
+  tags: javascript, typescript, web, sqlite, offline-first, checkpoint-requests
 ---
 
 > **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
@@ -18,6 +18,7 @@ Core patterns and guidance shared across all PowerSync JavaScript/TypeScript tar
 - [Query Patterns](#query-patterns) (useQuery, CompilableQuery, Imperative, Watch)
 - [Writes & Transactions](#writes--transactions)
 - [Sync Status, Priorities & Sync Streams](#sync-status-priorities--sync-streams)
+- [Checkpoint Requests (Alpha)](#checkpoint-requests-alpha)
 - [Debugging](#debugging)
 - [Common Pitfalls](#common-pitfalls)
 
@@ -709,6 +710,77 @@ subscription.unsubscribe();
 - Default streams: server may configure streams as default — these subscribe automatically without a client call
 - TTL eviction: after TTL expires with no active subscriber, the stream's data may be removed from the local DB
 
+## Checkpoint Requests (Alpha)
+
+Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
+
+Requires PowerSync Service v1.24.0+. .NET and Rust SDKs do not yet support checkpoint requests.
+
+To opt in, pass `checkpointMode: 'requests'` to `connect()`:
+
+```ts
+await db.connect(connector, { checkpointMode: 'requests' });
+```
+
+Without this option, calling `requestCheckpoint()` throws an error. Checkpoint IDs are represented as strings in the JS/TS SDK because large int64 values exceed the safe integer range for JavaScript numbers.
+
+### Waiting for the Latest Server Data
+
+```ts
+const checkpoint = await database.requestCheckpoint();
+await checkpoint.waitForSync({ signal: AbortSignal.timeout(30_000) });
+// Local queries now reflect server state from when requestCheckpoint() was called.
+```
+
+`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call suspends until the Service is reachable. Aborting `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+
+### Error Handling
+
+```ts
+const signal = AbortSignal.timeout(30_000);
+
+try {
+  const checkpoint = await database.requestCheckpoint();
+  await checkpoint.waitForSync({ signal });
+} catch (e) {
+  if (signal.aborted) {
+    showRefreshMessage('The refresh timed out. Try again.');
+  } else {
+    showRefreshMessage(`Could not wait for checkpoint: ${e}`);
+  }
+}
+```
+
+### Relationship to Local Writes
+
+When checkpoint requests are enabled, the SDK creates an internal request after each upload queue flush. You do not need to call `requestCheckpoint()` for your own writes. If you create a request while local writes are pending, waiting on it also waits for those writes to upload and their results to sync back:
+
+```ts
+await database.execute('INSERT INTO tasks (id, description) VALUES (uuid(), ?)', ['Review the project plan']);
+const checkpoint = await database.requestCheckpoint();
+await checkpoint.waitForSync();
+// The pending write has uploaded and its server state has synced locally.
+```
+
+This behavior relies on `uploadData()` returning only after your backend has committed the changes to the source database.
+
+### Async Upload Backends (Team/Enterprise)
+
+If `uploadData()` queues writes for later processing rather than committing them synchronously, implement the optional `postCheckpointRequest` method on your connector. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
+
+```ts
+class MyBackendConnector implements PowerSyncBackendConnector {
+  // ... also implement fetchCredentials and uploadData
+
+  async postCheckpointRequest(clientId: string, requestId: string): Promise<string> {
+    const response = await myBackend.createCheckpointRequest(clientId, requestId);
+    return response.checkpointRequestId;
+  }
+}
+```
+
+See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+
 ## ORM & Raw Tables
 
 These advanced topics are in separate files — load only when needed:
@@ -728,7 +800,7 @@ The Rust-based sync client is now the only sync client. The legacy JavaScript cl
 
 ### QueryStore
 
-`useSuspenseQuery` uses a `QueryStore` (one per `PowerSyncDatabase`, stored in a `WeakMap`). Caches `WatchedQuery` instances keyed by `"${sql} -- ${JSON.stringify(params)} -- ${JSON.stringify(options)}"`. Evicted when listener count reaches 0. `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`.
+`useSuspenseQuery` uses a `QueryStore` (one per `PowerSyncDatabase`, stored in a `WeakMap`). Caches `WatchedQuery` instances keyed by `"${sql} -- ${JSON.stringify(params)} -- ${JSON.stringify(options)}"`; Evicted when listener count reaches 0. `useSuspenseQuery` and `useQuery` with the same SQL/params/options share the same underlying `WatchedQuery`.
 
 ### Op Types (Internal Sync vs CRUD)
 

@@ -1,6 +1,6 @@
 {
   "name": "agent-skills",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "PowerSync Agent Skills for developers building applications with PowerSync.",
   "main": "",
   "type": "module",

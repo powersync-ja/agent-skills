@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/powersync-ja/agent-skills/compare/v1.4.0...v1.4.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* field learnings from a production engagement ([499a7a9](https://github.com/powersync-ja/agent-skills/commit/499a7a9a38adf75016028a2e8145b7df8b4b9d5d))
+
 ## [1.4.0](https://github.com/powersync-ja/agent-skills/compare/v1.3.0...v1.4.0) (2026-09-02)
 
 

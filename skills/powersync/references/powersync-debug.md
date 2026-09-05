@@ -55,6 +55,44 @@ Each of the PowerSync Client SDKs have the SyncStatus class that can be used to 
 
 Key fields to check: `connected`, `downloading`, `uploading`, `lastSyncedAt`, `hasSynced`, `downloadError`, `uploadError`.
 
+## Read Sync Errors That Print as `[object Object]` (Web)
+
+What it identifies: The actual name, message, and cause of a sync error that a web app logs as `[object Object]`.
+
+Why: On the Web SDK, errors raised inside the shared sync worker cross the MessagePort serialized by `SyncStatus.toJSON()` and arrive as plain `{name, message, stack, cause}` objects. They are not `Error` instances: `String(error)` prints `[object Object]` and `instanceof Error` is false, so generic error formatting hides the real failure.
+
+How: Read the `name` and `message` fields directly, and flatten the `cause` chain (each `cause` can itself be a serialized error). Always record which side reported the failure: `status.uploadError` or `status.downloadError`.
+
+What to look for: The two sides call for different first responses. `uploadError` points at the upload queue and your backend (see [Inspect `ps_crud` Directly](#inspect-ps_crud-directly)); `downloadError` points at credentials, the service, or the download path.
+
+## A Resolved `connect()` Is Not a Working Connection
+
+What it identifies: Why an app stays stuck on `Syncing...` even though `connect()` returned without throwing.
+
+Why: `connect()` is fire-and-forget. It resolves even when `fetchCredentials()` fails, and the retry loop that follows surfaces only through `SyncStatus`: `downloadError` is set and `connected` stays `false` between retries.
+
+How: Treat `SyncStatus` as the source of truth for connection health, not the `connect()` promise. Do not put `await connect()` on a UI-blocking path expecting it to fail loudly; it won't.
+
+What to look for: `connected: false` with a populated `downloadError` after `connect()` resolved means the credential or connection loop is failing silently. Start with `fetchCredentials()` and the endpoint URL.
+
+## Persisted Sync State Is Available at Open, Offline
+
+What it identifies: Whether first-sync UI showing on every reload is an app wiring bug rather than an SDK problem.
+
+Why: `hasSynced`, `lastSyncedAt`, and per-stream subscription state are read from the local database when it opens (via `powersync_offline_sync_status()`), before any network activity. A device that has synced before reports ready milliseconds after open, even offline.
+
+How: If an app shows first-sync UI on every reload, inspect what the UI gates on. The SDK's persisted state is correct; the app is likely gating on a value that resets per session (a fresh in-memory flag, or live connection state) instead of `hasSynced`.
+
+## Never Gate Local-Only Reads on Stream Readiness
+
+What it identifies: Guest or signed-out surfaces pinned to a loading state forever.
+
+Why: The "wait for first sync before trusting local queries" rule applies only to identities that can download. A guest or local-only database never connects, so its streams never report synced. Gating guest reads on `hasSynced` (or a `waitForStream` option) pins every guest surface to a permanent loading state.
+
+How: Gate on whether the current identity is expected to sync, for example `mustWaitForStream = authLoaded && isSignedIn`, and apply that gate to every collection read hook.
+
+What to look for: Partial application. A fix applied to one read hook but not the others produces surfaces that load and surfaces that spin in the same app. Audit every read hook that gates on sync readiness, not only the one that was reported.
+
 ## Enable the Request Logger (Swift SDK)
 
 What it identifies: The exact HTTP request being made to the PowerSync Service to inspect the URL, method, headers, authorization token, and response status code. Use this when authentication failures, JWT errors, or endpoint misconfigurations need to be diagnosed on iOS/macOS.
@@ -107,6 +145,16 @@ SELECT * FROM ps_crud ORDER BY id
 
 What to look for: `op` (PUT/PATCH/DELETE), `type` (table name), `id`, `opData` (changed columns). If a column you updated is missing from `opData`, it means its value didn't change from the previous row (PowerSync intentionally omits unchanged values).
 
+## A Wedged Upload Looks Like Syncing Forever
+
+What it identifies: A first sync that never completes because a failing upload is blocking downloads, presenting as an eternal spinner rather than an upload error.
+
+Why: Uploads are processed before downloads. One upload that keeps failing blocks checkpoint application, so the first sync never completes. The UI symptom is an indefinite `Syncing...` state; nothing on screen mentions uploads.
+
+How: Inspect `ps_crud` (see the preceding section) for stuck entries, then check `status.uploadError` for the failure.
+
+What to look for: A non-empty `ps_crud` whose oldest entry never drains, together with a latched `uploadError`. In the app's own UX, after a grace window, distinguish "downloading" (connected, download progress advancing) from "stalled" (disconnected, or a latched `uploadError`/`downloadError`) instead of showing an indefinite optimistic spinner; the optimistic spinner hides exactly this failure.
+
 ## Log the Actual `endpoint` URL in `fetchCredentials()`
 
 What it identifies: Whether the `endpoint` value returned by your connector is pointing at the PowerSync Service, not your app backend.
@@ -127,6 +175,20 @@ EXPLAIN QUERY PLAN SELECT ...
 ```
 
 What to look for: `SCAN TABLE <name>` (bad / no index used) vs. `SEARCH TABLE <name> USING INDEX` (good). If your PowerSync tables show a SCAN, switch to [raw tables](https://docs.powersync.com/usage/use-case-examples/raw-tables.md). If your non-PowerSync tables show a SCAN, add an index on the join column.
+
+## Benchmark Client Queries Without a Device
+
+What it identifies: Missing or unusable schema indexes and expensive query shapes, before they ship, using any local SQLite instead of a real device.
+
+Why: The client storage layout is reproducible. Each PowerSync table is stored as `ps_data__<table>(id, data)` with a view exposing `CAST(json_extract(data, '$.col') AS <type>)` columns, and schema indexes compile to those same expressions. A benchmark database built with this layout exercises the same query plans as a real client.
+
+How: Seed 10k-50k rows into an in-memory SQLite database using that layout, run the app's real query builders against it, and read `EXPLAIN QUERY PLAN` for each query.
+
+What to look for:
+
+- `SCAN` plus `USE TEMP B-TREE FOR ORDER BY` is the red flag; a matching composite index turns it into `SEARCH ... USING INDEX`.
+- A filter wrapped in an expression (`CASE`, or `coalesce()` around the indexed column) can never use a schema index. Rewrite predicates as bare-column equalities so they are sargable, and let the planner choose the index.
+- The planner's index-versus-scan choice depends on data distribution (after `ANALYZE`). Seed the benchmark with realistic skew, or the conclusion is wrong.
 
 ## Check Package Versions and Duplicate Dependencies
 

@@ -2,7 +2,7 @@
 name: powersync-js-react
 description: PowerSync React and Next.js integration — PowerSyncContext, useSuspenseQuery, useQuery, sync stream hooks, and Next.js/Vite setup
 metadata:
-  tags: react, nextjs, vite, hooks, useSuspenseQuery, useQuery, PowerSyncContext, javascript, typescript
+  tags: react, nextjs, vite, hooks, useSuspenseQuery, useQuery, PowerSyncContext, javascript, typescript, isFetching, disconnectAndClear
 ---
 
 # PowerSync React & Next.js
@@ -354,3 +354,31 @@ Any component that calls `usePowerSync`, `useQuery`, `useStatus`, or `useSuspens
 ### Next.js: awaiting `db.connect()` at module scope
 
 `connect()` is fire-and-forget. Calling `await db.connect(connector)` at module scope in a Next.js file will block the module evaluation. Call `db.connect(connector)` without `await` in your provider, then use `db.waitForFirstSync()` if you need to gate rendering on data availability.
+
+### Never flip the context database between null and non-null
+
+`useQuery` takes an early return path (calling fewer hooks) when `usePowerSync()` returns null. A provider that withholds the database on some renders and supplies it on others for the same mounted tree changes the hook count between renders and crashes with "Rendered fewer hooks than expected".
+
+If readiness genuinely must close (for example, the database is being torn down and replaced), remount the consuming subtree with a `key` change instead of setting the context value to null. Better: design the provider so readiness never closes for non-changes, such as an auth provider re-confirming the same user (see the next pitfall).
+
+### Auth confirmation is not a schema change
+
+Apps that support both signed-out (local-only) and signed-in (synced) use need a small orchestration layer around sign-in and sign-out. A recipe that works:
+
+- Keep durable per-database markers: the owner user ID and whether the database is in local or synced mode.
+- On boot, open reads immediately based on those markers, before the auth provider resolves.
+- When the auth provider then confirms the same identity, confirm in place: do not tear down readers, take exclusive locks, or put `connect()` on the read path.
+- Reserve the destructive transition (`disconnectAndClear()`, reopen, reconnect) for actual identity changes: sign-out, or a different user signing in.
+
+Treating a same-identity confirmation as a destructive transition shows up as content appearing on a hard reload, being yanked away for seconds while the app rebuilds, then reappearing. Confirming in place keeps content on screen throughout.
+
+### `@powersync/react` 2.0.x: `isFetching` pinned true behind a closed stream gate
+
+In `@powersync/react` 2.0.0, a query change while a `streams: [{ waitForStream: true }]` gate is closed leaves `isFetching` pinned true forever: the `useWatchedQuery` effect cleanup disposes the pending-update listener without clearing its ref, so the update that would clear `isFetching` never lands. Observed in 2.0.0 and still present in 2.0.1.
+
+Mitigations:
+
+- Before relying on `isFetching` behind a stream gate, verify that the installed version's `useWatchedQuery` effect cleanup nulls the pending-update listener ref.
+- Or avoid gating queries through the `streams` `waitForStream` option, and gate on sync status externally (for example, on the stream subscription's `hasSynced`) instead.
+
+If you patch this locally: a patch keyed to an exact package version in a lockfile silently stops applying when the resolved version drifts. Pin the package version, or make the patch tooling fail loudly on a version mismatch.

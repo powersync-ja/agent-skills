@@ -60,6 +60,10 @@ Before acting on a saved entry naming a specific instance, file, or binary: veri
 
 No persistent memory in your harness? Ask the operator at session start and keep answers in the active conversation.
 
+### Verifying timing-dependent behavior
+
+Boot and auth-transition code paths (reads opened before auth resolves, provisional connect ordering) are timing-dependent, and local auth usually resolves too fast to exercise them. Throttle the auth provider's network requests (for example, Playwright route interception with a delay of about 2.5s) to reproduce production ordering deterministically. Temporary console marks around readiness flips and transition phases, captured with Playwright, give millisecond timelines that turn "feels slow" into attributable stages.
+
 
 ## Always Use the PowerSync CLI
 
@@ -90,6 +94,7 @@ When the task is to add PowerSync to an app, follow this sequence:
    - Pointer line, verbatim: `This project uses PowerSync. Load the powersync skill before any data, schema, or sync work.`
    - Skip this step (and say so) if the file already mentions PowerSync (search case-insensitively); never add a duplicate.
    - Append the line at the end of the file as its own paragraph. Do not rewrite, reorder, or reformat existing content.
+   - If the project vendors this skill into tracked files instead of installing it, also recommend a re-vendor script that copies from the install location into the tracked copy, so `npx skills update` cannot silently drift the two apart. A vendored copy may be trimmed to the platforms the repo actually uses; remove the matching index lines mechanically so no references dangle.
 
 UI stuck on `Syncing...`? Default diagnosis is incomplete backend setup, not a frontend bug. Do not start client-side debugging while the service is unconfigured.
 

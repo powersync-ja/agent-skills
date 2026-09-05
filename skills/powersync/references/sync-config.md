@@ -2,7 +2,7 @@
 name: sync-config
 description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
 metadata:
-  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant, prioritized-sync
 ---
 
 # Sync Config
@@ -155,6 +155,28 @@ streams:
 The client can also override the priority per-subscription — see [Client Usage](#client-usage).
 
 See [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md) for full details.
+
+#### First-paint priority split
+
+For an app whose main surface reads a small slice of a large auto-subscribed dataset, split the streams: put the first-screen rows in a small `priority: 1` auto-subscribed stream and keep the bulk at `priority: 2` or lower priority. The first screen can then open at the priority 1 checkpoint instead of waiting for the full first sync.
+
+```yaml
+streams:
+  inbox_items:
+    priority: 1
+    auto_subscribe: true
+    query: SELECT * FROM items WHERE user_id = auth.user_id() AND folder = 'inbox'
+
+  all_items:
+    priority: 2
+    auto_subscribe: true
+    query: SELECT * FROM items WHERE user_id = auth.user_id()
+```
+
+Two nuances:
+
+- Overlap is the point. The same rows appearing in both the hot stream and the bulk stream is safe; a row is only removed from the client when no subscribed stream retains it. Filtering the hot stream on a user-editable column (such as `folder`) is normally risky because an edit can drop the row out of the stream mid-session, but with the bulk stream also subscribed, the row stays local after it leaves the hot slice.
+- The client must gate honestly. Only reads fully covered by the hot slice may open at the priority 1 checkpoint. Whole-account aggregates (counts, "all items" lists) must still wait for the full sync, or partial data is presented as complete. The consistency caveats of [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md), such as stale rows pending deletion, apply as usual.
 
 ### `accept_potentially_dangerous_queries` (default: `false`)
 

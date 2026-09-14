@@ -1,13 +1,13 @@
 ---
 name: supabase-auth
-description: Configuring PowerSync with Supabase — database publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
+description: Configuring PowerSync with Supabase — replication role and publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
 metadata:
-  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256, publication, replica-identity
+  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256, publication, replica-identity, powersync_role, replication-role
 ---
 
 # PowerSync + Supabase Auth
 
-> **Load this when** using Supabase as the backend — covers database publication setup, JWT signing keys, fetchCredentials(), uploadData error handling, and Cloud/self-hosted auth config.
+> **Load this when** using Supabase as the backend — covers replication role and publication setup, JWT signing keys, fetchCredentials(), uploadData error handling, and Cloud/self-hosted auth config.
 
 ## Table of Contents
 - [Supabase Database Setup](#supabase-database-setup)
@@ -21,7 +21,25 @@ PowerSync verifies Supabase JWTs directly when connected to a Supabase-hosted Po
 
 ## Supabase Database Setup
 
-Supabase already has logical replication enabled at the WAL level. You still need to create a publication so PowerSync knows which tables to replicate, and set `REPLICA IDENTITY FULL` on each table so that DELETE operations include the full row (required for PowerSync to sync deletes to clients).
+Supabase already has logical replication enabled at the WAL level. You still need to create a dedicated replication role for PowerSync to connect with, and a publication so PowerSync knows which tables to replicate. Set `REPLICA IDENTITY FULL` on each table so that DELETE operations include the full row (required for PowerSync to sync deletes to clients).
+
+### Replication Role
+
+Never connect PowerSync as the `postgres` superuser. Create a dedicated `powersync_role` with only the privileges PowerSync needs, and use it in `PS_DATABASE_URI`.
+
+Run this in the Supabase SQL Editor (replace the password with a generated secure value, e.g. `openssl rand -base64 32`; do NOT use "secure_password"):
+
+```sql
+-- Dedicated replication role for PowerSync (never use the postgres superuser)
+-- BYPASSRLS: PowerSync replicates whole tables; row filtering happens in the sync config
+CREATE ROLE powersync_role WITH REPLICATION BYPASSRLS LOGIN PASSWORD 'YOUR_GENERATED_PASSWORD';
+
+-- Read-only access to the tables PowerSync replicates
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO powersync_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO powersync_role;
+```
+
+### Publication
 
 Run this in the Supabase SQL Editor **after creating your tables**:
 
@@ -164,6 +182,8 @@ replication:
 Without this you will see: `Replication error postgres does not support ssl`.
 
 Local Supabase database credentials are printed by `supabase status`. Supply the password to the PowerSync service container via the `PS_SUPABASE_DB_PASSWORD` environment variable. The service only substitutes `!env` variables whose names start with `PS_`.
+
+Connecting as the default `postgres` user is acceptable for this throwaway local container only. Hosted Supabase projects must use the dedicated `powersync_role` (see § "Supabase Database Setup").
 
 You can verify your local Supabase is using ES256 by checking:
 ```bash

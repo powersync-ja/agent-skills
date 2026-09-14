@@ -6,7 +6,7 @@ license: MIT
 compatibility: Works with any skills-compatible agent. Some references include CLI commands requiring the @powersync/cli package.
 metadata:
   author: powersync
-  version: "1.5.0" # x-release-please-version
+  version: "1.6.0" # x-release-please-version
   organization: PowerSync
   tags: powersync, offline-first, local-first, sync-streams, sqlite, replication, uploadData, fetchCredentials, service-config, sync-config, cloud, cli, debugging, supabase, postgres, mongodb, mysql, electric, electric-migration, watch-queries, useQuery, attachments, upload-queue, disconnectAndClear, schema, react-native, flutter, node, web, wa-sqlite
 ---
@@ -34,6 +34,17 @@ If a sentence is ambiguous, default to the operator interpretation. Full legend 
 - **Default scope on existing projects: sync-config only.** Do not edit `service.yaml` or `cli.yaml` unless the operator explicitly authorized service/infra changes in this conversation.
 - **Confirm the target instance before any mutating command** (`deploy`, `destroy`, `stop`, `link --create`, `pull instance`). Never deploy to an instance not authorized by the operator. Treat production as off-limits unless explicitly approved.
 - **Use project memory.** If your harness supports it, persist the CLI invocation, sync-config path, authorized instance ids + environment (dev/staging/prod), and allowed scope of changes. Verify saved values still match reality before acting on them. See `AGENTS.md` § "Continuous Use & Guardrails".
+
+## First Use in a Repo: Offer to Trim (agents)
+
+This copy ships reference files for every PowerSync platform. On your first use of this skill in a repo, check for `.trim-state.json` next to this file. If it exists, the operator already decided; skip this section.
+
+Otherwise run `node scripts/trim.mjs` from this skill's directory. The default run is a read-only report: it detects which PowerSync platforms this repo uses and lists the reference files this copy does not need. It works on this installed copy only, makes no network requests, and is reversible by reinstalling the skill. If it refuses (shared or source install) or detects no PowerSync usage yet, skip this section silently. Otherwise show the report to the operator and ask whether to trim this installed copy. Never trim without explicit operator approval.
+
+- Operator approves: run `node scripts/trim.mjs --apply` (add `--keep <platforms>` for platforms the operator wants to keep anyway).
+- Operator declines: run `node scripts/trim.mjs --decline` so the operator is not asked again.
+
+Reinstalling or `npx skills update` restores the full copy and clears the recorded decision; offering again after an update is expected.
 
 ## What to Load for Your Task
 

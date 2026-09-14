@@ -36,9 +36,9 @@ Follow this sequence exactly. **Do not skip ahead to app code.**
 
 1. **Confirm the path.** PowerSync Cloud + Supabase + your platform.
 
-2. **Keep credentials in `.env`, never hardcoded.** As soon as Supabase project details are available, record `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI`, and `POWERSYNC_URL` in `.env`. Both `service.yaml` (via `!env` tags) and app code depend on these values. For how to get `POWERSYNC_URL`, see `references/powersync-cli.md` § "Getting POWERSYNC_URL". New Supabase projects use publishable keys (prefixed `sb_publishable_…`) instead of the legacy anon key — use it as the value for `SUPABASE_ANON_KEY`.
+2. **Keep credentials in `.env`, never hardcoded.** As soon as Supabase project details are available, record `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PS_DATABASE_URI`, and `POWERSYNC_URL` in `.env`. Both `service.yaml` (via `!env` tags) and app code depend on these values. For how to get `POWERSYNC_URL`, see `references/powersync-cli.md` § "Getting POWERSYNC_URL". New Supabase projects use publishable keys (prefixed `sb_publishable_…`) instead of the legacy anon key — use it as the value for `SUPABASE_ANON_KEY`. `PS_DATABASE_URI` must connect as the dedicated `powersync_role` created in step 3, never as the `postgres` superuser.
 
-3. **Run the Supabase publication SQL.** The publication must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL. Present it to the operator and ask them to confirm.
+3. **Run the Supabase replication role + publication SQL.** Both must exist before PowerSync connects to the database. See `references/supabase-auth.md` § "Supabase Database Setup" for the exact SQL (dedicated `powersync_role` + publication). Present it to the operator and ask them to confirm.
 
 4. **Scaffold and configure PowerSync.**
    - **New instance (CLI):** `powersync init cloud` → edit config → `powersync link cloud --create --project-id=<id>` → deploy
@@ -65,6 +65,7 @@ Do not proceed to app code until all items are verified:
 
 - [ ] PowerSync instance exists and is running
 - [ ] Source database connection is configured
+- [ ] Dedicated `powersync_role` exists and `PS_DATABASE_URI` connects as it (not the `postgres` user)
 - [ ] Supabase publication exists for synced tables
 - [ ] Sync config is deployed with `config: edition: 3`
 - [ ] Client auth is configured for Supabase

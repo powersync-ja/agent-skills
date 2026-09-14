@@ -61,6 +61,24 @@ Installed skills do not update themselves. To get the latest release:
 - Claude Code plugin: `/plugin marketplace update powersync`, then `/plugin update powersync-skills@powersync`
 - Gemini CLI: `gemini skills uninstall powersync`, then reinstall
 
+## Trimming an installed copy
+
+The skill ships reference files for every PowerSync platform (JS/TS, Flutter, Kotlin, Swift, .NET, Terraform). Installed copies include `scripts/trim.mjs`, which detects the platforms a repo uses and, with your approval, prunes the unused reference files from that copy to reduce agent context size.
+
+Agents offer this automatically on first use (see the skill's SKILL.md). To run it yourself from your repo root (adjust the path to where your agent installs skills):
+
+```bash
+node .claude/skills/powersync/scripts/trim.mjs          # read-only report
+node .claude/skills/powersync/scripts/trim.mjs --apply  # prune unused files
+```
+
+Notes:
+
+- The script only changes files inside the installed skill directory and makes no network requests.
+- The decision is recorded in `.trim-state.json` inside the skill directory so the offer is not repeated. Delete that file to decide again.
+- Shared installs (the Claude Code plugin cache, user-level installs) are refused, since one repo's trim would affect every project.
+- Updating or reinstalling restores the full copy and clears the recorded decision, so the offer repeats on the restored copy.
+
 ## Usage
 
 Once skills are installed, agents will automatically use relevant information when working on tasks relating to PowerSync. 
@@ -96,10 +114,10 @@ export SNYK_TOKEN=<your-token>
 uvx snyk-agent-scan@latest scan skills/powersync --json
 ```
 
-Without a Snyk account, use the rate-limited demo endpoint behind Snyk's [Skill Inspector](https://labs.snyk.io/experiments/skill-scan/):
+Without a Snyk account, use the rate-limited demo endpoint behind Snyk's [Skill Inspector](https://labs.snyk.io/experiments/skill-scan/). Pin version 0.5.17: newer releases target a newer analysis API and are rejected by the demo endpoint without a token.
 
 ```bash
-SNYK_CLI_USE=true uvx snyk-agent-scan@latest scan skills/powersync \
+SNYK_CLI_USE=true uvx snyk-agent-scan@0.5.17 scan skills/powersync \
   --analysis-url "https://labs.snyk.io/experiments/skill-scan/api/agent-scan/analysis-machine" \
   --json
 ```

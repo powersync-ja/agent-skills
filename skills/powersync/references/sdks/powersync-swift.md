@@ -2,7 +2,8 @@
 name: powersync-swift
 description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, http-client, custom-headers, checkpoint-requests
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, http-client, custom-headers, checkpoint-requests, sync-streams, syncStream
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
 ---
 
 # PowerSync Swift SDK
@@ -175,7 +176,26 @@ Multi-process access introduces constraints:
 
 ## Sync Streams
 
-See [sync-config.md](references/sync-config.md) for how to subscribe to Sync Streams when `auto_subscribe` is not set to `true` in the PowerSync Service config.
+Sync Streams define what data syncs to each client. See [sync-config.md](references/sync-config.md) for server-side configuration (YAML definitions, parameters, CTEs).
+
+If `auto_subscribe` is not set to `true` in the sync config, subscribe to streams from client code:
+
+```swift
+// Subscribe to a stream with parameters
+let sub = try await db.syncStream(name: "list_todos", params: ["list_id": .string(listId)]).subscribe()
+
+// Wait for this specific stream to complete its first sync
+try await sub.waitForFirstSync()
+
+// The stream's rows are now in the local SQLite database.
+// Read the data with a local query:
+let rows = try await db.getAll("SELECT * FROM todos WHERE list_id = ?", parameters: [listId])
+
+// When the stream is no longer needed
+try await sub.unsubscribe()
+```
+
+Same stream name with different parameters creates separate subscriptions. Subscribing while offline is supported. For full details see [Client-Side Usage](https://docs.powersync.com/sync/streams/client-usage.md).
 
 ## Checkpoint Requests (Alpha)
 

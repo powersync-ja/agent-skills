@@ -23,6 +23,10 @@ If a sentence is ambiguous, default to the operator interpretation.
 
 Shortcut requested? Operator must say so explicitly (e.g. "no CLI, dashboard only").
 
+## First use in a repo (trim offer)
+
+If `.trim-state.json` does not exist next to `SKILL.md`, follow SKILL.md § "First Use in a Repo: Offer to Trim": run `node scripts/trim.mjs` (read-only report), show the result to the operator, and trim only with explicit operator approval (`--apply`). Record a decline with `--decline`. Skip silently if the script refuses or detects no PowerSync usage yet.
+
 ## Continuous Use & Guardrails (existing projects)
 
 The onboarding playbook below assumes a fresh project. On an **existing** project the rules in this section take precedence. Continuous-use sessions are where agents do the most damage — assume nothing about the linked instance, scope, or environment.
@@ -95,7 +99,7 @@ When the task is to add PowerSync to an app, follow this sequence:
    - Pointer line, verbatim: `This project uses PowerSync. Load the powersync skill before any data, schema, or sync work.`
    - Skip this step (and say so) if the file already mentions PowerSync (search case-insensitively); never add a duplicate.
    - Append the line at the end of the file as its own paragraph. Do not rewrite, reorder, or reformat existing content.
-   - If the project vendors this skill into tracked files instead of installing it, also recommend a re-vendor script that copies from the install location into the tracked copy, so `npx skills update` cannot silently drift the two apart. A vendored copy may be trimmed to the platforms the repo actually uses; remove the matching index lines mechanically so no references dangle.
+   - If the project vendors this skill into tracked files instead of installing it, also recommend a re-vendor script that copies from the install location into the tracked copy, so `npx skills update` cannot silently drift the two apart. A vendored copy may be trimmed to the platforms the repo actually uses with the operator's approval; use `scripts/trim.mjs` in this skill so no references dangle.
 
 UI stuck on `Syncing...`? Default diagnosis is incomplete backend setup, not a frontend bug. Do not start client-side debugging while the service is unconfigured.
 
@@ -159,6 +163,7 @@ Do not proceed to app-side code until **all** items below are verified:
 - Client auth is configured
 - Instance URL is available for `fetchCredentials()`
 - Source database replication/publication setup is complete
+- The replication connection uses a dedicated user (e.g. `powersync_role` on Supabase/Postgres), not a superuser or admin account
 - All credentials and URLs are in `.env` (e.g. `POWERSYNC_URL`, `PS_DATABASE_URI`, plus any backend-specific keys)
 
 Missing item? Finish service setup first. Use the CLI to verify and complete. For steps the agent cannot perform (e.g. running SQL in the source DB), present the exact commands and ask the operator to confirm completion before writing app code.

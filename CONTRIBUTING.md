@@ -11,6 +11,8 @@ skills/powersync/
 ├── CLAUDE.md           # Redirect to AGENTS.md (for Claude Code)
 ├── AGENTS.md           # Primary entry point for all agents (Cursor, Codex, Claude, etc.)
 ├── SKILL.md            # Entry point for skills.sh (includes YAML frontmatter + same content as AGENTS.md)
+├── scripts/
+│   └── trim.mjs        # Prunes unused platform references from an installed copy, with operator approval
 └── references/
     ├── sync-config.md
     ├── powersync-service.md
@@ -84,6 +86,15 @@ metadata:
 ```
 
 Tags are used by skill routing systems for auto-activation. Use terms developers would type when asking for help: SDK names, API method names (`uploadData`, `fetchCredentials`), error terms, feature names.
+
+### Skill scripts
+
+Files under `skills/powersync/scripts/` ship inside every installed copy and run in consumer repos with no `node_modules`, so they must be plain Node ESM importing `node:` builtins only. `pnpm validate` enforces this and runs a syntax check on each script.
+
+When adding or removing a reference file, also update:
+
+- the `PLATFORMS` table in `skills/powersync/scripts/trim.mjs` (validated by `pnpm validate` for `references/sdks/` files), and
+- the `relevance.signals.manifestDeps` patterns in `.claude-plugin/marketplace.json` if the change introduces a new platform.
 
 ### Key rules (apply to all files)
 

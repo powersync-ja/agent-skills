@@ -328,7 +328,7 @@ const db = new PowerSyncDatabase({
 })
 ```
 
-Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+Safari: Requires `OPFSCoopSyncVFS` for stable multi-tab, or set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 
 #### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
 
@@ -828,6 +828,25 @@ import { createConsoleLogger, LogLevels } from '@powersync/react'; // or @powers
 const logger = createConsoleLogger({ minLevel: LogLevels.debug }); // trace | debug | info | warn | error
 ```
 
+### Web: Worker Log Levels
+
+To control log verbosity inside web workers, pass `databaseWorkerLogLevel` and `sync.logLevel` at construction time:
+
+```ts
+import { LogLevels } from '@powersync/web';
+
+const db = new PowerSyncDatabase({
+  schema,
+  database: {
+    dbFilename: 'app.db',
+    databaseWorkerLogLevel: LogLevels.trace,
+  },
+  sync: {
+    logLevel: LogLevels.trace,
+  },
+});
+```
+
 ### Production Logging
 
 Enable PowerSync logging in production — it is extremely helpful for debugging sync issues reported by users. Use whatever logging provider your app already uses (Sentry, Datadog, Firebase Crashlytics, etc.).
@@ -890,16 +909,6 @@ db.registerListener({
 ```
 
 Context to include in logs: user/session ID, SDK version (`db.sdkVersion`), `lastSyncedAt`, `connected` status. Avoid logging sensitive row data.
-
-### Web: SQL Logging to Chrome Performance Timeline
-
-```ts
-const db = new PowerSyncDatabase({
-  schema,
-  database: { dbFilename: 'app.db', debugMode: true }
-});
-// All SQL appears in Chrome DevTools → Performance tab timeline
-```
 
 ### Check Sync Status Imperatively
 

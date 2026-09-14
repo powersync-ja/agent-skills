@@ -2,7 +2,7 @@
 name: powersync-dotnet
 description: PowerSync .NET SDK — schema, queries, sync lifecycle, and backend connectors
 metadata:
-  tags: dotnet, csharp, maui, wpf, console, sqlite, offline-first
+  tags: dotnet, csharp, maui, wpf, console, sqlite, offline-first, checkpoint-requests, RequestCheckpoint, WaitForSync, CheckpointRequestException, ICustomCheckpointRequestConnector, CheckpointMode
 ---
 
 # PowerSync .NET SDK
@@ -16,6 +16,7 @@ metadata:
 - [Writes and Transactions](#writes-and-transactions)
 - [Sync Status](#sync-status)
 - [Sync Streams](#sync-streams)
+- [Checkpoint Requests](#checkpoint-requests)
 - [Logging](#logging)
 - [Schema Updates](#schema-updates)
 
@@ -583,6 +584,102 @@ await stream.UnsubscribeAll();
 ```
 
 Same stream name with different parameters creates separate subscriptions. Subscribing while offline is supported — subscriptions are tracked locally and sent on next connect.
+
+## Checkpoint Requests
+
+> Load this section when the operator needs the client to confirm that recent writes have been uploaded and their results have synced back locally.
+
+If the operator needs to wait until local data reflects a specific server state, use `RequestCheckpoint()`. A checkpoint created after local writes confirms that those writes have been uploaded and the resulting server state has synced back.
+
+> **Alpha API** — checkpoint requests may change. Requires PowerSync Service 1.24.0 or later.
+
+### Enable Checkpoint Mode
+
+If using checkpoint requests, pass `CheckpointMode.Requests()` when connecting:
+
+```csharp
+await database.Connect(
+    connector: connector,
+    options: new PowerSyncConnectOptions(checkpointMode: new CheckpointMode.Requests())
+);
+```
+
+### Request a Checkpoint
+
+```csharp
+async Task RefreshLocalData(CancellationToken cancellationToken = default)
+{
+    var checkpoint = await database.RequestCheckpoint(cancellationToken);
+    await checkpoint.WaitForSync(cancellationToken);
+    // Local queries now reflect server state from when the request was made.
+}
+```
+
+If the device is offline when `RequestCheckpoint()` is called, the call waits until the Service is reachable. A request remains valid across a reconnect — call `WaitForSync()` again on the same request after reconnecting.
+
+With a timeout:
+
+```csharp
+try
+{
+    var checkpoint = await database.RequestCheckpoint();
+    await checkpoint.WaitForSync().WaitAsync(TimeSpan.FromSeconds(30));
+}
+catch (TimeoutException)
+{
+    ShowRefreshMessage("The refresh timed out. Try again.");
+}
+catch (CheckpointRequestException e) when (e.Message == CheckpointRequestException.Disconnected)
+{
+    ShowRefreshMessage("Reconnect before refreshing again.");
+}
+catch (CheckpointRequestException e)
+{
+    // Handle other checkpoint errors
+    ShowRefreshMessage($"Failed to request checkpoint: {e.Message}");
+}
+catch (Exception)
+{
+    // Handle other errors
+}
+```
+
+### Confirming Write Round-Trip
+
+After a local write, a checkpoint confirms the write has been uploaded and its result has synced back:
+
+```csharp
+await database.Execute(
+    "INSERT INTO tasks (id, description) VALUES (uuid(), ?)",
+    ["Review the project plan"]
+);
+var checkpoint = await database.RequestCheckpoint();
+await checkpoint.WaitForSync();
+// The write has uploaded and its server state has synced locally.
+```
+
+If `DisconnectAndClear()` is called, discard any existing checkpoint objects. Request a new checkpoint after reconnecting.
+
+### Custom Backend Connector
+
+If your application backend needs to create checkpoint requests (rather than letting PowerSync generate them), implement `ICustomCheckpointRequestConnector`:
+
+```csharp
+class BackendConnector : ICustomCheckpointRequestConnector
+{
+    public async Task<string> PostCheckpointRequest(string clientId, string requestId, CancellationToken ct)
+    {
+        var response = await BackendAPI.CreateCheckpointRequest(clientId, requestId, cancellationToken: ct);
+        return response.RequestId;
+    }
+
+    // Also implement other IPowerSyncBackendConnector methods: FetchCredentials, UploadData
+}
+```
+
+Use your application's own authentication for `PostCheckpointRequest` — it does not receive the PowerSync sync token.
+
+> The .NET SDK represents checkpoint IDs as strings for compatibility with older SDK APIs. This will change in a future release.
 
 ## Logging
 

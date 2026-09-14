@@ -8,6 +8,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -139,13 +140,13 @@ function validateSkillMd(skillDir, skillName) {
 function extractReferences(content) {
   const refs = new Set();
 
-  // Backtick references to .md files: `references/sdks/powersync-js.md`
-  for (const m of content.matchAll(/`((?:references|scripts|assets)\/[^`]+\.md)`/g)) {
+  // Backtick references to .md/.mjs files: `references/sdks/powersync-js.md`
+  for (const m of content.matchAll(/`((?:references|scripts|assets)\/[^`]+\.(?:md|mjs))`/g)) {
     refs.add(m[1]);
   }
 
-  // Markdown link references to local .md files: [text](references/foo.md)
-  for (const m of content.matchAll(/\]\(((?:references|scripts|assets)\/[^)]+\.md)\)/g)) {
+  // Markdown link references to local .md/.mjs files: [text](references/foo.md)
+  for (const m of content.matchAll(/\]\(((?:references|scripts|assets)\/[^)]+\.(?:md|mjs))\)/g)) {
     refs.add(m[1]);
   }
 
@@ -187,6 +188,56 @@ function validateReferences(skillDir, skillName) {
     pass(`all ${totalRefs} file references resolve`);
   } else if (totalRefs === 0) {
     warn('no file references found');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 2b. Validate skill scripts
+// ---------------------------------------------------------------------------
+
+// Skill scripts ship inside the skill and run in consumer repos that have no
+// node_modules, so they must parse standalone and import node builtins only.
+
+function validateScripts(skillDir, skillName) {
+  const scriptsDir = join(skillDir, 'scripts');
+  if (!existsSync(scriptsDir)) return;
+  console.log(`\n[Scripts] ${skillName}`);
+
+  for (const name of readdirSync(scriptsDir).filter((n) => n.endsWith('.mjs'))) {
+    const file = join(scriptsDir, name);
+    try {
+      execFileSync(process.execPath, ['--check', file], { stdio: 'pipe' });
+      pass(`scripts/${name} parses`);
+    } catch (e) {
+      error(`scripts/${name} has a syntax error: ${e.stderr?.toString().trim() || e.message}`);
+      continue;
+    }
+
+    const content = readFileSync(file, 'utf-8');
+    const specifiers = [...content.matchAll(/^\s*(?:import|export)\b[^'"]*['"]([^'"]+)['"]/gm)].map((m) => m[1]);
+    const external = specifiers.filter((s) => !s.startsWith('node:'));
+    if (external.length > 0) {
+      error(`scripts/${name} imports non-builtin modules: ${external.join(', ')} (use node: builtins only)`);
+    } else {
+      pass(`scripts/${name} imports node builtins only (${specifiers.length} imports)`);
+    }
+  }
+
+  // trim.mjs must list every SDK reference file, or a newly added file would
+  // silently survive every trim.
+  const trimPath = join(scriptsDir, 'trim.mjs');
+  const sdksDir = join(skillDir, 'references', 'sdks');
+  if (existsSync(trimPath) && existsSync(sdksDir)) {
+    const trimSource = readFileSync(trimPath, 'utf-8');
+    let missing = 0;
+    for (const name of readdirSync(sdksDir).filter((n) => n.endsWith('.md'))) {
+      const rel = `references/sdks/${name}`;
+      if (!trimSource.includes(rel)) {
+        error(`scripts/trim.mjs does not list ${rel}; add it to the PLATFORMS table`);
+        missing++;
+      }
+    }
+    if (missing === 0) pass('scripts/trim.mjs lists every references/sdks file');
   }
 }
 
@@ -380,6 +431,7 @@ if (!existsSync(skillsRoot)) {
     const skillDir = join(skillsRoot, dir.name);
     validateSkillMd(skillDir, dir.name);
     validateReferences(skillDir, dir.name);
+    validateScripts(skillDir, dir.name);
   }
 }
 

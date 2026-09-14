@@ -1,9 +1,8 @@
 ---
 name: powersync-swift
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), backend connectors, GRDB ORM support, and Swift Data community integration
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
-  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, checkpoint-requests, sync-streams, syncStream
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
+  tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, http-client, custom-headers, checkpoint-requests, sync-streams, syncStream
 ---
 
 # PowerSync Swift SDK
@@ -137,6 +136,25 @@ final class SystemManager {
 ```
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/swift.md#2-instantiate-the-powersync-database) for more information.
+
+## Custom HTTP Client
+
+If the user needs to add custom HTTP headers or configure URL session behavior, pass a custom `URLSession` via `ConnectOptions.clientConfiguration`. This is useful when the PowerSync Service runs behind a reverse proxy that requires specific headers:
+
+```swift
+let config = URLSessionConfiguration.ephemeral
+config.httpAdditionalHeaders = ["x-my-custom-header": "value"]
+let session = URLSession(configuration: config)
+
+try await db.connect(
+    connector: connector,
+    options: ConnectOptions(
+        clientConfiguration: SyncClientConfiguration(
+            urlSession: session
+        )
+    )
+)
+```
 
 ### App Groups and Extensions (Experimental, v1.15+)
 

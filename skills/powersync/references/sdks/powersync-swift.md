@@ -1,9 +1,8 @@
 ---
 name: powersync-swift
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), backend connectors, GRDB ORM support, and Swift Data community integration
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
 metadata:
   tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, http-client, custom-headers, checkpoint-requests, sync-streams, syncStream
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
 ---
 
 # PowerSync Swift SDK

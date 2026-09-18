@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing
+  tags: service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -232,6 +232,11 @@ storage:
     secret_access_key: !env PS_S3_SECRET
 ```
 
+Additional options for this configuration:
+
+- `object_storage.concurrency_limit`: Maximum concurrent object storage requests. Defaults to `64` as of Service 1.26.1 (was `16` in earlier versions).
+- `chunk_compaction_concurrency` (at `storage` level, not inside `object_storage`): Maximum buckets chunk-merge compaction processes at the same time on storage version 4. Defaults to `4` with `object_storage` configured, `2` without. Must be between 1 and 64. Available since Service 1.26.1. With object storage, request latency dominates per-bucket processing; raising this value shortens compaction and reduces the delay before a new Sync Config becomes active.
+
 For the full self-hosted setup — bucket creation, permissions, and lifecycle rules — follow the [S3 setup guide](https://docs.powersync.com/sync/advanced/storage-version-4#self-hosted-s3-setup).
 When S3 object storage is enabled, you can raise `max_concurrent_connections` above the default of 200 per API process. With storage version 4 and S3 enabled, each API process supports up to 1,000 concurrent client connections. If a large share of those clients run an initial sync at the same time, performance degrades; scale out the API before any deployment that forces all clients to re-download their data.
 
@@ -311,7 +316,7 @@ A single replication instance handles roughly 50,000–100,000 concurrent client
 Prometheus metrics are exposed on port `9464`. Enable the chart's `NetworkPolicy` (`networkPolicy.enabled: true`) in production to allow scrapes on that port. Key signals:
 
 | Metric | Note |
-|--------|-----------|
+|--------|----------|
 | `powersync_concurrent_connections` | Primary HPA driver. Alert when a pod nears the 200 hard cap. |
 | `powersync_replication_lag_seconds` | Alert on sustained spikes. |
 | `powersync_replication_storage_size_bytes` | Capacity-plan from the trend. |

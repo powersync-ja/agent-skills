@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/powersync-ja/agent-skills/compare/v1.6.0...v1.6.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* sync from docs, correct disconnectAndClear soft-clear and raw-table migration guidance (powersync-docs [#650](https://github.com/powersync-ja/agent-skills/issues/650)) ([#109](https://github.com/powersync-ja/agent-skills/issues/109)) ([042718f](https://github.com/powersync-ja/agent-skills/commit/042718fd60921c502fc8a273c8b09988c2ee3998))
+
 ## [1.6.0](https://github.com/powersync-ja/agent-skills/compare/v1.5.0...v1.6.0) (2026-09-09)
 
 

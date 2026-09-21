@@ -25,7 +25,7 @@ Raw tables let PowerSync sync data directly into native SQLite tables you define
 ## SDK Availability
 
 | SDK | Min Version | Package |
-|-----|-------------|---------|
+|-----|-------------|--------|
 | JavaScript (Web) | 1.35.0 | `@powersync/web` |
 | JavaScript (React Native) | 1.31.0 | `@powersync/react-native` |
 | JavaScript (Node) | 0.18.0 | `@powersync/node` |
@@ -268,8 +268,8 @@ Not needed if the raw table was present from the first `connect()` call.
 
 Three strategies:
 
-1. **Delete and resync:** `disconnectAndClear(soft: true)` → migrate → reconnect. Safest but requires network.
-2. **Trigger resync:** `ALTER TABLE ... ADD COLUMN` with a default → `SELECT powersync_trigger_resync(TRUE)`. App stays usable offline with optimistic defaults until resync completes.
+1. **Clear and resync:** Configure a `clear` statement on each raw table (required — `disconnectAndClear()` does not clear raw tables automatically), call `disconnectAndClear()`, migrate the schema, then reconnect. Add `soft: true` to keep PowerSync's internal copy and reduce re-download time for the same user.
+2. **Trigger resync:** `ALTER TABLE ... ADD COLUMN` with a default, then `SELECT powersync_trigger_resync(TRUE)`. App stays usable offline with optimistic defaults until resync completes.
 3. **`_extra` column pattern:** Store unknown columns as JSON in an `_extra TEXT` column using the `Rest` parameter. Migrate by extracting from `_extra`: `json_extract(_extra, '$.newCol')`.
 
 ## Caveats

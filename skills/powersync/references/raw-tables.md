@@ -268,7 +268,7 @@ Not needed if the raw table was present from the first `connect()` call.
 
 Three strategies:
 
-1. **Clear and resync:** Configure a `clear` statement on each raw table (required — `disconnectAndClear()` does not clear raw tables automatically), call `disconnectAndClear()`, migrate the schema, then reconnect. Add `soft: true` to keep PowerSync's internal copy and reduce re-download time for the same user.
+1. **Clear and resync:** Configure a `clear` statement on each raw table first, since `disconnectAndClear()` does not clear raw tables automatically. Then call `disconnectAndClear()`, migrate the schema, and reconnect. Add `soft: true` to keep PowerSync's internal copy and reduce re-download time for the same user.
 2. **Trigger resync:** `ALTER TABLE ... ADD COLUMN` with a default, then `SELECT powersync_trigger_resync(TRUE)`. App stays usable offline with optimistic defaults until resync completes.
 3. **`_extra` column pattern:** Store unknown columns as JSON in an `_extra TEXT` column using the `Rest` parameter. Migrate by extracting from `_extra`: `json_extract(_extra, '$.newCol')`.
 

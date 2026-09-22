@@ -324,7 +324,7 @@ For a full reference of all Service log messages and their structured fields, se
 ### Common Causes
 
 - **Large initial sync** — sync rules with a large dataset will slow the first sync after connecting. Inspect bucket sizes with the [Sync Diagnostics Client](https://diagnostics-app.powersync.com/).
-- **Upload queue blocking downloads** — by default, uploads are processed before downloads. Buckets and streams at [priority 0](https://docs.powersync.com/sync/advanced/prioritized-sync) are not blocked by uploads but carry trade-offs around sync consistency.
+- **Upload queue blocking downloads** — by default, uploads are processed before downloads. Buckets and streams at [priority 0](https://docs.powersync.com/sync/streams/prioritized-sync) are not blocked by uploads but carry trade-offs around sync consistency.
 - **Replication lag on the source database** — high write volume, long-running transactions, bulk updates, or backfills can cause replication to fall behind. See Stage 1 above.
 - **Too many buckets or parameter results per user**: two per-user limits apply, both defaulting to 1,000. Exceeding either fails sync with `PSYNC_S2305`. High bucket counts also increase incremental sync overhead roughly linearly. See [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count).
 

@@ -42,7 +42,7 @@ config:
 ```
 
 ### PowerSync SDKs
-There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/streams/migration.md#minimum-sdk-versions) for a full list for each supported PowerSync SDK.
+There are minimum SDK requirements when using Sync Streams in an application. See [Minimum SDK Versions](https://docs.powersync.com/sync/rules/migrate-to-sync-streams#requirements) for a full list for each supported PowerSync SDK.
 
 IMPORTANT
 Recent SDK versions ship only the Rust sync client, so no opt-in is needed. On older SDKs (pre `Rust Client Default`), explicitly enable the Rust sync client to use Sync Streams.
@@ -154,7 +154,7 @@ streams:
 
 The client can also override the priority per-subscription — see [Client Usage](#client-usage).
 
-See [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md) for full details.
+See [Prioritized Sync](https://docs.powersync.com/sync/streams/prioritized-sync) for full details.
 
 #### First-paint priority split
 
@@ -176,7 +176,7 @@ streams:
 Two nuances:
 
 - Overlap is the point. The same rows appearing in both the hot stream and the bulk stream is safe; a row is only removed from the client when no subscribed stream retains it. Filtering the hot stream on a user-editable column (such as `folder`) is normally risky because an edit can drop the row out of the stream mid-session, but with the bulk stream also subscribed, the row stays local after it leaves the hot slice.
-- The client must gate honestly. Only reads fully covered by the hot slice may open at the priority 1 checkpoint. Whole-account aggregates (counts, "all items" lists) must still wait for the full sync, or partial data is presented as complete. The consistency caveats of [Prioritized Sync](https://docs.powersync.com/sync/advanced/prioritized-sync.md), such as stale rows pending deletion, apply as usual.
+- The client must gate honestly. Only reads fully covered by the hot slice may open at the priority 1 checkpoint. Whole-account aggregates (counts, "all items" lists) must still wait for the full sync, or partial data is presented as complete. The consistency caveats of [Prioritized Sync](https://docs.powersync.com/sync/streams/prioritized-sync), such as stale rows pending deletion, apply as usual.
 
 ### `accept_potentially_dangerous_queries` (default: `false`)
 
@@ -423,11 +423,11 @@ For a full breakdown, see [Limitations](https://docs.powersync.com/sync/streams/
 
 ## Migration
 
-There are big differences between Sync Rules and Sync Streams, consider the following when migrating from Sync Rules to Sync Streams. See [Sync Streams Migrations](https://docs.powersync.com/sync/streams/migration.md) for information such as:
-- How to migrate
-- The tools that can make it easier 
-- Understanding the difference between Sync Rules and Sync Streams
-- Migration examples for common scenarios
+If the project uses Sync Rules (`bucket_definitions:` in the config), use the migration tool to convert to Sync Streams without changing what the app syncs:
+
+1. **Generate the draft:** In the PowerSync Dashboard, click **Migrate to Sync Streams**. Or run `powersync migrate sync-rules` in the CLI (reads `sync-config.yaml`, overwrites it with the Sync Streams draft).
+2. **Review and deploy:** Compare the draft against the original Sync Rules, then run `powersync deploy sync-config`. Clients do a one-time full re-sync after the switch.
+3. **Adopt Sync Streams features** (optional, one stream at a time): split the merged stream into named streams, convert parameter CTEs to subqueries, or change `auto_subscribe` streams to on-demand subscriptions. See [Migrate to Sync Streams](https://docs.powersync.com/sync/rules/migrate-to-sync-streams) for the full guide and examples.
 
 ## Client Usage
 
@@ -474,7 +474,7 @@ There are examples available for each PowerSync Client SDK.
 ### Frameworks 
 
 | Framework                 | Client Usage Reference URL                                                                                         |
-|---------------------------|-----------------------------------------------------------------------------------------------------------------|
+|---------------------------|---------------------------------------------------------------------------------------------------------------|
 | React                     | [Client Usage](https://docs.powersync.com/sync/streams/client-usage.md#react-hooks)                                        |
 
 ## Advanced Topics

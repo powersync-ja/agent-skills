@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/powersync-ja/agent-skills/compare/v1.6.1...v1.6.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* update stale docs URLs for prioritized-sync and migration guide ([#111](https://github.com/powersync-ja/agent-skills/issues/111)) ([4732cda](https://github.com/powersync-ja/agent-skills/commit/4732cda87e05b650efe75ee59f99180af42832a8))
+
 ## [1.6.1](https://github.com/powersync-ja/agent-skills/compare/v1.6.0...v1.6.1) (2026-09-21)
 
 

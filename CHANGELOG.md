@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.3](https://github.com/powersync-ja/agent-skills/compare/v1.6.2...v1.6.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* add ap-south-1 (India) to Private Endpoints supported regions ([#113](https://github.com/powersync-ja/agent-skills/issues/113)) ([4100f9b](https://github.com/powersync-ja/agent-skills/commit/4100f9b0ff9fc9cd97cef064aa052bac5cfdb49b))
+
 ## [1.6.2](https://github.com/powersync-ja/agent-skills/compare/v1.6.1...v1.6.2) (2026-09-22)
 
 

@@ -397,7 +397,7 @@ Private Endpoints use AWS PrivateLink for private networking between your source
 
 5. **Connect using the Private Endpoint**: Instance → Database Connections → select the endpoint in the Private Endpoint dropdown (only `Available` endpoints in the same region are selectable). For MongoDB Atlas, use the connection string from the Atlas Connect dialog with Private Endpoint selected as the connection type.
 
-**AWS regions supported:** `us-east-1`, `eu-west-1`, `sa-east-1`, `ap-northeast-1`, `ap-southeast-2`. The Private Endpoint must be in the same region as the PowerSync instance; the Endpoint Service itself can be in any AWS region, as long as it accepts connections from the PowerSync instance's region.
+**AWS regions supported:** `us-east-1`, `eu-west-1`, `sa-east-1`, `ap-northeast-1`, `ap-southeast-2`, `ap-south-1`. The Private Endpoint must be in the same region as the PowerSync instance; the Endpoint Service itself can be in any AWS region, as long as it accepts connections from the PowerSync instance's region.
 
 ## Source Database Setup
 

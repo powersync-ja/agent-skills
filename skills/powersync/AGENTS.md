@@ -129,6 +129,7 @@ Additional footguns by area (do not load unless working there):
 - **Supabase:** `references/supabase-auth.md` (JWT signing keys, publication SQL, local Supabase)
 - **Custom backend:** `references/custom-backend.md` (upload endpoint rules, JWT pitfalls)
 - **SQLite extensions (vector search, custom tokenizers):** `references/sqlite-extensions.md`
+- **Rust SDK:** `references/sdks/powersync-rust.md` (environment setup, `PowerSyncEnvironment::tokio()` or `async_io(executor)`, `tx.complete()`, checkpoint requests)
 
 ## Required Inputs Before Coding
 

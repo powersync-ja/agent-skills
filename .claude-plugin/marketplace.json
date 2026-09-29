@@ -33,7 +33,8 @@
         "kotlin",
         "swift",
         "dotnet",
-        "typescript"
+        "typescript",
+        "rust"
       ],
       "category": "coding",
       "license": "MIT",
@@ -76,6 +77,10 @@
             },
             {
               "file": "[/\\\\]Podfile$",
+              "pattern": "powersync"
+            },
+            {
+              "file": "[/\\\\]Cargo\\.toml$",
               "pattern": "powersync"
             }
           ]

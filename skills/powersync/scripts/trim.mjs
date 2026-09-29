@@ -54,6 +54,7 @@ const PLATFORMS = {
   kotlin: { label: 'Kotlin', files: ['references/sdks/powersync-kotlin.md'] },
   swift: { label: 'Swift', files: ['references/sdks/powersync-swift.md'] },
   dotnet: { label: '.NET', files: ['references/sdks/powersync-dotnet.md'] },
+  rust: { label: 'Rust', files: ['references/sdks/powersync-rust.md'] },
   terraform: { label: 'Terraform', files: ['references/terraform.md'] },
 };
 
@@ -67,6 +68,7 @@ const MATCHERS = [
   },
   { platform: 'swift', match: (n) => n === 'Package.swift' || n === 'Podfile', pattern: /powersync/i },
   { platform: 'dotnet', match: (n) => n.endsWith('.csproj'), pattern: /powersync/i },
+  { platform: 'rust', match: (n) => n === 'Cargo.toml', pattern: /powersync/i },
   { platform: 'terraform', match: (n) => n.endsWith('.tf'), pattern: /powersync/i },
 ];
 
@@ -102,7 +104,7 @@ function parseArgs(argv) {
   }
   const invalid = args.keep.filter((k) => !PLATFORMS[k]);
   if (invalid.length > 0) {
-    console.error(`Unknown --keep platform(s): ${invalid.join(', ')} (valid: ${Object.keys(PLATFORMS).join(', ')})`);
+    console.error(`Unknown --keep platform(s): ${invalid.join(', ')} (valid: ${Object.keys(PLATFORMS).join(', ')}`);
     process.exit(2);
   }
   return args;

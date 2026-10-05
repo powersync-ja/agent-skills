@@ -2,7 +2,7 @@
 name: powersync-js
 description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, sqlite, offline-first, checkpoint-requests
+  tags: javascript, typescript, web, sqlite, offline-first, checkpoint-requests, PowerSyncLogger
 ---
 
 > **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
@@ -849,66 +849,75 @@ const db = new PowerSyncDatabase({
 
 ### Production Logging
 
-Enable PowerSync logging in production — it is extremely helpful for debugging sync issues reported by users. Use whatever logging provider your app already uses (Sentry, Datadog, Firebase Crashlytics, etc.).
+Enable PowerSync logging in production. Use whatever logging provider your app already uses (Sentry, Datadog, Firebase Crashlytics, etc.).
 
-The key pattern is: use `WARN` level in production (captures errors and warnings without noise), and pipe warnings/errors to your log aggregation service. Capture all levels as breadcrumbs so you have context leading up to an error.
+The `PowerSyncLogger` interface requires a `log(record)` method where `record` has `{ level: number, message: string, error?: unknown }`. When using `createConsoleLogger`, override `log` to intercept records: save the original `log`, then replace it with a wrapper that forwards to both the console and your logging service. Compare `level` against `LogLevels` constants to map records to your provider's severity levels.
 
-Example using Sentry (substitute your own provider):
+Register a separate status listener for `uploadError` and `downloadError`. These events are not emitted through the SDK logger. Deduplicate by comparing against the last reported error string, because `statusChanged` fires on every sync status change while the error persists.
+
+Example using Sentry (SDK v2, substitute your own provider):
 
 ```ts
-import { createConsoleLogger, LogLevels } from '@powersync/react-native';
+import * as Sentry from '@sentry/react';
+import { createConsoleLogger, LogLevels } from '@powersync/web'; // or @powersync/react-native / @powersync/common
 
-const logger = createConsoleLogger({ minLevel: LogLevels.warn }); // warn and above in production
+// Sentry SDK 10.71.0 and later enable structured logs by default. Omit enableLogs.
+Sentry.init({ dsn: 'YOUR_SENTRY_DSN_HERE' });
 
-logger.setHandler((messages, context) => {
-  if (!context?.level) return;
+function toSentryLevel(level: number): Sentry.SeverityLevel {
+  if (level >= LogLevels.error) return 'error';
+  if (level >= LogLevels.warn) return 'warning';
+  if (level >= LogLevels.info) return 'info';
+  return 'debug';
+}
 
-  const messageArray = Array.from(messages);
-  const mainMessage = String(messageArray[0] || '');
-  const extra = messageArray.slice(1).reduce((acc, curr) => ({ ...acc, ...curr }), {});
-  const level = context.level.name.toLowerCase();
+const logger = createConsoleLogger({ minLevel: LogLevels.info });
+const logToConsole = logger.log.bind(logger);
 
-  // Capture everything as breadcrumbs for pre-error context
-  Sentry.addBreadcrumb({
-    message: mainMessage,
-    level: level as Sentry.SeverityLevel,
-    data: extra,
-    timestamp: Date.now()
-  });
-
-  // Only send warn/error to the logging service
-  if (level === 'warn' || level === 'error') {
-    Sentry.logger[level](mainMessage, extra);
+// Override log(). The SDK calls it for every record it emits.
+logger.log = (record) => {
+  logToConsole(record);
+  const { level, message, error } = record;
+  const severity = toSentryLevel(level);
+  const attributes = error ? { error: String(error) } : {};
+  // Breadcrumbs show the PowerSync operations that led up to an error report.
+  Sentry.addBreadcrumb({ category: 'powersync', message, level: severity, data: attributes });
+  if (severity === 'error') {
+    Sentry.logger.error(message, attributes);
+  } else if (severity === 'warning') {
+    Sentry.logger.warn(message, attributes);
   }
-});
+};
 ```
 
-Also register a status listener to capture `uploadError` and `downloadError` — these won't appear in the SDK logger automatically:
+For sync errors not emitted through the SDK logger, register a status listener. Deduplicate by tracking the last reported error string because the status retains the error until it clears:
 
 ```ts
+let lastDownloadError = '';
+let lastUploadError = '';
+
 db.registerListener({
   statusChanged: (status) => {
-    if (status.downloadError) {
-      logger.error('PowerSync download error', {
-        error: status.downloadError,
-        lastSyncedAt: status.lastSyncedAt,
-        connected: status.connected,
-        sdkVersion: db.sdkVersion,
-      });
+    const context = {
+      lastSyncedAt: status.lastSyncedAt?.toISOString(),
+      connected: status.connected,
+      sdkVersion: db.sdkVersion || 'unknown'
+    };
+    const downloadError = status.downloadError ? String(status.downloadError) : '';
+    if (downloadError && downloadError !== lastDownloadError) {
+      Sentry.logger.error('PowerSync sync download failed', { ...context, error: downloadError });
     }
-    if (status.uploadError) {
-      logger.error('PowerSync upload error', {
-        error: status.uploadError,
-        lastSyncedAt: status.lastSyncedAt,
-        connected: status.connected,
-        sdkVersion: db.sdkVersion,
-      });
+    lastDownloadError = downloadError;
+    const uploadError = status.uploadError ? String(status.uploadError) : '';
+    if (uploadError && uploadError !== lastUploadError) {
+      Sentry.logger.error('PowerSync sync upload failed', { ...context, error: uploadError });
     }
+    lastUploadError = uploadError;
   }
 });
 ```
 
-Context to include in logs: user/session ID, SDK version (`db.sdkVersion`), `lastSyncedAt`, `connected` status. Avoid logging sensitive row data.
+Context to include in logs: SDK version (`db.sdkVersion`), `lastSyncedAt`, `connected` status. Avoid logging sensitive row data.
 
 ### Check Sync Status Imperatively
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.4](https://github.com/powersync-ja/agent-skills/compare/v1.6.3...v1.6.4) (2026-10-05)
+
+
+### Bug Fixes
+
+* update JS SDK v2 Sentry logger example in production logging section ([#116](https://github.com/powersync-ja/agent-skills/issues/116)) ([670db8e](https://github.com/powersync-ja/agent-skills/commit/670db8e6e93c69e72e142a2bbacf6648d6483f4e))
+
 ## [1.6.3](https://github.com/powersync-ja/agent-skills/compare/v1.6.2...v1.6.3) (2026-09-28)
 
 

@@ -2,7 +2,7 @@
 name: sync-config
 description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
 metadata:
-  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant, prioritized-sync
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant, prioritized-sync, fixed_booleans_in_json
 ---
 
 # Sync Config
@@ -489,7 +489,7 @@ Reference these when the standard patterns don't cover your use case:
 | [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
 | [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables; in Sync Streams, use `table_alias.table_suffix()` to filter on the matched suffix (not `_table_suffix`, which is Sync Rules only) |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |
-| [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams; if `NOT NULL`, `substr()`, or `length()` behave unexpectedly, `unstable_sqlite_expression_engine` (Service ≥ 1.22.0, experimental — may be removed) routes evaluation through actual SQLite; `fixed_booleans_in_json` (Service ≥ 1.27.0) preserves boolean literals in JSON structures instead of converting them to `0`/`1` |
+| [Compatibility Flags](https://docs.powersync.com/sync/advanced/compatibility) | Fix known SQL expression edge cases in Sync Streams. `fixed_booleans_in_json` (Service ≥ 1.27.0) preserves booleans in JSON structures such as MongoDB embedded objects — without it, `{"notifications": true}` syncs as `{"notifications": 1}`. `unstable_sqlite_expression_engine` (Service ≥ 1.22.0, experimental) routes `NOT NULL`, `substr()`, and `length()` evaluation through SQLite. |
 
 ### Multiple Client Versions
 
@@ -620,7 +620,7 @@ data:
 ### Functions
 
 | Category | Functions |
-|----------|-----------|
+|----------|----------|
 | String | `upper()`, `lower()`, `substring()`, `length()`, `hex()`, `base64()` |
 | JSON | `json_extract()`, `->`, `->>`, `json_array_length()`, `json_valid()` |
 | Type | `typeof()`, `cast()` |

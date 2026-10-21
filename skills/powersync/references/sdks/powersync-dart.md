@@ -22,6 +22,12 @@ Best practices and guidance for building Flutter apps with the PowerSync Dart SD
 flutter pub add powersync
 ```
 
+From `powersync` v2.5.0+, the package ships an embedded agent skill. Install it with:
+
+```bash
+dart run skills@ get
+```
+
 ## Setup
 
 ### 1. Define Schema

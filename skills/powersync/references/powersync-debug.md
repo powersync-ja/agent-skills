@@ -2,7 +2,7 @@
 name: powersync-debug
 description: PowerSync debugging and troubleshooting — sync status, JWT verification, PSYNC error codes, replication lag, and diagnostics tools
 metadata:
-  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics, log-reference, close-reason, checkpoint, flushed, sync-stream-started, sync-stream-complete
+  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics, log-reference, close-reason, checkpoint, flushed, sync-stream-started, sync-stream-complete, sync_config_source, service.version
 ---
 
 # PowerSync Debug
@@ -374,6 +374,11 @@ For proactive monitoring: PowerSync emits a WAL budget warning in the dashboard,
 ## Diagnostics API: WAL Health Fields (Self-Hosted)
 
 When a self-hosted operator reports replication or WAL issues, check these fields in the Diagnostics API response (`POST /api/admin/v1/diagnostics`). Retrieve with the CLI: `powersync status --output=json | jq '.data.active_sync_rules'`
+
+The top-level response also includes:
+
+- `service.version`: the version of the running Service (for example, `1.27.1`). If a reported behavior does not match current documentation, ask the operator for this value before checking release notes.
+- `sync_config_source`: where the Service loads its Sync Config. The value is `config` if the Sync Config comes from the Service configuration (such as the `sync_config:` section of `service.yaml`). The value is `api` if the Sync Config was deployed via the Management API. If the operator edits `service.yaml` but the Sync Config does not change, check this field — when it is `api`, the API-deployed config is active and `sync_config:` changes in `service.yaml` are ignored.
 
 Each entry in `active_sync_rules.connections[]` includes:
 

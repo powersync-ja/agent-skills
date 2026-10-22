@@ -88,6 +88,13 @@ Always load `references/sdks/powersync-js.md` for any JS/TS project, then load t
 | Swift | `references/sdks/powersync-swift.md` |
 | Rust | `references/sdks/powersync-rust.md` |
 
+### Live debugging
+
+Some PowerSync SDKs offer ways for agents to connect to a running app, which can be used to
+inspect sync state or run queries against the actual app database.
+
+For the Dart SDK, load `references/sdks/powersync-dart-debugging.md` for instructions.
+
 ## Key Rules to Apply Without Being Asked
 
 - Never define the `id` column in a PowerSync table schema; it is created automatically.

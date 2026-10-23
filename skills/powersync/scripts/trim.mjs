@@ -50,7 +50,13 @@ const PLATFORMS = {
       'references/sdks/powersync-js-vue.md',
     ],
   },
-  dart: { label: 'Dart / Flutter', files: ['references/sdks/powersync-dart.md'] },
+  dart: {
+    label: 'Dart / Flutter',
+    files: [
+      'references/sdks/powersync-dart.md',
+      'references/sdks/powersync-dart-debugging.md',
+    ],
+  },
   kotlin: { label: 'Kotlin', files: ['references/sdks/powersync-kotlin.md'] },
   swift: { label: 'Swift', files: ['references/sdks/powersync-swift.md'] },
   dotnet: { label: '.NET', files: ['references/sdks/powersync-dotnet.md'] },

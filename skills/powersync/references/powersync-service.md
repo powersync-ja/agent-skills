@@ -216,9 +216,9 @@ replication:
       snapshot_socket_timeout: 120
 ```
 
-#### S3 Object Storage (Beta)
+#### S3 Object Storage
 
-To offload larger blocks of bucket data to Amazon S3 or an S3-compatible object store instead of MongoDB, configure `storage.object_storage` (requires Service v1.26.0 and `storage_version: 4` in the Sync Config). Sync Configs on version 2 keep all data in MongoDB even when this is configured. If `access_key_id` and `secret_access_key` are omitted, PowerSync uses credentials available to the process (such as an IAM role); for S3-compatible providers, also set `endpoint` and `force_path_style: true`.
+To offload larger blocks of bucket data to Amazon S3 or an S3-compatible object store instead of MongoDB, configure `storage.object_storage` (requires Service v1.26.0 and storage version 4, the default for MongoDB bucket storage since Service v1.27.0). Sync Configs on version 2 keep all data in MongoDB even when this is configured. If `access_key_id` and `secret_access_key` are omitted, PowerSync uses credentials available to the process (such as an IAM role); for S3-compatible providers, also set `endpoint` and `force_path_style: true`.
 
 ```yaml
 storage:
@@ -241,14 +241,14 @@ For the full self-hosted setup — bucket creation, permissions, and lifecycle r
 
 #### Storage Version Default
 
-To control which storage version the Service uses for new Sync Config deployments (available since Service v1.26.0), set `storage.default_storage_version`. Even numbers are stable; odd numbers are experimental:
+Since Service v1.27.0, the default storage version is 4 for MongoDB bucket storage and 2 for Postgres bucket storage. To override, set `storage.default_storage_version` (available since Service v1.26.0). Even numbers are stable; odd numbers are experimental:
 
 ```yaml
 storage:
-  default_storage_version: 2  # 2 (stable, default in v1.26.0); 4 (Beta — enables incremental reprocessing and S3)
+  default_storage_version: 2  # pin to 2 to delay upgrade (Postgres bucket storage always uses 2)
 ```
 
-Set this to opt in to [storage version 4](https://docs.powersync.com/sync/advanced/storage-version-4), prepare for a Service downgrade, or delay a storage format upgrade.
+Set this to pin a storage version, prepare for a Service downgrade, or delay a storage format upgrade.
 
 #### Deprecated: `sync_rules` Key
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.5](https://github.com/powersync-ja/agent-skills/compare/v1.6.4...v1.6.5) (2026-10-29)
+
+
+### Bug Fixes
+
+* mark storage version 4 as GA and update defaults ([#119](https://github.com/powersync-ja/agent-skills/issues/119)) ([4529dc9](https://github.com/powersync-ja/agent-skills/commit/4529dc9eea87618e98d56f5e86ffc3871b15919e))
+* remove stale max_concurrent_connections note from S3 section ([#121](https://github.com/powersync-ja/agent-skills/issues/121)) ([f17352e](https://github.com/powersync-ja/agent-skills/commit/f17352ee924e1776bd7968b12ee83bb789def8ac))
+* sync from docs, add fixed_booleans_in_json compatibility flag (powersync-docs [#645](https://github.com/powersync-ja/agent-skills/issues/645)) ([#120](https://github.com/powersync-ja/agent-skills/issues/120)) ([6373477](https://github.com/powersync-ja/agent-skills/commit/6373477628c74ce5c4be05b59dce2a3737cebc18))
+
 ## [1.6.4](https://github.com/powersync-ja/agent-skills/compare/v1.6.3...v1.6.4) (2026-10-05)
 
 

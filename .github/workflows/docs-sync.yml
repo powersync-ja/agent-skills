@@ -134,12 +134,15 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: ${{ steps.prompt.outputs.text }}
+          # The PR body's disclaimer line is the only attribution, so turn off
+          # Claude Code's own commit trailer, PR footer, and session link.
+          settings: '{"attribution": {"commit": "", "pr": "", "sessionUrl": false}}'
           claude_args: |
             --model claude-sonnet-5-5
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(pnpm validate:*),Bash(node .github/scripts/check-pr-body.mjs:*)"
 
       # Last line of defence after Claude's own checks: fail the job if any PR
-      # opened by this run has a malformed title or body.
+      # opened by this run has a body that won't render as proper markdown.
       - name: Check posted PR bodies
         if: always() && steps.claude.outcome != 'skipped'
         env:
@@ -151,9 +154,13 @@ jobs:
             --json number,headRefName --jq '.[] | select(.headRefName | startswith("drift/docs-")) | .number')
           failed=0
           for pr in $prs; do
-            if ! node .github/scripts/check-pr-body.mjs --pr "$pr" --repo "$GITHUB_REPOSITORY"; then
-              echo "::error::PR #$pr has a malformed title or body"
+            status=0
+            node .github/scripts/check-pr-body.mjs --pr "$pr" --repo "$GITHUB_REPOSITORY" || status=$?
+            if [ "$status" -eq 1 ]; then
+              echo "::error::PR #$pr has a malformed body"
               failed=1
+            elif [ "$status" -ne 0 ]; then
+              echo "::warning::Could not read PR #$pr to check it"
             fi
           done
           exit $failed

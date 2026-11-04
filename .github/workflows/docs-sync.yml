@@ -1,0 +1,174 @@
+name: Sync skills from docs
+
+# Opens agent-skills PRs for skill-relevant powersync-docs PRs, authored by claude[bot].
+# The prompt lives in .github/prompts/docs-sync.md.
+#
+# Setup (org admin):
+#   1. Install the Claude GitHub App (https://github.com/apps/claude) on this repo.
+#   2. Add an org Anthropic API key as the ANTHROPIC_API_KEY repo secret.
+#
+# The Claude App token exchange only works once this file is on main, so test it
+# with "Run workflow" after merging.
+
+on:
+  schedule:
+    # Weekdays at 06:00 UTC
+    - cron: "0 6 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      docs_pr:
+        description: "powersync-docs PR number to sync. Leave empty to scan recent merges."
+        required: false
+        type: string
+
+concurrency:
+  group: docs-sync
+  cancel-in-progress: false
+
+# Applies to GITHUB_TOKEN only. Claude pushes and opens PRs with the Claude App token.
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+
+env:
+  DOCS_REPO: powersync-ja/powersync-docs
+  LOOKBACK_DAYS: 14
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Docs PRs merged in the lookback window with no drift/docs-<n>-* branch and
+      # no agent-skills PR body referencing them (as .../pull/<n> or
+      # powersync-docs#<n>). Skipped PRs leave no trace, so
+      # Claude re-evaluates them until they age out of the window.
+      - name: Find candidate docs PRs
+        id: candidates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCS_PR: ${{ inputs.docs_pr }}
+        run: |
+          set -euo pipefail
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+          if [ -n "${DOCS_PR:-}" ]; then
+            if ! [[ "$DOCS_PR" =~ ^[0-9]+$ ]]; then
+              echo "::error::docs_pr must be a PR number"
+              exit 1
+            fi
+            list="$DOCS_PR"
+          else
+            since=$(date -u -d "$LOOKBACK_DAYS days ago" +%Y-%m-%d)
+            gh pr list -R "$DOCS_REPO" --state merged --base main --search "merged:>=$since" \
+              --limit 200 --json number,title,mergedAt > "$RUNNER_TEMP/docs-prs.json"
+            gh pr list -R "$GITHUB_REPOSITORY" --state all --limit 1000 --json body \
+              --jq 'map(.body) | join("\n")' > "$RUNNER_TEMP/skills-pr-bodies.txt"
+            gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/drift/docs-" \
+              --jq '.[].ref' > "$RUNNER_TEMP/drift-refs.txt"
+
+            list=$(jq -r \
+              --rawfile bodies "$RUNNER_TEMP/skills-pr-bodies.txt" \
+              --rawfile refs "$RUNNER_TEMP/drift-refs.txt" \
+              --arg docs "$DOCS_REPO" '
+                sort_by(.mergedAt)[]
+                | select(.title | test("^(Version Packages|Release v|chore\\(main\\): release)"; "i") | not)
+                | (.number | tostring) as $n
+                | select($bodies | test($docs + "(/pull/|#)" + $n + "(?![0-9])") | not)
+                | select($refs | test("refs/heads/drift/docs-" + $n + "-") | not)
+                | $n
+              ' "$RUNNER_TEMP/docs-prs.json" | paste -sd ' ' -)
+          fi
+
+          echo "Candidates: ${list:-none}"
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+          if [ -z "$list" ]; then
+            echo "No unhandled docs PRs in the last $LOOKBACK_DAYS days." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/setup-node@v6
+        if: steps.candidates.outputs.list != ''
+        with:
+          node-version-file: ".node-version"
+
+      - uses: pnpm/action-setup@v5
+        if: steps.candidates.outputs.list != ''
+
+      - name: Install dependencies
+        if: steps.candidates.outputs.list != ''
+        run: pnpm install --frozen-lockfile
+
+      - name: Build prompt
+        id: prompt
+        if: steps.candidates.outputs.list != ''
+        env:
+          CANDIDATES: ${{ steps.candidates.outputs.list }}
+        run: |
+          set -euo pipefail
+          # Scratch space for PR body drafts, kept out of commits.
+          mkdir -p .docs-sync
+          echo ".docs-sync/" >> .git/info/exclude
+
+          delim="PROMPT_$(openssl rand -hex 8)"
+          {
+            echo "text<<$delim"
+            echo "## Run context"
+            echo
+            echo "- Repository: $GITHUB_REPOSITORY"
+            echo "- Docs repository: $DOCS_REPO"
+            echo "- Candidate docs PRs, oldest merge first: $CANDIDATES"
+            echo
+            cat .github/prompts/docs-sync.md
+            echo "$delim"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude
+        id: claude
+        if: steps.candidates.outputs.list != ''
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.prompt.outputs.text }}
+          # The PR body's disclaimer line is the only attribution, so turn off
+          # Claude Code's own commit trailer, PR footer, and session link.
+          settings: '{"attribution": {"commit": "", "pr": "", "sessionUrl": false}}'
+          claude_args: |
+            --model claude-sonnet-5-5
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(pnpm validate:*),Bash(node .github/scripts/check-pr-body.mjs:*)"
+
+      # Last line of defence after Claude's own checks: fail the job if any PR
+      # opened by this run has a body that won't render as proper markdown.
+      - name: Check posted PR bodies
+        if: always() && steps.claude.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STARTED_AT: ${{ steps.candidates.outputs.started_at }}
+        run: |
+          set -euo pipefail
+          prs=$(gh pr list -R "$GITHUB_REPOSITORY" --state all --search "created:>=$STARTED_AT" \
+            --json number,headRefName --jq '.[] | select(.headRefName | startswith("drift/docs-")) | .number')
+          failed=0
+          for pr in $prs; do
+            status=0
+            node .github/scripts/check-pr-body.mjs --pr "$pr" --repo "$GITHUB_REPOSITORY" || status=$?
+            if [ "$status" -eq 1 ]; then
+              echo "::error::PR #$pr has a malformed body"
+              failed=1
+            elif [ "$status" -ne 0 ]; then
+              echo "::warning::Could not read PR #$pr to check it"
+            fi
+          done
+          exit $failed
+
+      - name: Post run summary
+        if: always() && steps.claude.outputs.execution_file != ''
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          [ -f "$EXECUTION_FILE" ] || exit 0
+          jq -r 'map(select(.type == "result")) | last | .result // empty' "$EXECUTION_FILE" >> "$GITHUB_STEP_SUMMARY"

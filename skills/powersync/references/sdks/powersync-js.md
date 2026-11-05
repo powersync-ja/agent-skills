@@ -219,6 +219,7 @@ Note: When uploading to backends with native boolean columns (e.g. PostgreSQL vi
 
 - Return 2xx from backend even for validation errors — a 4xx blocks the upload queue permanently
 - 5xx → PowerSync retries automatically with backoff
+- Throw from `uploadData()` only when a later retry can succeed (network error, `5xx`, or a bug or schema mismatch you must fix first). If the backend rejects a write permanently (for example it fails validation), log the rejected write and call `complete()` so the queue advances
 - Surface validation errors by writing them to a local-only table and showing in the UI — never let them block the queue
 
 #### getCrudBatch vs getNextCrudTransaction

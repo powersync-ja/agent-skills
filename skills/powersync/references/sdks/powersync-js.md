@@ -732,7 +732,7 @@ await checkpoint.waitForSync({ signal: AbortSignal.timeout(30_000) });
 // Local queries now reflect server state from when requestCheckpoint() was called.
 ```
 
-`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call suspends until the Service is reachable. Aborting `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call waits without a timeout until the Service is reachable. Once the request reaches the Service it may time out; `requestCheckpoint()` then fails with an error, so call it again to retry. Aborting `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
 
 ### Error Handling
 

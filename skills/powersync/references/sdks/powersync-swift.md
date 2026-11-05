@@ -221,7 +221,7 @@ try await checkpoint.waitForSync(timeout: 30)
 // Local queries now reflect server state from when requestCheckpoint() was called.
 ```
 
-`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call suspends until the Service is reachable. Cancel the calling task to stop waiting. Aborting `waitForSync(timeout:)` or reaching the timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call waits without a timeout until the Service is reachable. Once the request reaches the Service it may time out; `requestCheckpoint()` then fails with an error, so call it again to retry. Cancel the calling task to stop waiting. Aborting `waitForSync(timeout:)` or reaching the timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
 
 ### Error Handling
 

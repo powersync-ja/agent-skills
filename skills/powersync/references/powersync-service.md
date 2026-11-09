@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -249,6 +249,12 @@ storage:
 ```
 
 Set this to pin a storage version, prepare for a Service downgrade, or delay a storage format upgrade.
+
+#### Invalid Sync Config: `sync_config.exit_on_error`
+
+By default (`exit_on_error: true`), the Service exits when the configured Sync Config has a parsing error or a fatal validation error, such as using a feature the source does not support.
+
+Since Service v1.28.0, if you set `sync_config.exit_on_error: false`, the Service keeps running without storing, replicating, or serving the rejected config. Any previous active config keeps replicating and serving clients. The errors appear in `deploying_sync_rules.errors[]` in the Diagnostics API. To recover, correct the config and restart the affected Service processes. If API and replication run as separate processes, give both the same corrected config and restart both.
 
 #### Deprecated: `sync_rules` Key
 

@@ -373,8 +373,10 @@ useQuery<RowType>(
     runQueryOnce?: boolean,
     streams?: QuerySyncStreamOptions[],
   }
-): { data, isLoading, isFetching, error }
+): { data, isLoading, isFetching, fetchReason, error }
 ```
+
+For `@powersync/react` 2.1.0 or later, if `isFetching` is true, read `fetchReason` to tell why: `'initial'`, `'refresh'` (after `refresh()` on a `runQueryOnce` query), `'tables-changed'`, or `'settings-changed'`. For `'settings-changed'` (SQL, parameters, or options changed), `data` still holds the previous query's rows until the new query returns its first result.
 
 Parameters are compared by `JSON.stringify` value, not by reference — so `[userId]` across renders are considered equal even as different array instances.
 

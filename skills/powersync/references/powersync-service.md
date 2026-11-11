@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -407,6 +407,8 @@ Private Endpoints use AWS PrivateLink for private networking between your source
 
 5. **Connect using the Private Endpoint**: Instance → Database Connections → select the endpoint in the Private Endpoint dropdown (only `Available` endpoints in the same region are selectable). For Postgres, set Host to the database's own hostname (the cluster endpoint for Aurora, the instance endpoint for RDS), not the load balancer or Endpoint Service DNS name, because PowerSync verifies the server certificate against that hostname. For MongoDB Atlas, use the connection string from the Atlas Connect dialog with Private Endpoint selected as the connection type.
 
+For Private Endpoint connections, **Test Connection** validates configuration but does not verify reachability. After deployment, confirm the connection in the instance's **Health** view and logs.
+
 **AWS regions supported:** `us-east-1`, `eu-west-1`, `sa-east-1`, `ap-northeast-1`, `ap-southeast-2`, `ap-south-1`. The Private Endpoint must be in the same region as the PowerSync instance; the Endpoint Service itself can be in any AWS region, as long as it accepts connections from the PowerSync instance's region.
 
 ## Source Database Setup
@@ -449,6 +451,15 @@ CREATE PUBLICATION powersync FOR TABLE users, todos, lists;
 -- OR to replicate all current and future tables automatically:
 CREATE PUBLICATION powersync FOR ALL TABLES;
 ```
+
+### AWS Aurora Postgres
+
+Provisioned and Serverless v2 clusters are supported. Aurora Postgres Limitless is not.
+
+1. Enable logical replication through the DB cluster parameter group, not an instance parameter group. If the cluster uses a default parameter group, create a custom cluster parameter group and assign it first. Set `rds.logical_replication` to `1`, then reboot the writer. Confirm with `SHOW rds.logical_replication;` (`on`) and `SHOW wal_level;` (`logical`).
+2. Grant `rds_replication` to the PowerSync role.
+
+For connection settings and troubleshooting, see [Connecting Aurora](#connecting-aurora).
 
 ### MongoDB Quick Start
 

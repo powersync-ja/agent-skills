@@ -339,9 +339,9 @@ db.execute(
 )
 
 // Multiple operations atomically — auto-commits, auto-rollbacks on exception
-db.writeTransaction { tx ->
-    tx.execute("DELETE FROM lists WHERE id = ?", listOf(listId))
-    tx.execute("DELETE FROM todos WHERE list_id = ?", listOf(listId))
+db.writeTransactionAsync { tx ->
+    tx.executeAsync("DELETE FROM lists WHERE id = ?", listOf(listId))
+    tx.executeAsync("DELETE FROM todos WHERE list_id = ?", listOf(listId))
 }
 ```
 

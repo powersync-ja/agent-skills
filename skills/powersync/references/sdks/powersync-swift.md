@@ -111,6 +111,8 @@ final class MyConnector: PowerSyncBackendConnectorProtocol {
 
 Use `getCrudBatch` instead of `getNextCrudTransaction` when uploading large numbers of mutations in bulk.
 
+If you use v1.14 or later, `CrudBatch`, `CrudEntry`, and `CrudTransaction` are structs that your code cannot create, so in tests and mocks of the connector, don't construct them directly.
+
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
 
 ### 3. Instantiate and Connect
@@ -301,9 +303,10 @@ try await db.execute(
 )
 
 // Multiple related mutations as a single unit
+// Statements inside the closure run synchronously: use try without await
 try await db.writeTransaction { tx in
-    try await tx.execute("INSERT INTO lists (id, name) VALUES (?, ?)", parameters: [listId, "Shopping"])
-    try await tx.execute("INSERT INTO todos (id, list_id, description) VALUES (uuid(), ?, ?)", parameters: [listId, "Milk"])
+    try tx.execute("INSERT INTO lists (id, name) VALUES (?, ?)", parameters: [listId, "Shopping"])
+    try tx.execute("INSERT INTO todos (id, list_id, description) VALUES (uuid(), ?, ?)", parameters: [listId, "Milk"])
 }
 ```
 

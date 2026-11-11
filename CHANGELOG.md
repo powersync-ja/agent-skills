@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.6](https://github.com/powersync-ja/agent-skills/compare/v1.6.5...v1.6.6) (2026-11-11)
+
+
+### Bug Fixes
+
+* sync from docs, add Aurora connection and Private Endpoint host guidance (powersync-docs [#744](https://github.com/powersync-ja/agent-skills/issues/744)) ([#133](https://github.com/powersync-ja/agent-skills/issues/133)) ([0fb77e5](https://github.com/powersync-ja/agent-skills/commit/0fb77e5b17271873c4b3b0f8e91d5c0bbf79ad29))
+* sync from docs, correct checkpoint request SDK support and docs link (powersync-docs [#722](https://github.com/powersync-ja/agent-skills/issues/722)) ([#128](https://github.com/powersync-ja/agent-skills/issues/128)) ([30b23c2](https://github.com/powersync-ja/agent-skills/commit/30b23c237c13d0d35f961be0390489967b6bf151))
+* sync from docs, correct checkpoint request timeout note (powersync-docs [#738](https://github.com/powersync-ja/agent-skills/issues/738)) ([72fbb77](https://github.com/powersync-ja/agent-skills/commit/72fbb77f86daac33a6f17d8cfea9f456284e8b1b))
+* sync from docs, correct checkpoint request timeout note (powersync-docs [#738](https://github.com/powersync-ja/agent-skills/issues/738)) ([545b44b](https://github.com/powersync-ja/agent-skills/commit/545b44bc9c63ce2a749320040ecf8b4fb63d8d9e))
+* sync from docs, correct Kotlin and Swift transaction examples (powersync-docs [#727](https://github.com/powersync-ja/agent-skills/issues/727)) ([#134](https://github.com/powersync-ja/agent-skills/issues/134)) ([3da87bd](https://github.com/powersync-ja/agent-skills/commit/3da87bd56049613a98e0bf0c3433915e956bfed5))
+* sync from docs, document exit_on_error for invalid Sync Config (powersync-docs [#752](https://github.com/powersync-ja/agent-skills/issues/752)) ([#136](https://github.com/powersync-ja/agent-skills/issues/136)) ([99ef422](https://github.com/powersync-ja/agent-skills/commit/99ef422c7ce59cf8a2a7ba7dd092f4f411153c4b))
+* sync from docs, recommend vfs auto and add SimpleOpfsVFS (powersync-docs [#762](https://github.com/powersync-ja/agent-skills/issues/762)) ([#137](https://github.com/powersync-ja/agent-skills/issues/137)) ([3284fb6](https://github.com/powersync-ja/agent-skills/commit/3284fb63884604c10ef695ad9e0a40da4f5c7588))
+* sync from docs, update Rust SDK to Authenticator and MutationUploader split (powersync-docs [#735](https://github.com/powersync-ja/agent-skills/issues/735)) ([#131](https://github.com/powersync-ja/agent-skills/issues/131)) ([342a675](https://github.com/powersync-ja/agent-skills/commit/342a67536763423225df46fc961d12c81daee0b5))
+
 ## [1.6.5](https://github.com/powersync-ja/agent-skills/compare/v1.6.4...v1.6.5) (2026-11-04)
 
 

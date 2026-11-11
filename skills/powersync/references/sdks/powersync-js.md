@@ -717,7 +717,7 @@ subscription.unsubscribe();
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires PowerSync Service v1.24.0+. .NET and Rust SDKs do not yet support checkpoint requests.
+Requires PowerSync Service v1.24.0+. All client SDKs (JS, Dart, Kotlin, Swift, .NET, Rust) support checkpoint requests.
 
 To opt in, pass `checkpointMode: 'requests'` to `connect()`:
 
@@ -782,7 +782,7 @@ class MyBackendConnector implements PowerSyncBackendConnector {
 }
 ```
 
-See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## ORM & Raw Tables
 

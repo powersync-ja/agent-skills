@@ -200,7 +200,7 @@ Same stream name with different parameters creates separate subscriptions. Subsc
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. JavaScript, Dart, and Kotlin SDKs also support checkpoint requests; .NET and Rust do not yet.
+Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. The JavaScript, Dart, Kotlin, .NET, and Rust SDKs also support checkpoint requests.
 
 ```swift
 try await database.connect(
@@ -263,7 +263,7 @@ This behavior relies on `uploadData()` returning only after your backend has com
 
 ### Async Upload Backends (Team/Enterprise)
 
-If `uploadData()` queues writes for later processing rather than committing them synchronously, use `CustomCheckpointRequestConnector`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+If `uploadData()` queues writes for later processing rather than committing them synchronously, use `CustomCheckpointRequestConnector`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## Query Patterns
 

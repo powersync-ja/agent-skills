@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -13,6 +13,7 @@ metadata:
 - [Sync Config](#sync-config)
 - [Service Configuration (Self-hosted)](#service-configuration-self-hosted)
 - [PowerSync Cloud Setup](#powersync-cloud-setup)
+- [Connecting Aurora](#connecting-aurora)
 - [Private Endpoints](#private-endpoints)
 - [Source Database Setup](#source-database-setup)
 - [App Backend](#app-backend)
@@ -375,6 +376,16 @@ For full CLI setup workflow, see `references/powersync-cli.md` → Cloud Usage.
 
 See [PowerSync Cloud Instances](https://docs.powersync.com/configuration/powersync-service/cloud-instances.md) for detailed dashboard step-by-step instructions.
 
+## Connecting Aurora
+
+> Load this section only when the source database is AWS Aurora.
+
+- If the source is Aurora Postgres or Aurora MySQL, use the cluster (writer) endpoint as Host. Do not use the reader endpoint, because logical replication (Postgres) and binary logs (MySQL) are available only on the writer. The cluster endpoint follows the writer through a failover; an instance endpoint does not.
+- If Aurora MySQL fails over to a writer with a different server UUID, PowerSync takes a new snapshot before resuming replication.
+- If Aurora Postgres returns "IPs in this range are not supported", the host resolves to a private IP. Make the cluster publicly accessible or use a Private Endpoint.
+- If the logs show `Hostname/IP does not match certificate's altnames`, Host does not match the server certificate. Check that Host is the cluster endpoint. For a Private Endpoint, check that the target group forwards to the current writer in the same cluster.
+- PowerSync Cloud has the AWS RDS CA certificates pre-configured, so the default `verify-full` SSL mode works for Aurora Postgres.
+
 ## Private Endpoints
 
 > Load this section only when the operator needs to connect PowerSync Cloud to a source database over AWS PrivateLink without public internet exposure.
@@ -385,7 +396,7 @@ Private Endpoints use AWS PrivateLink for private networking between your source
 
 1. **Configure an Endpoint Service** in front of your source database and copy its **Service Name** (`com.amazonaws.vpce.<region>.vpce-svc-<id>`):
    - *MongoDB Atlas*: Security → Database & Network Access → Network Access → Private Endpoint → Dedicated Cluster → Create endpoint service. The Atlas cluster does not need to be in the same region as the PowerSync instance; add the PowerSync AWS region under Accepted Endpoint Regions so Atlas accepts connections from it.
-   - *Custom Postgres*: Create a Target Group (IP type, TCP, port 5432) → Network Load Balancer → VPC Endpoint Service. Allow principal `arn:aws:iam::131569880293:root` to connect.
+   - *Custom Postgres*: Create a Target Group (IP type, TCP, port 5432) → Network Load Balancer → VPC Endpoint Service. Allow principal `arn:aws:iam::131569880293:root` to connect. The target group holds a fixed IP and does not follow the database. For Aurora, resolve the cluster endpoint to get the current writer's IP. If the writer IP changes (Aurora failover, instance replacement, new cluster), update the target group, or PowerSync cannot connect or reaches an instance whose certificate does not match the configured host.
 2. **Create the Private Endpoint in the Dashboard**: Dashboard → Organization Settings → Private Endpoints → Create. Provide a name, the Service Name from step 1, and the PowerSync region matching your instance. The endpoint starts in `Pending Acceptance` state.
 3. **Copy the VPC Endpoint ID** (`vpce-<id>`) from the Dashboard and accept the connection on the Endpoint Service:
    - *Atlas*: Network Access → Private Endpoint → Add Endpoint → Connect Existing Endpoint → enter the VPC Endpoint ID.
@@ -400,7 +411,7 @@ Private Endpoints use AWS PrivateLink for private networking between your source
 | `Rejected` | Rejected by the Endpoint Service. |
 | `Failed` | Creation failed. |
 
-5. **Connect using the Private Endpoint**: Instance → Database Connections → select the endpoint in the Private Endpoint dropdown (only `Available` endpoints in the same region are selectable). For MongoDB Atlas, use the connection string from the Atlas Connect dialog with Private Endpoint selected as the connection type.
+5. **Connect using the Private Endpoint**: Instance → Database Connections → select the endpoint in the Private Endpoint dropdown (only `Available` endpoints in the same region are selectable). For Postgres, set Host to the database's own hostname (the cluster endpoint for Aurora, the instance endpoint for RDS), not the load balancer or Endpoint Service DNS name, because PowerSync verifies the server certificate against that hostname. For MongoDB Atlas, use the connection string from the Atlas Connect dialog with Private Endpoint selected as the connection type.
 
 **AWS regions supported:** `us-east-1`, `eu-west-1`, `sa-east-1`, `ap-northeast-1`, `ap-southeast-2`, `ap-south-1`. The Private Endpoint must be in the same region as the PowerSync instance; the Endpoint Service itself can be in any AWS region, as long as it accepts connections from the PowerSync instance's region.
 

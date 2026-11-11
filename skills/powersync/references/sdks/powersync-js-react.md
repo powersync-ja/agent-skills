@@ -2,7 +2,7 @@
 name: powersync-js-react
 description: PowerSync React and Next.js integration — PowerSyncContext, useSuspenseQuery, useQuery, sync stream hooks, and Next.js/Vite setup
 metadata:
-  tags: react, nextjs, vite, hooks, useSuspenseQuery, useQuery, PowerSyncContext, javascript, typescript, isFetching, disconnectAndClear
+  tags: react, nextjs, vite, hooks, useSuspenseQuery, useQuery, PowerSyncContext, javascript, typescript, isFetching, disconnectAndClear, usePowerSyncOrNull, useStatusOrNull
 ---
 
 # PowerSync React & Next.js
@@ -40,6 +40,8 @@ export function App() {
 ```
 
 All hooks (`useQuery`, `useSuspenseQuery`, `useStatus`) read from this context via `usePowerSync()`. If the provider is missing, `useQuery` returns `{ isLoading: false, error: Error('PowerSync not configured.') }`, and `useSuspenseQuery` throws.
+
+If a component can render without a PowerSync database in context, use `usePowerSyncOrNull()` or `useStatusOrNull()` (`@powersync/react` 2.2.0 or later). They return `null` instead of throwing, which is what `usePowerSync()` and `useStatus()` do when the provider is missing.
 
 ## useSuspenseQuery
 

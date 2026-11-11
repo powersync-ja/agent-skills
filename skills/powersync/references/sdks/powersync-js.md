@@ -219,6 +219,7 @@ Note: When uploading to backends with native boolean columns (e.g. PostgreSQL vi
 
 - Return 2xx from backend even for validation errors — a 4xx blocks the upload queue permanently
 - 5xx → PowerSync retries automatically with backoff
+- Throw from `uploadData()` only when a later retry can succeed (network error, `5xx`, or a bug or schema mismatch you must fix first). If the backend rejects a write permanently (for example it fails validation), log the rejected write and call `complete()` so the queue advances
 - Surface validation errors by writing them to a local-only table and showing in the UI — never let them block the queue
 
 #### getCrudBatch vs getNextCrudTransaction
@@ -372,8 +373,10 @@ useQuery<RowType>(
     runQueryOnce?: boolean,
     streams?: QuerySyncStreamOptions[],
   }
-): { data, isLoading, isFetching, error }
+): { data, isLoading, isFetching, fetchReason, error }
 ```
+
+For `@powersync/react` 2.1.0 or later, if `isFetching` is true, read `fetchReason` to tell why: `'initial'`, `'refresh'` (after `refresh()` on a `runQueryOnce` query), `'tables-changed'`, or `'settings-changed'`. For `'settings-changed'` (SQL, parameters, or options changed), `data` still holds the previous query's rows until the new query returns its first result.
 
 Parameters are compared by `JSON.stringify` value, not by reference — so `[userId]` across renders are considered equal even as different array instances.
 
@@ -714,7 +717,7 @@ subscription.unsubscribe();
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires PowerSync Service v1.24.0+. .NET and Rust SDKs do not yet support checkpoint requests.
+Requires PowerSync Service v1.24.0+. All client SDKs (JS, Dart, Kotlin, Swift, .NET, Rust) support checkpoint requests.
 
 To opt in, pass `checkpointMode: 'requests'` to `connect()`:
 
@@ -732,7 +735,7 @@ await checkpoint.waitForSync({ signal: AbortSignal.timeout(30_000) });
 // Local queries now reflect server state from when requestCheckpoint() was called.
 ```
 
-`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call suspends until the Service is reachable. Aborting `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call waits without a timeout until the Service is reachable. Once the request reaches the Service it may time out; `requestCheckpoint()` then fails with an error, so call it again to retry. Aborting `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
 
 ### Error Handling
 
@@ -779,7 +782,7 @@ class MyBackendConnector implements PowerSyncBackendConnector {
 }
 ```
 
-See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## ORM & Raw Tables
 

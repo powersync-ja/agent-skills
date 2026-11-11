@@ -339,9 +339,9 @@ db.execute(
 )
 
 // Multiple operations atomically — auto-commits, auto-rollbacks on exception
-db.writeTransaction { tx ->
-    tx.execute("DELETE FROM lists WHERE id = ?", listOf(listId))
-    tx.execute("DELETE FROM todos WHERE list_id = ?", listOf(listId))
+db.writeTransactionAsync { tx ->
+    tx.executeAsync("DELETE FROM lists WHERE id = ?", listOf(listId))
+    tx.executeAsync("DELETE FROM todos WHERE list_id = ?", listOf(listId))
 }
 ```
 
@@ -467,7 +467,7 @@ Same stream name with different parameters creates separate subscriptions. Subsc
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires PowerSync Service v1.24.0+. .NET and Rust SDKs do not yet support checkpoint requests.
+Requires PowerSync Service v1.24.0+. All client SDKs (JS, Dart, Kotlin, Swift, .NET, Rust) support checkpoint requests.
 
 To opt in, pass `CheckpointMode.Requests()` in `SyncOptions` to `connect()`:
 
@@ -492,7 +492,7 @@ withTimeout(30.seconds) {
 // Local queries now reflect server state from when requestCheckpoint() was called.
 ```
 
-`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call suspends until the Service is reachable. Cancelling `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+`requestCheckpoint()` requires the database to be connected or connecting. If offline, the call waits without a timeout until the Service is reachable. Once the request reaches the Service it may time out; `requestCheckpoint()` then fails with an error, so call it again to retry. Cancelling `waitForSync` or reaching a timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
 
 ### Error Handling
 
@@ -546,7 +546,7 @@ class MyBackendConnector: PowerSyncBackendConnector(), CustomCheckpointRequestCo
 }
 ```
 
-See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## Background Sync (Android)
 

@@ -2,7 +2,7 @@
 name: raw-tables
 description: PowerSync Raw Tables — native SQLite tables bypassing JSON views, with multi-SDK examples (JS, Dart, Kotlin, Swift, Rust), triggers, local-only columns, and migration strategies
 metadata:
-  tags: raw-tables, sqlite, advanced, powersync, javascript, dart, kotlin, swift, rust
+  tags: raw-tables, managed-tables, direct, sqlite, advanced, powersync, javascript, dart, kotlin, swift, rust
 ---
 
 # Raw Tables
@@ -14,6 +14,7 @@ Raw tables let PowerSync sync data directly into native SQLite tables you define
 ## Table of Contents
 - [When to Use](#when-to-use-raw-tables)
 - [SDK Availability](#sdk-availability)
+- [Managed Tables (Alpha)](#managed-tables-alpha)
 - [Defining Raw Tables](#defining-raw-tables) (Inferred vs Explicit)
 - [Triggers for Local Writes](#triggers-for-local-writes) (Inferred vs Explicit)
 - [Local-Only Columns](#local-only-columns)
@@ -42,6 +43,47 @@ Raw tables let PowerSync sync data directly into native SQLite tables you define
 - Reduced storage overhead — no JSON object per row
 - SQLite constraints (`FOREIGN KEY`, `NOT NULL`, `CHECK`)
 - Local-only columns that persist across syncs but never upload
+
+If faster queries are the only reason to leave the default JSON-backed views, use managed tables instead of raw tables. If the project needs foreign keys, custom triggers, expression indexes, or a library that owns the schema (for example Room), use raw tables.
+
+## Managed Tables (Alpha)
+
+> Load this section only when the user reports slow queries that read many rows (filter, sort, aggregate) on a client-side table.
+
+A managed table stores rows in a SQLite table with one column per schema column. PowerSync still creates and migrates it and records local writes in the upload queue. Queries read columns directly instead of decoding JSON. The API is alpha and may change.
+
+Set `direct` on the table definition. Choose the type per table, so one schema can mix managed views (default), managed tables, and raw tables.
+
+```ts
+const schema = new Schema({
+  users: new Table({ name: column.text }, { direct: true })
+});
+```
+
+```dart
+const schema = Schema([Table.direct('users', [Column.text('name')])]);
+```
+
+```kotlin
+val schema = Schema(Table("users", listOf(Column.text("name")), direct = true))
+```
+
+```swift
+let schema = Schema(Table(name: "users", columns: [.text("name")], direct: true))
+```
+
+```rust
+schema.tables.push(Table::create("users", vec![Column::text("name")], |tbl| { tbl.direct = true }));
+```
+
+Minimum SDK versions: JS Web 2.6.0, React Native 2.4.0, Node 1.3.0, Capacitor 0.10.0, Dart 2.6.0, Kotlin 1.16.0, Swift 1.17.0, Rust 0.2.0. .NET is not supported.
+
+Rules:
+
+- If a table needs `viewName` (for example to move local-only data to a synced table), keep it a managed view. Managed tables cannot set `viewName`.
+- If a table is watched with High Performance Diffs in the JS SDKs, keep it a managed view. Diffs do not support managed tables yet.
+- Managed tables keep each value with the type it was written or synced with, so a text value in an `integer` column stays text and can sort or filter differently than on a view.
+- Toggling `direct`, adding a column, or removing a column migrates the table on device. This takes longer as the table grows. A new column that is already synced shows `NULL` until the next completed sync.
 
 ## Defining Raw Tables
 

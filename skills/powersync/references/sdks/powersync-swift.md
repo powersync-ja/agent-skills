@@ -111,6 +111,8 @@ final class MyConnector: PowerSyncBackendConnectorProtocol {
 
 Use `getCrudBatch` instead of `getNextCrudTransaction` when uploading large numbers of mutations in bulk.
 
+If you use v1.14 or later, `CrudBatch`, `CrudEntry`, and `CrudTransaction` are structs that your code cannot create, so in tests and mocks of the connector, don't construct them directly.
+
 See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/swift.md#3-integrate-with-your-backend) for more information.
 
 ### 3. Instantiate and Connect
@@ -200,7 +202,7 @@ Same stream name with different parameters creates separate subscriptions. Subsc
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. JavaScript, Dart, and Kotlin SDKs also support checkpoint requests; .NET and Rust do not yet.
+Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. The JavaScript, Dart, Kotlin, .NET, and Rust SDKs also support checkpoint requests.
 
 ```swift
 try await database.connect(
@@ -221,7 +223,7 @@ try await checkpoint.waitForSync(timeout: 30)
 // Local queries now reflect server state from when requestCheckpoint() was called.
 ```
 
-`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call suspends until the Service is reachable. Cancel the calling task to stop waiting. Aborting `waitForSync(timeout:)` or reaching the timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
+`requestCheckpoint()` requires that the database is connected or connecting. If offline, the call waits without a timeout until the Service is reachable. Once the request reaches the Service it may time out; `requestCheckpoint()` then fails with an error, so call it again to retry. Cancel the calling task to stop waiting. Aborting `waitForSync(timeout:)` or reaching the timeout does not remove the checkpoint. It only limits how long you wait for the checkpoint to apply locally.
 
 ### Error Handling
 
@@ -263,7 +265,7 @@ This behavior relies on `uploadData()` returning only after your backend has com
 
 ### Async Upload Backends (Team/Enterprise)
 
-If `uploadData()` queues writes for later processing rather than committing them synchronously, use `CustomCheckpointRequestConnector`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/advanced/checkpoint-requests) for the full setup guide.
+If `uploadData()` queues writes for later processing rather than committing them synchronously, use `CustomCheckpointRequestConnector`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## Query Patterns
 
@@ -301,9 +303,10 @@ try await db.execute(
 )
 
 // Multiple related mutations as a single unit
+// Statements inside the closure run synchronously: use try without await
 try await db.writeTransaction { tx in
-    try await tx.execute("INSERT INTO lists (id, name) VALUES (?, ?)", parameters: [listId, "Shopping"])
-    try await tx.execute("INSERT INTO todos (id, list_id, description) VALUES (uuid(), ?, ?)", parameters: [listId, "Milk"])
+    try tx.execute("INSERT INTO lists (id, name) VALUES (?, ?)", parameters: [listId, "Shopping"])
+    try tx.execute("INSERT INTO todos (id, list_id, description) VALUES (uuid(), ?, ?)", parameters: [listId, "Milk"])
 }
 ```
 

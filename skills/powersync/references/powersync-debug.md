@@ -395,4 +395,4 @@ Warnings and errors appear in `active_sync_rules.errors[]`:
 - Replication lag warning when no replicated commit received in > 5 minutes (warning) or > 15 minutes (fatal)
 - `PSYNC_S1146` when `wal_status = 'lost'`
 
-If a new sync config is currently deploying, check `deploying_sync_rules.connections[]` and `deploying_sync_rules.errors[]` — the same fields apply. PowerSync continues serving clients from `active_sync_rules` while `deploying_sync_rules` completes its initial snapshot.
+If a new sync config is currently deploying, check `deploying_sync_rules.connections[]` and `deploying_sync_rules.errors[]` — the same fields apply. PowerSync continues serving clients from `active_sync_rules` while `deploying_sync_rules` completes its initial snapshot. If `sync_config.exit_on_error` is `false` (Service v1.28.0+) and a configured Sync Config has fatal validation errors, it appears in `deploying_sync_rules.errors[]` without being processed, and the previous active config keeps serving.

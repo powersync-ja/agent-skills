@@ -83,7 +83,9 @@ Rules:
 - If a table needs `viewName` (for example to move local-only data to a synced table), keep it a managed view. Managed tables cannot set `viewName`.
 - If a table is watched with High Performance Diffs in the JS SDKs, keep it a managed view. Diffs do not support managed tables yet.
 - Managed tables keep each value with the type it was written or synced with, so a text value in an `integer` column stays text and can sort or filter differently than on a view.
-- Toggling `direct`, adding a column, or removing a column migrates the table on device. This takes longer as the table grows. A new column that is already synced shows `NULL` until the next completed sync.
+- If a change adds a column, expect roughly constant migration time regardless of row count. A new column that is already synced shows `NULL` until the next completed sync.
+- If a change drops a column or toggles `direct`, the migration rewrites every row and takes longer as the table grows. On tables with many millions of rows, avoid dropping columns unless startup delay was tested on representative devices and data; otherwise keep the unused column in the client schema.
+- There is no API to report migration progress or to defer it when opening the database with the new schema. Account for migration time in database initialization and test row-rewriting changes before release.
 
 ## Defining Raw Tables
 

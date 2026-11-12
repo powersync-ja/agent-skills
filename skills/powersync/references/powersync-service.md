@@ -329,7 +329,7 @@ Prometheus metrics are exposed on port `9464`. Enable the chart's `NetworkPolicy
 | `powersync_operation_storage_size_bytes` | Capacity-plan from the trend. |
 | `powersync_data_sent_bytes_total` | Egress cost driver. |
 
-See [Usage Reporting](https://docs.powersync.com/maintenance-ops/self-hosting/usage-reporting#whatiscollected) for the full metric catalog.
+See [Monitoring](https://docs.powersync.com/maintenance-ops/self-hosting/monitoring#metrics) for the full metric list.
 
 ### Bucket Storage Database
 This is required by PowerSync and can be configured in two different ways. This is separate from the source DB.

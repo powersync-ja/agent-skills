@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit, mongodb_filter_expression, source_table_options, pre-filtering, changeStreamPreAndPostImages
 ---
 
 # PowerSync Service
@@ -492,6 +492,35 @@ db.createUser({
 
 // Change streams are used automatically
 ```
+
+#### MongoDB Replication Pre-filtering
+
+> Load this section only when the user wants to replicate a subset of a MongoDB collection (for example active records only).
+
+If the instance needs only some documents in a collection, set `config.source_table_options.<collection>.mongodb_filter_expression` in the Sync Config. Excluded documents never enter bucket storage. With a supporting source index, the initial snapshot also reads only matching documents.
+
+- Requires Service 1.28.0+, Sync Config `edition: 3`, MongoDB 6.0+ (not Azure DocumentDB), and the Team or Enterprise plan on Cloud (or Enterprise Self-Hosted).
+- Requires `post_images: auto_configure` or `read_only`. `post_images: off` blocks deployment. With `read_only`, enable `changeStreamPreAndPostImages` yourself on every replicated collection.
+- Create the source index before deploying, because the snapshot starts on deployment. Put the filtered field first and `_id` last, with simple collation.
+- Adding, changing, or removing a filter forces a full reprocess of all replicated collections.
+- Pre-filters are not authorization. Keep the Sync Streams query filters that control per-client access.
+- Supported operators are `$eq`, `$in`, `$and`, and `$or`. Put the source field first as `$$doc.<path>`. A document missing the field does not match `$eq`.
+- If a saved filter is no longer supported by the plan or Service edition, replication stops with `PSYNC_S1348`. Restore support, or remove the filters and deploy a new Sync Config.
+
+```javascript
+db.todos.createIndex({ archived: 1, _id: 1 }, { collation: { locale: 'simple' } });
+```
+
+```yaml
+config:
+  edition: 3
+  source_table_options:
+    todos:
+      mongodb_filter_expression:
+        $eq: ['$$doc.archived', false]
+```
+
+See [MongoDB Replication Pre-filtering](https://docs.powersync.com/sync/advanced/mongodb-replication-pre-filtering) for multi-field snapshot indexes and EJSON constants.
 
 ### Azure DocumentDB (Cosmos DB for MongoDB vCore)
 

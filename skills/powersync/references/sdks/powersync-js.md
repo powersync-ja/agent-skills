@@ -2,7 +2,7 @@
 name: powersync-js
 description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger
+  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger, storageBucket, InvalidStateError
 ---
 
 > **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
@@ -336,6 +336,28 @@ import { WASQLiteVFS } from '@powersync/web'
 ```
 
 Safari: Requires `OPFSCoopSyncVFS` (or `vfs: 'auto'`) for stable multi-tab, or set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+
+#### `InvalidStateError` in Chromium after site data is deleted
+
+> Load this section only when the user reports `InvalidStateError` from OPFS calls, or a database that vanished, after site data was cleared.
+
+If site data is deleted while a tab has an OPFS-based VFS open (including `vfs: 'auto'`), for example through Chrome site settings or a `Clear-Site-Data: "storage"` header, every OPFS call can fail until the browser restarts. This is a Chromium bug in the default storage bucket. It can also silently delete a database another tab created after the deletion.
+
+If the app hits this, set `database.storageBucket` (`@powersync/web` 2.6.0+) to store the database in a named Storage Bucket. Firefox and Safari do not support the Storage Buckets API and opening the database fails without it, so set the option only when `'storageBuckets' in navigator`.
+
+```js
+export const db = new PowerSyncDatabase({
+  schema: AppSchema,
+  database: {
+    dbFilename: 'app.db',
+    vfs: 'auto',
+    storageBucket: 'storageBuckets' in navigator ? 'app-db' : undefined
+  }
+});
+```
+
+- If the app already stores data in the default bucket, adding `storageBucket` starts a new empty database. Follow the VFS switching guidance in the Web SDK reference first.
+- If `storageBucket` is set and the app needs to delete the database file, close the database and call `navigator.storageBuckets.delete(<name>)`. The Web SDK file deletion helpers only access the default bucket.
 
 #### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
 

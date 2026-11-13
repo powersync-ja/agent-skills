@@ -335,7 +335,7 @@ import { WASQLiteVFS } from '@powersync/web'
 // vfs: WASQLiteVFS.OPFSCoopSyncVFS
 ```
 
-Safari: Requires `OPFSCoopSyncVFS` (or `vfs: 'auto'`) for stable multi-tab, or set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+Safari: If the app has a significant number of Safari users, use `OPFSCoopSyncVFS` for now instead of `vfs: 'auto'` (which selects `SimpleOpfsVFS`). On Safari the database can fail to open after a page reload or navigation because of a known WebKit issue, and `SimpleOpfsVFS` is expected to hit it more often. Alternatively, set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
 
 #### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
 

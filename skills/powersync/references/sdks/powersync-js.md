@@ -2,7 +2,7 @@
 name: powersync-js
 description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger
+  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, OPFSWriteAheadVFS, AccessHandlePoolVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger
 ---
 
 > **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
@@ -312,11 +312,13 @@ Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs
 
 | VFS Option                | Description         | Reference URL                                                                                           |
 |---------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
-| `'auto'`                  | Recommended (`@powersync/web` 2.7.0+). Uses OPFS, falls back to in-memory when OPFS is unavailable | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#1-automatic-vfs-selection-recommended) |
-| IDBBatchAtomicVFS         | Default, kept for backwards compatibility | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#2-idbbatchatomicvfs-default)     |
-| SimpleOpfsVFS             | OPFS, simplified variant of OPFSCoopSyncVFS; picks the best strategy per browser; no `ATTACH` | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-opfs-based-alternatives)       |
-| OPFSCoopSyncVFS           | OPFS, multi-tab and Safari support | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-opfs-based-alternatives)       |
-| InMemoryVfs               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web.md#4-in-memory-vfs) |
+| `'auto'`                  | Recommended (`@powersync/web` 2.7.0+). Uses OPFS, falls back to in-memory when OPFS is unavailable | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#automatic-vfs-selection-recommended) |
+| IDBBatchAtomicVFS         | Default, kept for backwards compatibility | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#idbbatchatomicvfs-default)     |
+| SimpleOpfsVFS             | OPFS, simplified variant of OPFSCoopSyncVFS; picks the best strategy per browser; no `ATTACH` | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#simpleopfsvfs)       |
+| OPFSCoopSyncVFS           | OPFS, multi-tab and Safari support | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#opfscoopsyncvfs)       |
+| OPFSWriteAheadVFS         | OPFS, concurrent reads (`additionalReaders`, default `1`); Chromium-based browsers only | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#opfswriteaheadvfs)       |
+| AccessHandlePoolVFS       | OPFS, no multi-tab support; backwards compatibility only | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#accesshandlepoolvfs)       |
+| InMemoryVfs               | No persistence; fast queries; for development or online-only apps with small datasets | [Link](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md#inmemoryvfs) |
 
 If the app must support a wide range of browsers, set `vfs: 'auto'`. The VFS options are not compatible with each other, so if you switch VFS, use a new `dbFilename`; data in the old file is not migrated.
 
@@ -335,7 +337,7 @@ import { WASQLiteVFS } from '@powersync/web'
 // vfs: WASQLiteVFS.OPFSCoopSyncVFS
 ```
 
-Safari: Requires `OPFSCoopSyncVFS` (or `vfs: 'auto'`) for stable multi-tab, or set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+Safari: Requires `OPFSCoopSyncVFS` (or `vfs: 'auto'`) for stable multi-tab, or set `database.useWebWorker: false`. See [VFS and Multi-Tab Support](https://docs.powersync.com/client-sdks/reference/javascript-web-storage.md) for full VFS and multi-tab details.
 
 #### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
 

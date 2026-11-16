@@ -16,6 +16,8 @@ Node.js-specific integration for the PowerSync JavaScript SDK. Use this referenc
 | [Node.js SDK Reference](https://docs.powersync.com/client-sdks/reference/node.md) | Full SDK documentation for Node.js, consult for details beyond the inline examples. |
 | [Node SDK API Reference](https://powersync-ja.github.io/powersync-js/node-sdk) | Full API reference for `@powersync/node`, consult only when the inline examples don't cover your case. |
 
+Replace `https://your-instance.powersync.journeyapps.com` in the examples with your PowerSync instance URL.
+
 ## Node.js
 
 ### 1. Install
@@ -46,7 +48,7 @@ npm install --save-dev @types/better-sqlite3
 ```ts
 import { PowerSyncDatabase } from '@powersync/node';
 import { AppSchema } from './AppSchema';
-import { PowerSyncConnector } from './PowerSyncConnector';
+import { authenticator, uploadData } from './backend';
 
 const db = new PowerSyncDatabase({
   schema: AppSchema,
@@ -55,8 +57,7 @@ const db = new PowerSyncDatabase({
   }
 });
 
-const connector = new PowerSyncConnector();
-await db.connect(connector);
+await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 ```
 
 `connect()` behaves the same as the web SDK — it starts the sync stream in the background. Use `db.waitForFirstSync()` to wait for data before proceeding.
@@ -142,7 +143,7 @@ npm install @powersync/node@latest better-sqlite3
 // main/db.ts
 import { PowerSyncDatabase } from '@powersync/node';
 import { AppSchema } from './AppSchema';
-import { PowerSyncConnector } from './PowerSyncConnector';
+import { authenticator, uploadData } from './backend';
 
 export const db = new PowerSyncDatabase({
   schema: AppSchema,
@@ -150,8 +151,7 @@ export const db = new PowerSyncDatabase({
 });
 
 export async function initDb() {
-  const connector = new PowerSyncConnector();
-  await db.connect(connector);
+  await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
   await db.waitForFirstSync();
 }
 ```

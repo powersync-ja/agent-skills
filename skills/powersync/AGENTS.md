@@ -88,12 +88,12 @@ When the task is to add PowerSync to an app, follow this sequence:
 3. **Supabase online or local?** If unclear from project/env, ask before choosing connection strings, auth config, or references.
 4. Collect required inputs before coding (see "Required Inputs Below").
 5. **Load `references/sync-config.md`** and generate sync config. Source DB setup (publication SQL, replication, CDC) → `references/powersync-service.md` § "Source Database Setup". Without sync config, nothing syncs.
-6. **Keep credentials in `.env`, never hardcoded.** When a CLI or dashboard returns DB credentials (host, port, db name, username, password, URI), record them in `.env` *before* deploying config or writing app code. `service.yaml` (`!env`) and app code (`fetchCredentials`) read from there. Minimum: `POWERSYNC_URL`, the Postgres URI (e.g. `PS_DATABASE_URI`), and any backend-specific keys.
+6. **Keep credentials in `.env`, never hardcoded.** When a CLI or dashboard returns DB credentials (host, port, db name, username, password, URI), record them in `.env` *before* deploying config or writing app code. `service.yaml` (`!env`) and app code (the connection endpoint and authenticator) read from there. Minimum: `POWERSYNC_URL`, the Postgres URI (e.g. `PS_DATABASE_URI`), and any backend-specific keys.
 7. **Create/link the instance and deploy config before app code.** CLI only — do not hand-create config files.
    - Cloud: `powersync init cloud` → edit config → `powersync link cloud --create` → `powersync deploy`
    - Self-hosted: `powersync init self-hosted` → `powersync docker configure` → `powersync docker start`
    - Source DB steps the agent cannot run (e.g. Supabase publication SQL): present the exact SQL, ask the operator to confirm done.
-8. Only after backend readiness is confirmed, implement app-side PowerSync integration.
+8. Only after backend readiness is confirmed, implement app-side PowerSync integration. **Use separate authentication and mutation uploads** on supported SDKs: load the platform SDK reference and the chosen backend reference, implement `Authenticator` and an independent uploader, and pass both with the explicit PowerSync endpoint in one `connect()` call. Do not generate a combined `PowerSyncBackendConnector` for new integrations on supported SDKs. Onboarding must finish with both downloads and uploads configured. Keep the supported combined interface for .NET and older SDKs that cannot yet upgrade; see the platform reference for compatibility.
 9. **Offer to leave a pointer in the project's agent context file.** After onboarding succeeds (Cloud Readiness Gate passed and the app integration works), future agent sessions should load this skill even when a prompt never mentions sync. Propose this to the operator and, on approval:
    - If the project root has `AGENTS.md`, append the pointer line there. Otherwise, if it has `CLAUDE.md`, append it there. If neither exists, create `AGENTS.md` containing only the pointer line.
    - Pointer line, verbatim: `This project uses PowerSync. Load the powersync skill before any data, schema, or sync work.`
@@ -162,7 +162,7 @@ Do not proceed to app-side code until **all** items below are verified:
 - Source database connection is configured
 - Sync config is deployed
 - Client auth is configured
-- Instance URL is available for `fetchCredentials()`
+- Instance URL is available to pass to `connect()`
 - Source database replication/publication setup is complete
 - The replication connection uses a dedicated user (e.g. `powersync_role` on Supabase/Postgres), not a superuser or admin account
 - All credentials and URLs are in `.env` (e.g. `POWERSYNC_URL`, `PS_DATABASE_URI`, plus any backend-specific keys)

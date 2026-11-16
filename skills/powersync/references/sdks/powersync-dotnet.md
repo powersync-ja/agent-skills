@@ -26,6 +26,10 @@ Supported targets: .NET 9, .NET 8, .NET 6, .NET Standard 2.0, .NET Framework 4.8
 
 > **Alpha status** — this SDK is currently in alpha. Expect breaking changes and instability. Do not rely on it for production use.
 
+## Connector Compatibility
+
+The .NET SDK does not yet support the split `Authenticator`/mutation uploader connection API or download-only/upload-only modes described for other SDKs. Use `IPowerSyncBackendConnector` and `Connect(connector)` in this reference; do not translate another SDK’s split signatures into C#. See [current SDK support](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
+
 ## Installation
 
 For console, WPF, or general .NET projects:

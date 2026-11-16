@@ -1,6 +1,6 @@
 ---
 name: powersync-kotlin
-description: PowerSync Kotlin SDK — schema, queries, sync lifecycle, and backend connectors
+description: PowerSync Kotlin SDK — schema, queries, sync lifecycle, authentication, and mutation uploads
 metadata:
   tags: kotlin, android, ios, sqlite, offline-first, http-client, custom-headers, checkpoint-requests
 ---
@@ -125,37 +125,40 @@ val items = Table(
 )
 ```
 
-### 2. Create Backend Connector
+### 2. Create an Authenticator and Mutation Uploader
+
+Requires PowerSync Kotlin SDK 1.16.0+. Use the split interface for new integrations; older SDKs retain `PowerSyncBackendConnector` until upgraded.
 
 ```kotlin
-import com.powersync.connectors.PowerSyncBackendConnector
-import com.powersync.connectors.PowerSyncCredentials
+import com.powersync.connectors.Authenticator
 import com.powersync.PowerSyncDatabase
 import com.powersync.db.crud.UpdateType
 
-class MyConnector : PowerSyncBackendConnector() {
-    override suspend fun fetchCredentials(): PowerSyncCredentials {
-        // Always fetch fresh credentials — do not cache stale tokens
-        return PowerSyncCredentials(
-            endpoint = "https://your-instance.powersync.journeyapps.com",
-            token = myAuthService.getToken(),
-        )
+open class MyAuthenticator : Authenticator {
+    private var token: String? = null
+
+    override suspend fun resolveCredentials(): String {
+        token?.let { return it }
+        return myAuthService.getToken().also { token = it }
     }
 
-    override suspend fun uploadData(database: PowerSyncDatabase) {
-        val transaction = database.getNextCrudTransaction() ?: return
-        try {
-            for (entry in transaction.crud) {
-                when (entry.op) {
-                    UpdateType.PUT -> api.upsert(entry.table, entry.id, entry.opData)
-                    UpdateType.PATCH -> api.update(entry.table, entry.id, entry.opData)
-                    UpdateType.DELETE -> api.delete(entry.table, entry.id)
-                }
+    override fun invalidateCredentials() { token = null }
+}
+
+// api manages backend authentication independently of MyAuthenticator.
+suspend fun uploadData(database: PowerSyncDatabase) {
+    val transaction = database.getNextCrudTransaction() ?: return
+    try {
+        for (entry in transaction.crud) {
+            when (entry.op) {
+                UpdateType.PUT -> api.upsert(entry.table, entry.id, entry.opData)
+                UpdateType.PATCH -> api.update(entry.table, entry.id, entry.opData)
+                UpdateType.DELETE -> api.delete(entry.table, entry.id)
             }
-            transaction.complete(null) // MUST call — otherwise the same transaction is returned forever
-        } catch (e: Exception) {
-            throw e // PowerSync backs off and retries automatically
         }
+        transaction.complete(null) // MUST call — otherwise the same transaction is returned forever
+    } catch (e: Exception) {
+        throw e // PowerSync backs off and retries automatically
     }
 }
 ```
@@ -178,17 +181,9 @@ Op semantics: `PUT` = full insert/replace (all non-null columns), `PATCH` = part
 
 For batching multiple transactions at once, use `database.getCrudBatch(limit)` or `database.getCrudTransactions()`. Both follow the same `complete()` contract.
 
-#### Supabase Connector
+#### Supabase Uploads
 
-```kotlin
-val connector = SupabaseConnector(
-    supabaseUrl = "https://your-project.supabase.co",
-    supabaseKey = "your-anon-key",
-    powerSyncEndpoint = "https://your-instance.powersync.journeyapps.com",
-)
-```
-
-`SupabaseConnector` is open — override `uploadCrudEntry` and `handleError` for custom behaviour.
+Load `references/supabase-auth.md` § "Kotlin: Built-in Supabase Connector" for the split connection using an independent session authenticator and `SupabaseConnector` as an upload helper. The helper is open: override `uploadCrudEntry` and `handleError` for custom behaviour.
 
 ### 3. Initialize and Connect
 
@@ -200,13 +195,17 @@ val db = PowerSyncDatabase(
     scope = coroutineScope,
 )
 
-// Starts sync stream and uploadData loop in the background (non-blocking)
-db.connect(connector)
+val authenticator = MyAuthenticator()
 
-// Pass sync parameters to the server if needed
+// Starts downloads and uploads in the background (non-blocking)
+db.connect(endpoint = powerSyncEndpoint, authenticator = authenticator, uploader = ::uploadData)
+
+// Alternative to the call above: include sync parameters when connecting
 db.connect(
-    connector = connector,
-    params = mapOf("userId" to JsonParam.String("abc123")),
+    endpoint = powerSyncEndpoint,
+    authenticator = authenticator,
+    uploader = ::uploadData,
+    options = SyncOptions(params = mapOf("userId" to JsonParam.String("abc123"))),
 )
 
 // Wait for first sync before showing data-dependent UI
@@ -214,6 +213,17 @@ db.waitForFirstSync()
 ```
 
 Use a **single `PowerSyncDatabase` instance** per database file. Multiple instances for the same file cause lock contention and missed watch updates — share via dependency injection.
+
+#### Connection Modes
+
+```kotlin
+// Alternatives: each call replaces the previous configuration.
+db.connect(endpoint = powerSyncEndpoint, authenticator = authenticator) // downloads only
+db.connect(uploader = ::uploadData) // uploads only, no PowerSync endpoint/authenticator
+db.connect(endpoint = powerSyncEndpoint, authenticator = authenticator, uploader = ::uploadData)
+```
+
+The authenticator owns token caching/invalidation; the SDK does not cache its tokens. Reuse valid tokens or the auth provider’s session and discard rejected tokens and state from previous users. Kotlin uses coroutine cancellation for authentication and uploads; preserve cancellation when handling errors. Upload-only still requires backend authentication in the uploader. Download-only clients must not mutate synced tables. See [connection mode examples](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
 
 #### Disconnect and Clear
 
@@ -239,7 +249,9 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.header
 
 db.connect(
-    connector,
+    endpoint = powerSyncEndpoint,
+    authenticator = authenticator,
+    uploader = ::uploadData,
     options = SyncOptions(
         clientConfiguration = SyncClientConfiguration.ExtendedConfig {
             defaultRequest {
@@ -256,7 +268,9 @@ To use a fully custom HTTP engine, use `SyncClientConfiguration.ExistingClient`.
 import com.powersync.sync.configureSyncHttpClient
 
 db.connect(
-    connector,
+    endpoint = powerSyncEndpoint,
+    authenticator = authenticator,
+    uploader = ::uploadData,
     options = SyncOptions(
         clientConfiguration = SyncClientConfiguration.ExistingClient(HttpClient(YourEngine) {
             configureSyncHttpClient()
@@ -473,7 +487,9 @@ To opt in, pass `CheckpointMode.Requests()` in `SyncOptions` to `connect()`:
 
 ```kotlin
 database.connect(
-    connector,
+    endpoint = powerSyncEndpoint,
+    authenticator = authenticator,
+    uploader = ::uploadData,
     options = SyncOptions(
         checkpointMode = CheckpointMode.Requests(),
     )
@@ -529,12 +545,13 @@ This behavior relies on `uploadData()` returning only after your backend has com
 
 ### Async Upload Backends (Team/Enterprise)
 
-If `uploadData()` queues writes for later processing rather than committing them synchronously, implement `CustomCheckpointRequestConnector` on your connector. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
+If `uploadData()` queues writes for later processing rather than committing them synchronously, implement `CustomCheckpointRequestConnector` on your authenticator. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
 
 ```kotlin
-class MyBackendConnector: PowerSyncBackendConnector(), CustomCheckpointRequestConnector {
-    override suspend fun fetchCredentials(): PowerSyncCredentials? = TODO()
-    override suspend fun uploadData(database: PowerSyncDatabase) = TODO()
+import com.powersync.connectors.CustomCheckpointRequestConnector
+
+class MyCheckpointAuthenticator : MyAuthenticator(), CustomCheckpointRequestConnector {
+    // Inherit token caching/invalidation; uploads remain separate.
 
     override suspend fun postCheckpointRequest(
         clientId: String,
@@ -546,7 +563,7 @@ class MyBackendConnector: PowerSyncBackendConnector(), CustomCheckpointRequestCo
 }
 ```
 
-See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
+Pass `MyCheckpointAuthenticator()` as `authenticator` in the split connect call. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## Background Sync (Android)
 
@@ -556,7 +573,7 @@ Share a single `PowerSyncDatabase` instance between the UI and any foreground se
 class SyncService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val db = (application as MyApp).database
-        serviceScope.launch { db.connect(connector) }
+        serviceScope.launch { db.connect(endpoint = powerSyncEndpoint, authenticator = authenticator, uploader = ::uploadData) }
         return START_STICKY
     }
     override fun onDestroy() { serviceScope.launch { db.disconnect() } }

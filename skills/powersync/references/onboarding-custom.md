@@ -103,9 +103,9 @@ Only after Phase 3 is complete.
     ```
     Or write manually — but never define the `id` column (it is automatic).
 
-14. **Implement the backend connector.** See `references/custom-backend.md` § "Client-Side Connector" for `fetchCredentials()` and `uploadData()` code. Critical: `transaction.complete()` is mandatory — without it the queue stalls permanently.
+14. **Implement separate authentication and uploads.** Load `references/custom-backend.md` § "Client-Side Authentication and Uploads" and the platform SDK reference. Implement `Authenticator` plus an independent mutation uploader; the uploader must obtain backend credentials without depending on a prior authentication callback. Critical: `transaction.complete()` is mandatory — without it the queue stalls permanently. Use the supported combined connector only for .NET or older SDKs that cannot upgrade.
 
-15. **Initialize PowerSync and connect.**
+15. **Initialize PowerSync and connect.** On supported SDKs, pass the explicit PowerSync endpoint, authenticator, and uploader together using the platform SDK’s split API. For the compatibility exceptions above, use the platform reference’s supported combined call. Full downloads and uploads are the default onboarding outcome; do not issue separate calls for each direction.
     - `connect()` is fire-and-forget — use `waitForFirstSync()` if you need readiness.
     - Use `disconnectAndClear()` on logout or user switch.
 

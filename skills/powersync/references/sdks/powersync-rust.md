@@ -2,7 +2,7 @@
 name: powersync-rust
 description: Setup, schema, CRUD, upload queue, checkpoint requests, and footguns for the PowerSync Rust SDK (beta).
 metadata:
-  tags: rust, cargo, powersync-rust, PowerSyncDatabase, BackendConnector, Authenticator, MutationUploader, resolve_credentials, invalidate_credentials, download_only, upload_only, fetch_credentials, upload_data, watch_statement, checkpoint, request_checkpoint, SyncOptions, PowerSyncEnvironment, tokio, smol, CheckpointError, crud_transactions
+  tags: rust, cargo, powersync-rust, PowerSyncDatabase, BackendConnector, Authenticator, MutationUploader, resolve_credentials, invalidate_credentials, download_only, upload_only, fetch_credentials, upload_data, watch_statement, checkpoint, request_checkpoint, SyncOptions, PowerSyncEnvironment, tauri, init_with_options, with_http_client, tokio, smol, CheckpointError, crud_transactions
 ---
 
 # PowerSync Rust SDK
@@ -264,6 +264,24 @@ fn post_checkpoint_request<'a>(
     )
 }
 ```
+
+## Tauri: Custom HTTP Client
+
+If the app uses the `tauri_plugin_powersync` plugin and needs TLS options, timeouts, a proxy, or a user agent, build a `reqwest::Client` and call `init_with_options` instead of `init`. All databases opened through the plugin share the client.
+
+```rust
+let client = reqwest::Client::builder()
+    .user_agent("my-app")
+    .build()
+    .expect("could not build HTTP client");
+
+tauri::Builder::default()
+    .plugin(tauri_plugin_powersync::init_with_options(
+        tauri_plugin_powersync::PowerSyncOptions::default().with_http_client(client),
+    ))
+```
+
+If Android logs show `invalid peer certificate: Revoked` and sync retries with `Sync iteration failed, HTTP error`, the default TLS verifier is rejecting certificates without an OCSP responder (Let's Encrypt no longer includes one). Build the client with `ClientBuilder::tls_certs_only`, passing bundled root certificates (for example from the `webpki-root-certs` crate), then pass it to `with_http_client`.
 
 ## Logging
 

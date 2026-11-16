@@ -9,6 +9,8 @@ metadata:
 
 > **Load this when** building a Vue app or Nuxt app with PowerSync. Always load `powersync-js.md` first.
 
+Replace `https://your-instance.powersync.journeyapps.com` in the examples with your PowerSync instance URL.
+
 ## Table of Contents
 - [Vue](#vue) (Plugin, Composables, Watchers)
 - [Nuxt](#nuxt) (Module, Auto-imports, SSR)
@@ -40,7 +42,7 @@ pnpm add @powersync/vue@latest @powersync/web@latest
 import { createPowerSyncPlugin } from '@powersync/vue';
 import { PowerSyncDatabase } from '@powersync/web';
 import { AppSchema } from './AppSchema';
-import { PowerSyncConnector } from './PowerSyncConnector';
+import { authenticator, uploadData } from './backend';
 import { createApp } from 'vue';
 import App from './App.vue';
 
@@ -49,8 +51,7 @@ const db = new PowerSyncDatabase({
   schema: AppSchema
 });
 
-const connector = new PowerSyncConnector();
-db.connect(connector);
+db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 
 const app = createApp(App);
 app.use(createPowerSyncPlugin({ database: db }));
@@ -208,7 +209,7 @@ Create `plugins/powersync.client.ts`. The `.client.ts` suffix ensures this only 
 ```typescript
 import { NuxtPowerSyncDatabase, createPowerSyncPlugin } from '@powersync/nuxt';
 import { AppSchema } from '~/powersync/AppSchema';
-import { PowerSyncConnector } from '~/powersync/PowerSyncConnector';
+import { authenticator, uploadData } from '~/powersync/backend';
 
 export default defineNuxtPlugin({
   async setup(nuxtApp) {
@@ -219,10 +220,8 @@ export default defineNuxtPlugin({
       schema: AppSchema
     });
 
-    const connector = new PowerSyncConnector();
-
     await db.init();
-    await db.connect(connector);
+    await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 
     const plugin = createPowerSyncPlugin({ database: db });
     nuxtApp.vueApp.use(plugin);

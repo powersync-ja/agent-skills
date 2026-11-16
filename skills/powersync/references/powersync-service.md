@@ -663,7 +663,7 @@ PowerSync does not write client-side changes stored in the SQLite database back 
 | Resource | Description |
 |----------|-------------|
 | [App Backend Setup](https://docs.powersync.com/configuration/app-backend/setup.md) | Overview of setting up the app backend for PowerSync. |
-| [Client-Side Integration with Your Backend](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) | How to implement a "backend connector" and links to example implementations. |
+| [Client-Side Integration with Your Backend](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) | Client-side authentication and mutation uploads. Load the platform SDK reference for the split connection API. |
 
 ## Authentication
 

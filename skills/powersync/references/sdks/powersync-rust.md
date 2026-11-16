@@ -124,7 +124,7 @@ db.connect(SyncOptions::new(
 )).await;
 ```
 
-In powersync 0.2.0 and later, `SyncOptions::new` takes the endpoint, an `Authenticator`, and a `MutationUploader`. If the project is on 0.1.x and still uses a single `BackendConnector`, `SyncOptions::new(my_backend_connector)` applies until it upgrades. For a read-only client, use `SyncOptions::download_only(endpoint, authenticator)`. For a client that only uploads, use `SyncOptions::upload_only`, which needs no endpoint or authenticator.
+In powersync 0.2.0 and later, `SyncOptions::new` takes the endpoint, an `Authenticator`, and a `MutationUploader`. If the project is on 0.1.x and still uses a single `BackendConnector`, `SyncOptions::new(my_backend_connector)` applies until it upgrades. For a read-only client, use `SyncOptions::download_only(endpoint, authenticator)`. For a client that only uploads, use `SyncOptions::upload_only(uploader)`, which needs no endpoint or authenticator. Uploaders must obtain backend credentials independently of download authentication. Connection modes are alternatives, not additive: pass the endpoint, authenticator, and uploader together for full sync.
 
 `connect()` is fire-and-forget. Do not await it expecting data to be ready. If you need to wait for the first sync, use `db.wait_for_first_sync().await`.
 

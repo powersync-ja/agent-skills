@@ -1,20 +1,20 @@
 ---
 name: supabase-auth
-description: Configuring PowerSync with Supabase — replication role and publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, fetchCredentials() implementation, and error codes
+description: Configuring PowerSync with Supabase — replication role and publication setup, JWT signing keys, Cloud dashboard setup, self-hosted service.yaml config, Authenticator implementation, and error codes
 metadata:
-  tags: supabase, auth, jwt, jwks, client_auth, fetchCredentials, authentication, hs256, rs256, publication, replica-identity, powersync_role, replication-role
+  tags: supabase, auth, jwt, jwks, client_auth, resolveCredentials, Authenticator, MutationUploader, authentication, hs256, rs256, publication, replica-identity, powersync_role, replication-role
 ---
 
 # PowerSync + Supabase Auth
 
-> **Load this when** using Supabase as the backend — covers replication role and publication setup, JWT signing keys, fetchCredentials(), uploadData error handling, and Cloud/self-hosted auth config.
+> **Load this when** using Supabase as the backend — covers replication role and publication setup, JWT signing keys, resolveCredentials(), uploadData error handling, and Cloud/self-hosted auth config.
 
 ## Table of Contents
 - [Supabase Database Setup](#supabase-database-setup)
 - [JWT Signing Key Types](#jwt-signing-key-types)
 - [PowerSync Cloud Setup](#powersync-cloud-setup)
 - [Self-Hosted Config](#self-hosted-serviceyaml-config)
-- [fetchCredentials()](#fetchcredentials--client-implementation)
+- [Authenticator](#authenticator--client-implementation)
 - [Troubleshooting](#troubleshooting)
 
 PowerSync verifies Supabase JWTs directly when connected to a Supabase-hosted Postgres database. This file covers everything needed to configure authentication end-to-end.
@@ -206,63 +206,59 @@ client_auth:
 
 ---
 
-## `fetchCredentials()` — Client Implementation
+## Authenticator — Client Implementation
 
-**Prerequisite:** `fetchCredentials()` requires an active Supabase auth session. PowerSync calls it automatically whenever a token is needed, but if no session exists (user not signed in), it will throw and sync will not start. **You must sign the user in before calling `db.connect()`.**
+**Prerequisite:** sign the user in before connecting PowerSync. `resolveCredentials()` requires an active Supabase auth session. If explicit sign-in is required, gate the connection behind that flow; do not silently enable anonymous auth.
 
-- If your app requires explicit sign-in (email/password, OAuth, magic link), connect PowerSync only after the sign-in completes.
-- If anonymous access is acceptable, use the anonymous sign-in pattern below.
-- If anonymous auth is disabled on your Supabase project, there is no silent fallback — the agent must gate `db.connect()` behind an explicit auth flow.
-
-`fetchCredentials()` in your backend connector should return the Supabase session JWT. The examples below use the JS Supabase client; equivalent patterns exist for [Dart](https://github.com/powersync-ja/powersync.dart/blob/main/demos/supabase-todolist/lib/powersync.dart) and [Kotlin](https://github.com/powersync-ja/powersync-kotlin/blob/main/connectors/supabase/src/commonMain/kotlin/com/powersync/connector/supabase/SupabaseConnector.kt).
+Use the split API from `references/sdks/powersync-js.md` (including its minimum versions). Other platforms must load their matching SDK reference for the language-specific interfaces.
 
 ### Standard Supabase Auth (JS/TS)
 
-Use this when users sign in explicitly (email, OAuth, magic link). Call `db.connect(connector)` only after `supabase.auth.signIn*` succeeds.
-
 ```ts
 import { createClient } from '@supabase/supabase-js';
-import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'; // or @powersync/react-native
+import type { Authenticator } from '@powersync/web'; // or @powersync/react-native
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export const connector: PowerSyncBackendConnector = {
-  async fetchCredentials(): Promise<PowerSyncCredentials> {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) throw error ?? new Error('No session');
-    return {
-      endpoint: POWERSYNC_URL,
-      token: session.access_token,
-      expiresAt: new Date(session.expires_at! * 1000),
-    };
+let refreshRequired = false;
+
+export const authenticator: Authenticator = {
+  async resolveCredentials(): Promise<string> {
+    const result = refreshRequired
+      ? await supabase.auth.refreshSession()
+      : await supabase.auth.getSession();
+    if (result.error || !result.data.session) {
+      throw result.error ?? new Error('No session');
+    }
+    refreshRequired = false;
+    return result.data.session.access_token;
   },
-  // ...uploadData
+  invalidateCredentials(): void {
+    refreshRequired = true;
+  },
 };
 ```
+
+The SDK does not cache authenticator tokens. Reuse the Supabase-managed session instead of issuing a token request for every resolution; Supabase handles normal expiry, and invalidation forces a refresh on the next resolution. Clear per-user auth state on logout/account switches and use `disconnectAndClear()` before connecting as a different user.
 
 > **Publishable keys:** New Supabase projects use publishable keys (prefixed `sb_publishable_…`) in place of the legacy anon key. Use it as the value for `SUPABASE_ANON_KEY` — the `createClient()` call is unchanged.
 
 ### Anonymous Sign-In (JS/TS)
 
-Use this when you want sync to work without an explicit sign-in step. Requires **anonymous sign-ins to be enabled** in Supabase (Dashboard → Authentication → Providers → Anonymous). If disabled, `signInAnonymously()` returns an error and sync fails silently.
+Only use this when anonymous access is intended and anonymous sign-ins are enabled in Supabase Dashboard → Authentication → Providers → Anonymous. Establish the session before connecting; use the same authenticator and uploader as for explicit sign-in.
 
 ```ts
-async fetchCredentials(): Promise<PowerSyncCredentials> {
-  let { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) throw error; // Will throw if anonymous auth is disabled
-    session = data.session!;
+let { data: { session }, error } = await supabase.auth.getSession();
+if (error) throw error;
+if (!session) {
+  const result = await supabase.auth.signInAnonymously();
+  if (result.error || !result.data.session) {
+    throw result.error ?? new Error('Anonymous sign-in returned no session');
   }
-  return {
-    endpoint: POWERSYNC_URL,
-    token: session.access_token,
-    expiresAt: new Date(session.expires_at! * 1000),
-  };
-},
+  session = result.data.session;
+}
+// Now connect with the endpoint, authenticator, and uploadData shown below.
 ```
-
-`fetchCredentials` is called automatically on reconnect — always return a fresh token, never a cached one.
 
 ### `uploadData()` — Writing Changes Back to Supabase
 
@@ -279,44 +275,50 @@ For Supabase backends, `uploadData` writes client-side changes directly to Supab
 The Supabase JS client returns errors as `{ error: PostgrestError }` rather than throwing HTTP status codes — check `error.code` or `error.message` to distinguish permanent failures (constraint violations, RLS denials) from transient ones. Supabase RLS errors return `{ code: '42501' }` (PostgreSQL insufficient_privilege).
 
 ```ts
-import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, UpdateType } from '@powersync/web';
+import { UpdateType } from '@powersync/web';
+import type { UploadMutationsOptions } from '@powersync/web';
 
-export const connector: PowerSyncBackendConnector = {
-  async fetchCredentials() { /* ... see above ... */ },
+export async function uploadData({ database }: UploadMutationsOptions): Promise<void> {
+  const transaction = await database.getNextCrudTransaction();
+  if (!transaction) return;
 
-  async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
-    const transaction = await database.getNextCrudTransaction();
-    if (!transaction) return;
-
-    try {
-      for (const op of transaction.crud) {
-        const { op: opType, table, opData, id } = op;
-        let result: { error: any };
-        if (opType === UpdateType.PUT) {
-          result = await supabase.from(table).upsert({ ...opData, id });
-        } else if (opType === UpdateType.PATCH) {
-          result = await supabase.from(table).update(opData).eq('id', id);
-        } else {
-          result = await supabase.from(table).delete().eq('id', id);
-        }
-        if (result.error) throw result.error;
+  try {
+    for (const op of transaction.crud) {
+      const { op: opType, table, opData, id } = op;
+      let result: { error: any };
+      if (opType === UpdateType.PUT) {
+        result = await supabase.from(table).upsert({ ...opData, id });
+      } else if (opType === UpdateType.PATCH) {
+        result = await supabase.from(table).update(opData ?? {}).eq('id', id);
+      } else {
+        result = await supabase.from(table).delete().eq('id', id);
       }
-      await transaction.complete(); // REQUIRED — advances the queue
-    } catch (error: any) {
-      // Permanent failures (RLS violation, constraint error, 4xx-equivalent):
-      // complete the transaction so the queue can advance. Log for debugging.
-      const isPermanent = error?.code === '42501' || error?.status === 400;
-      if (isPermanent) {
-        console.error('Permanent upload error, skipping:', error);
-        await transaction.complete();
-        return;
-      }
-      // Transient failures: throw so PowerSync retries with backoff.
-      throw error;
+      if (result.error) throw result.error;
     }
+    await transaction.complete(); // REQUIRED — advances the queue
+  } catch (error: any) {
+    // Permanent failures (RLS violation, constraint error, 4xx-equivalent):
+    // complete the transaction so the queue can advance. Log for debugging.
+    const isPermanent = error?.code === '42501' || error?.status === 400;
+    if (isPermanent) {
+      console.error('Permanent upload error, skipping:', error);
+      await transaction.complete();
+      return;
+    }
+    // Transient failures: throw so PowerSync retries with backoff.
+    throw error;
   }
-};
+}
+
+// Call after explicit or anonymous sign-in succeeds.
+await db.connect({
+  powerSyncEndpoint: POWERSYNC_URL,
+  authenticator,
+  upload: uploadData,
+});
 ```
+
+Uploads use the Supabase client’s own session, so they do not depend on a download authentication callback having run.
 
 **Important:** Your tables need both Data API grants and RLS policies. Without `grant … on public.<table> to authenticated`, `supabase-js` returns `42501: permission denied for table` before RLS is evaluated — see [Data API Grants](#data-api-grants). Without RLS policies, any authenticated user can read and write all rows.
 
@@ -345,7 +347,7 @@ For Sync Rules (legacy), use `request.user_id()` instead.
 
 ## Kotlin: Built-in Supabase Connector
 
-The Kotlin SDK includes a first-party Supabase connector that handles `fetchCredentials` and session management automatically:
+The Kotlin SDK includes a first-party `SupabaseConnector` helper. Reuse its upload implementation with the split connect API; use a separate authenticator backed by the same signed-in Supabase client:
 
 ```kotlin
 // build.gradle.kts
@@ -353,10 +355,30 @@ implementation("com.powersync:connector-supabase:$powersyncVersion")
 ```
 
 ```kotlin
-val connector = SupabaseConnector(
-    supabaseUrl = "https://your-project.supabase.co",
-    supabaseKey = "your-anon-key",
-    powerSyncEndpoint = "https://your-instance.powersync.journeyapps.com",
+import com.powersync.connectors.Authenticator
+import com.powersync.connector.supabase.SupabaseConnector
+import io.github.jan.supabase.auth.auth
+
+val supabaseUploads = SupabaseConnector(
+    supabaseClient = supabase,
+    powerSyncEndpoint = powerSyncEndpoint,
+)
+val authenticator = object : Authenticator {
+    private var refreshRequired = false
+    override suspend fun resolveCredentials(): String {
+        if (refreshRequired) {
+            supabase.auth.refreshCurrentSession()
+            refreshRequired = false
+        }
+        return supabase.auth.currentSessionOrNull()?.accessToken
+            ?: error("User is not signed in")
+    }
+    override fun invalidateCredentials() { refreshRequired = true }
+}
+db.connect(
+    endpoint = powerSyncEndpoint,
+    authenticator = authenticator,
+    uploader = supabaseUploads::uploadData,
 )
 ```
 

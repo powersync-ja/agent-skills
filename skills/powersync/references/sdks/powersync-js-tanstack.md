@@ -20,6 +20,8 @@ TanStack-specific integrations for the PowerSync JavaScript SDK. Use this refere
 
 ---
 
+Replace `https://your-instance.powersync.journeyapps.com` in the examples with your PowerSync instance URL.
+
 ## TanStack Query
 
 `@powersync/tanstack-react-query` wraps TanStack Query's `useQuery` and `useSuspenseQuery` hooks, bringing TanStack's advanced async state management to PowerSync web and React Native applications.
@@ -147,7 +149,7 @@ const db = new PowerSyncDatabase({
   schema: APP_SCHEMA
 });
 
-// Optional: db.connect(connector) for backend sync
+// Optional: db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData }) for backend sync
 
 // Create a collection — types are inferred from the table definition
 const documentsCollection = createCollection(

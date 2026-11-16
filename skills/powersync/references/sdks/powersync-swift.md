@@ -1,6 +1,6 @@
 ---
 name: powersync-swift
-description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), checkpoint requests, backend connectors, GRDB ORM support, and Swift Data community integration
+description: PowerSync Swift SDK: schema, queries, sync lifecycle, ObservableSyncStatus for SwiftUI, app groups/extensions (v1.15+), checkpoint requests, authentication, mutation uploads, GRDB ORM support, and Swift Data community integration
 metadata:
   tags: swift, ios, macos, grdb, orm, sqlite, offline-first, swift-data, app-groups, observable-sync-status, http-client, custom-headers, checkpoint-requests, sync-streams, syncStream
 ---
@@ -61,50 +61,46 @@ let AppSchema = Schema(tables: [lists, todos])
 
 See [Define the Client-Side Schema](https://docs.powersync.com/client-sdks/reference/swift.md#1-define-the-client-side-schema) for more information.
 
-### 2. Create Backend Connector
+### 2. Create an Authenticator and Mutation Uploader
+
+Requires PowerSync Swift SDK 1.17.0+. Use the split interface for new integrations; older SDKs retain `PowerSyncBackendConnectorProtocol` until upgraded. App-owned `authService` and `apiClient` below must support Swift concurrency; the API client obtains backend credentials independently of download authentication.
 
 ```swift
 import PowerSync
 
-@Observable
-@MainActor
-final class MyConnector: PowerSyncBackendConnectorProtocol {
-    private let apiClient: APIClient
+actor MyAuthenticator: PowerSync.Authenticator {
+    private var token: String?
 
-    init(apiClient: APIClient) {
-        self.apiClient = apiClient
+    func resolveCredentials() async throws -> String {
+        if let token { return token }
+        let response = try await authService.getPowerSyncToken()
+        token = response.token
+        return response.token
     }
 
-    func fetchCredentials() async throws -> PowerSyncCredentials? {
-        let response = try await apiClient.getPowerSyncToken()
-        return PowerSyncCredentials(
-            endpoint: "https://your-instance.powersync.journeyapps.com",
-            token: response.token,
-            expiresAt: response.expiresAt
-        )
-    }
+    func invalidateCredentials() async { token = nil }
+}
 
-    func uploadData(database: PowerSyncDatabaseProtocol) async throws {
-        guard let transaction = try await database.getNextCrudTransaction() else { return }
+func uploadData(database: PowerSyncDatabaseProtocol) async throws {
+    guard let transaction = try await database.getNextCrudTransaction() else { return }
 
-        do {
-            for entry in transaction.crud {
-                switch entry.op {
-                case .put:
-                    var data = entry.opData ?? [:]
-                    data["id"] = entry.id
-                    try await apiClient.upsert(table: entry.table, id: entry.id, data: data)
-                case .patch:
-                    guard let opData = entry.opData else { continue }
-                    try await apiClient.update(table: entry.table, id: entry.id, data: opData)
-                case .delete:
-                    try await apiClient.delete(table: entry.table, id: entry.id)
-                }
+    do {
+        for entry in transaction.crud {
+            switch entry.op {
+            case .put:
+                var data = entry.opData ?? [:]
+                data["id"] = entry.id
+                try await apiClient.upsert(table: entry.table, id: entry.id, data: data)
+            case .patch:
+                guard let opData = entry.opData else { continue }
+                try await apiClient.update(table: entry.table, id: entry.id, data: opData)
+            case .delete:
+                try await apiClient.delete(table: entry.table, id: entry.id)
             }
-            try await transaction.complete()
-        } catch {
-            throw error
         }
+        try await transaction.complete()
+    } catch {
+        throw error
     }
 }
 ```
@@ -121,7 +117,7 @@ See [Integrate with your Backend](https://docs.powersync.com/client-sdks/referen
 @Observable
 @MainActor
 final class SystemManager {
-    let connector = MyConnector()
+    let authenticator = MyAuthenticator()
     let db: PowerSyncDatabaseProtocol
 
     init() {
@@ -132,12 +128,31 @@ final class SystemManager {
     }
 
     func connect() async throws {
-        try await db.connect(connector: connector)
+        try await db.connect(
+            endpoint: powerSyncEndpoint,
+            authenticator: authenticator,
+            mutationUploader: uploadData,
+            options: ConnectOptions()
+        )
     }
 }
 ```
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/swift.md#2-instantiate-the-powersync-database) for more information.
+
+## Connection Modes
+
+```swift
+// Alternatives: each call replaces the previous configuration.
+try await db.connect(endpoint: powerSyncEndpoint, authenticator: authenticator, options: ConnectOptions())
+try await db.connect(mutationUploader: uploadData, options: ConnectOptions())
+try await db.connect(
+    endpoint: powerSyncEndpoint, authenticator: authenticator,
+    mutationUploader: uploadData, options: ConnectOptions()
+)
+```
+
+The authenticator owns token caching/invalidation; the SDK does not cache its tokens. Reuse valid tokens or your auth provider’s session and discard rejected tokens and state from previous users. `Authenticator` and upload callbacks are `Sendable`; use actors or other safe shared state and preserve Swift task cancellation. Upload-only needs no PowerSync endpoint/authenticator, but still requires backend authentication in the uploader. Download-only clients must not mutate synced tables. See [connection mode examples](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
 
 ## Custom HTTP Client
 
@@ -149,7 +164,9 @@ config.httpAdditionalHeaders = ["x-my-custom-header": "value"]
 let session = URLSession(configuration: config)
 
 try await db.connect(
-    connector: connector,
+    endpoint: powerSyncEndpoint,
+    authenticator: authenticator,
+    mutationUploader: uploadData,
     options: ConnectOptions(
         clientConfiguration: SyncClientConfiguration(
             urlSession: session
@@ -202,11 +219,13 @@ Same stream name with different parameters creates separate subscriptions. Subsc
 
 Checkpoint requests let you confirm that the local database has caught up to a specific server state. Use this when you need to know that server changes are available locally: after a local write to wait for the result to sync back, in a pull-to-refresh flow, or when a user opens a link that refers to data that may not have synced yet.
 
-Requires Swift SDK v1.16.0+, PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. The JavaScript, Dart, Kotlin, .NET, and Rust SDKs also support checkpoint requests.
+Checkpoint requests require Swift SDK v1.16.0+ (the split connection below requires v1.17.0+), PowerSync Service v1.24.0+, and `checkpointMode: .requests()` set in `ConnectOptions`. The JavaScript, Dart, Kotlin, .NET, and Rust SDKs also support checkpoint requests.
 
 ```swift
 try await database.connect(
-    connector: connector,
+    endpoint: powerSyncEndpoint,
+    authenticator: authenticator,
+    mutationUploader: uploadData,
     options: ConnectOptions(checkpointMode: .requests())
 )
 ```
@@ -265,7 +284,7 @@ This behavior relies on `uploadData()` returning only after your backend has com
 
 ### Async Upload Backends (Team/Enterprise)
 
-If `uploadData()` queues writes for later processing rather than committing them synchronously, use `CustomCheckpointRequestConnector`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
+If `uploadData()` queues writes for later processing rather than committing them synchronously, make the authenticator conform to `CustomCheckpointRequestConnector` (which extends `Authenticator`) and implement `postCheckpointRequest(_:clientId:) async throws -> Int64`. Pass it as `authenticator` in the split connect call; the uploader remains independent and the checkpoint endpoint needs its own backend authentication. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## Query Patterns
 

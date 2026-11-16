@@ -1,6 +1,6 @@
 ---
 name: powersync-dart
-description: PowerSync Dart SDK — schema, queries, sync lifecycle, backend connectors, Drift ORM, Flutter Web support, and encryption
+description: PowerSync Dart SDK — schema, queries, sync lifecycle, authentication, mutation uploads, Drift ORM, Flutter Web support, and encryption
 metadata:
   tags: dart, flutter, flutter-web, drift, orm, sqlite, encryption, sqlcipher, sqlite3mc, http-client, custom-headers, checkpoint-requests, sync-streams, syncStream
 ---
@@ -51,41 +51,45 @@ const schema = Schema([
 
 See [Define the Client-Side Schema](https://docs.powersync.com/client-sdks/reference/flutter.md#1-define-the-client-side-schema) for more information.
 
-### 2. Create Backend Connector
+### 2. Create an Authenticator and Mutation Uploader
+
+Requires `powersync` 2.6.0+. Use separate authentication and uploads for new integrations. Older versions use `PowerSyncBackendConnector` until upgraded.
 
 ```dart
 import 'package:powersync/powersync.dart';
 
-class MyBackendConnector extends PowerSyncBackendConnector {
+class MyAuthenticator implements Authenticator {
+  String? _token;
+
   @override
-  Future<PowerSyncCredentials?> fetchCredentials() async {
-    final token = await myAuthService.getPowerSyncToken();
-    return PowerSyncCredentials(
-      endpoint: 'https://your-instance.powersync.journeyapps.com',
-      token: token,
-    );
+  Future<String> resolveCredentials(Future<void> abortSignal) async {
+    if (_token case final token?) return token;
+    return _token = await myAuthService.getPowerSyncToken();
   }
 
   @override
-  Future<void> uploadData(PowerSyncDatabase database) async {
-    final transaction = await database.getNextCrudTransaction();
-    if (transaction == null) return;
+  void invalidateCredentials() { _token = null; }
+}
 
-    try {
-      for (final op in transaction.crud) {
-        switch (op.op) {
-          case UpdateType.put:
-            await apiClient.upsert(table: op.table, id: op.id, data: {...?op.opData, 'id': op.id});
-          case UpdateType.patch:
-            await apiClient.update(table: op.table, id: op.id, data: op.opData ?? {});
-          case UpdateType.delete:
-            await apiClient.delete(table: op.table, id: op.id);
-        }
+// apiClient manages backend authentication independently of MyAuthenticator.
+Future<void> uploadData(PowerSyncDatabase database) async {
+  final transaction = await database.getNextCrudTransaction();
+  if (transaction == null) return;
+
+  try {
+    for (final op in transaction.crud) {
+      switch (op.op) {
+        case UpdateType.put:
+          await apiClient.upsert(table: op.table, id: op.id, data: {...?op.opData, 'id': op.id});
+        case UpdateType.patch:
+          await apiClient.update(table: op.table, id: op.id, data: op.opData ?? {});
+        case UpdateType.delete:
+          await apiClient.delete(table: op.table, id: op.id);
       }
-      await transaction.complete();
-    } catch (e) {
-      rethrow;
     }
+    await transaction.complete();
+  } catch (e) {
+    rethrow;
   }
 }
 ```
@@ -113,7 +117,11 @@ Future<void> openDatabase() async {
 
 // Call after the user authenticates
 Future<void> connect() async {
-  await db.connect(connector: MyBackendConnector());
+  await db.connect(connector: ConnectRequest(
+    endpoint: powerSyncEndpoint,
+    authenticator: MyAuthenticator(),
+    uploader: MutationUploader(uploadData),
+  ));
 }
 
 // Call on logout
@@ -123,6 +131,24 @@ Future<void> disconnect() async {
 ```
 
 See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/reference/flutter.md#2-instantiate-the-powersync-database) for more information.
+
+### Connection Modes
+
+```dart
+// Alternatives: each connect call replaces the previous configuration.
+await db.connect(connector: ConnectRequest.downloadOnly(
+  endpoint: powerSyncEndpoint, authenticator: authenticator,
+));
+await db.connect(connector: ConnectRequest.uploadOnly(MutationUploader(uploadData)));
+await db.connect(connector: ConnectRequest(
+  endpoint: powerSyncEndpoint, authenticator: authenticator,
+  uploader: MutationUploader(uploadData),
+));
+```
+
+The authenticator owns token caching/invalidation; the SDK does not cache its tokens. Reuse valid tokens or your auth provider’s session, and discard rejected tokens and state from previous users. `abortSignal` completes when credential resolution is no longer needed. For cancellable uploads, use `MutationUploader.abortable((database, abortSignal) async { /* upload */ })` and forward cancellation to the HTTP client.
+
+Upload-only mode needs no PowerSync endpoint/authenticator, but the uploader still needs backend credentials. Download-only clients must not mutate synced tables. Web tabs sharing a worker must agree on the connection mode. See [connection mode examples](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
 
 ### SQLite Options
 
@@ -174,7 +200,11 @@ To opt in, pass `checkpointMode: .requests()` in `SyncOptions` to `connect()`:
 
 ```dart
 await db.connect(
-  connector: connector,
+  connector: ConnectRequest(
+    endpoint: powerSyncEndpoint,
+    authenticator: authenticator,
+    uploader: MutationUploader(uploadData),
+  ),
   options: SyncOptions(checkpointMode: .requests()),
 );
 ```
@@ -226,17 +256,18 @@ This behavior relies on `uploadData()` returning only after your backend has com
 
 ### Async Upload Backends (Team/Enterprise)
 
-If `uploadData()` queues writes for later processing rather than committing them synchronously, mix in `CustomCheckpointRequestConnector` and implement `postCheckpointRequest`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
+If `uploadData()` queues writes for later processing rather than committing them synchronously, mix `CustomCheckpointRequestConnector` into the authenticator and implement `postCheckpointRequest`. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
 
 ```dart
-final class MyBackendConnector extends PowerSyncBackendConnector
+final class MyCheckpointAuthenticator extends MyAuthenticator
     with CustomCheckpointRequestConnector {
-  // ... also implement fetchCredentials and uploadData
+  // Uploads remain in the independent uploadData function.
 
   @override
   Future<String> postCheckpointRequest(
     String clientId,
     String requestId,
+    Future<void> abortSignal,
   ) async {
     final response = await myBackend.createCheckpointRequest(clientId, requestId);
     return response.checkpointRequestId;
@@ -244,7 +275,7 @@ final class MyBackendConnector extends PowerSyncBackendConnector
 }
 ```
 
-See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
+Pass `MyCheckpointAuthenticator()` as the `ConnectRequest` authenticator; checkpoint requests need their own backend authentication. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## Query Patterns
 
@@ -340,7 +371,11 @@ final class _HeaderClient extends BaseClient {
 }
 
 await db.connect(
-  connector: connector,
+  connector: ConnectRequest(
+    endpoint: powerSyncEndpoint,
+    authenticator: authenticator,
+    uploader: MutationUploader(uploadData),
+  ),
   options: SyncOptions(httpClient: _HeaderClient.new),
 );
 ```

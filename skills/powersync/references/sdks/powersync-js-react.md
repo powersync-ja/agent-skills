@@ -9,6 +9,8 @@ metadata:
 
 > **Load this when** building a React web app, Next.js app, or any Vite + React project. Load **before** package install for Vite projects — contains the required `vite.config.ts` setup. Always load `powersync-js.md` first.
 
+Replace `https://your-instance.powersync.journeyapps.com` in the examples with your PowerSync instance URL.
+
 ## Table of Contents
 - [Provider Setup](#provider-setup)
 - [useSuspenseQuery](#usesuspensequery)
@@ -200,10 +202,11 @@ Create a client-only provider component. The `disableSSRWarning: true` flag supp
 'use client';
 
 import { AppSchema } from '@/lib/powersync/AppSchema';
-import { BackendConnector } from '@/lib/powersync/BackendConnector';
+import { authenticator, uploadData } from '@/lib/powersync/backend';
 import { PowerSyncContext } from '@powersync/react';
 import { PowerSyncDatabase, WASQLiteOpenFactory, createBaseLogger, LogLevel } from '@powersync/web';
 import React, { Suspense } from 'react';
+
 
 const factory = new WASQLiteOpenFactory({
   dbFilename: 'powersync.db',
@@ -222,8 +225,7 @@ export const db = new PowerSyncDatabase({
   }
 });
 
-const connector = new BackendConnector();
-db.connect(connector);
+db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 
 export const SystemProvider = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -315,7 +317,7 @@ function App() {
   const [db, setDb] = useState<PowerSyncDatabase | null>(null);
   useEffect(() => {
     const database = new PowerSyncDatabase({ schema, database: { dbFilename: 'app.db' } });
-    database.connect(connector);
+    database.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
     setDb(database);
     return () => { database.close(); }; // Kills the DB on Strict Mode re-mount
   }, []);
@@ -324,7 +326,7 @@ function App() {
 
 // CORRECT — create once at module scope (or use a stable singleton)
 const db = new PowerSyncDatabase({ schema, database: { dbFilename: 'app.db' } });
-db.connect(connector);
+db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 
 function App() {
   return (
@@ -355,7 +357,7 @@ Any component that calls `usePowerSync`, `useQuery`, `useStatus`, or `useSuspens
 
 ### Next.js: awaiting `db.connect()` at module scope
 
-`connect()` is fire-and-forget. Calling `await db.connect(connector)` at module scope in a Next.js file will block the module evaluation. Call `db.connect(connector)` without `await` in your provider, then use `db.waitForFirstSync()` if you need to gate rendering on data availability.
+`connect()` is fire-and-forget. Calling `await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData })` at module scope in a Next.js file will block the module evaluation. Call `db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData })` without `await` in your provider, then use `db.waitForFirstSync()` if you need to gate rendering on data availability.
 
 ### Never flip the context database between null and non-null
 

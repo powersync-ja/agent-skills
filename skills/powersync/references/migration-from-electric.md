@@ -90,9 +90,10 @@ Electric routes Shape requests through a backend to authorize them. PowerSync em
 1. Install: `pnpm install @powersync/web`
 2. Generate the client schema from the Dashboard or CLI. The `id` column is added automatically; do not define it.
 3. Instantiate `PowerSyncDatabase` with the schema and a `dbFilename`.
-4. Implement `PowerSyncBackendConnector`:
-   - `fetchCredentials()` returns the JWT and the PowerSync Cloud endpoint.
-   - `uploadData()` sends local mutations to your backend API.
+4. Load the platform SDK reference and implement separate authentication and uploads:
+   - `Authenticator.resolveCredentials()` returns the JWT, reusing valid tokens and invalidating rejected ones.
+   - The mutation uploader sends local mutations to your backend API and obtains backend credentials independently.
+   - Pass the PowerSync endpoint, authenticator, and uploader together in one `connect()` call using the platform’s split API. .NET and older SDKs that cannot upgrade retain their supported combined connector.
 5. Replace `useShape` with `useQuery` or `watch()` for live SQL queries.
 6. Replace Shape handle/offset usage with `waitForFirstSync()` and Sync Stream status checks.
 7. Tie on-demand Sync Stream subscriptions to component or route lifetime. The PowerSync React hooks handle automatic subscribe and unsubscribe.

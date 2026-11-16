@@ -17,7 +17,7 @@ Make sure to understand the [PowerSync Architecture](references/powersync-overvi
 
 Before asking for console logs or editing app code, verify these in order:
 
-1. The PowerSync endpoint URL returned by `fetchCredentials()` is correct (not the backend URL).
+1. The PowerSync endpoint URL passed to `connect()` is correct (not the backend URL).
 2. The PowerSync service has a valid source DB connection.
 3. Sync config was deployed and starts with `config: edition: 3`.
 4. Client auth is configured correctly (Supabase auth, custom JWKS, or other provider).
@@ -69,11 +69,11 @@ What to look for: The two sides call for different first responses. `uploadError
 
 What it identifies: Why an app stays stuck on `Syncing...` even though `connect()` returned without throwing.
 
-Why: `connect()` is fire-and-forget. It resolves even when `fetchCredentials()` fails, and the retry loop that follows surfaces only through `SyncStatus`: `downloadError` is set and `connected` stays `false` between retries.
+Why: `connect()` is fire-and-forget. It resolves even when `resolveCredentials()` fails, and the retry loop that follows surfaces only through `SyncStatus`: `downloadError` is set and `connected` stays `false` between retries.
 
 How: Treat `SyncStatus` as the source of truth for connection health, not the `connect()` promise. Do not put `await connect()` on a UI-blocking path expecting it to fail loudly; it won't.
 
-What to look for: `connected: false` with a populated `downloadError` after `connect()` resolved means the credential or connection loop is failing silently. Start with `fetchCredentials()` and the endpoint URL.
+What to look for: `connected: false` with a populated `downloadError` after `connect()` resolved means the credential or connection loop is failing silently. Start with `resolveCredentials()` and the endpoint passed to `connect()`.
 
 ## Persisted Sync State Is Available at Open, Offline
 
@@ -102,7 +102,9 @@ Why: The Rust-based sync client doesn't log request details by default. Adding a
 How:
 ```swift
 try await db.connect(
-    connector: connector,
+    endpoint: powerSyncEndpoint,
+    authenticator: authenticator,
+    mutationUploader: uploadData,
     options: ConnectOptions(
         clientConfiguration: SyncClientConfiguration(
             requestLogger: SyncRequestLoggerConfiguration(
@@ -155,13 +157,13 @@ How: Inspect `ps_crud` (see the preceding section) for stuck entries, then check
 
 What to look for: A non-empty `ps_crud` whose oldest entry never drains, together with a latched `uploadError`. In the app's own UX, after a grace window, distinguish "downloading" (connected, download progress advancing) from "stalled" (disconnected, or a latched `uploadError`/`downloadError`) instead of showing an indefinite optimistic spinner; the optimistic spinner hides exactly this failure.
 
-## Log the Actual `endpoint` URL in `fetchCredentials()`
+## Inspect the PowerSync Endpoint Passed to `connect()`
 
-What it identifies: Whether the `endpoint` value returned by your connector is pointing at the PowerSync Service, not your app backend.
+What it identifies: Whether the endpoint passed to `connect()` points at the PowerSync Service. In JS, this option is named `powerSyncEndpoint`; other SDKs use `endpoint`.
 
-Why: The most common cause of `404 Not Found` on `/write-checkpoint2.json` and `/sync/stream` is passing the wrong URL as `endpoint`. PowerSync builds its own request URLs by appending paths to whatever `endpoint` returns, if that's your app backend, every internal PowerSync request 404s. Adding a log statement catches this immediately.
+Why: The most common cause of `404 Not Found` on `/write-checkpoint2.json` and `/sync/stream` is passing the wrong URL as `endpoint`. PowerSync builds its own request URLs by appending paths to the configured endpoint, if that's your app backend, every internal PowerSync request 404s. Adding a log statement catches this immediately.
 
-How: Adding a log statement or set breakpoints to catch the endpoint before fetchCredentials() returns.
+How: Inspect or log only the configured endpoint immediately before `connect()`. For legacy combined connectors (.NET or older SDKs), inspect the endpoint returned by `fetchCredentials()` instead.
 
 ## Run `EXPLAIN QUERY PLAN` for Slow Queries
 

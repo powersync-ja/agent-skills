@@ -85,11 +85,11 @@ Only after Phase 2 is complete.
     ```
     Or write manually — but never define the `id` column (it is automatic).
 
-11. **Implement the backend connector.** See `references/supabase-auth.md` § "fetchCredentials()" and § "uploadData()" for complete implementations including error handling strategy.
+11. **Implement separate authentication and uploads.** Load `references/supabase-auth.md` § "Authenticator — Client Implementation" and § "uploadData()", plus the platform SDK reference. Resolve the JWT from the Supabase session and implement uploads independently through the Supabase client, including the documented error handling. Use the supported combined connector only for .NET or older SDKs that cannot upgrade.
 
-    **Auth prerequisite:** `fetchCredentials()` requires an active Supabase session. Call `db.connect(connector)` only after the user has signed in. For apps without a sign-in screen, enable anonymous auth in Supabase Dashboard → Authentication → Providers → Anonymous.
+    **Auth prerequisite:** `resolveCredentials()` requires an active Supabase session. Connect only after the user has signed in. For apps without a sign-in screen, enable anonymous auth in Supabase Dashboard → Authentication → Providers → Anonymous.
 
-12. **Initialize PowerSync and connect.**
+12. **Initialize PowerSync and connect.** On supported SDKs, pass the explicit PowerSync endpoint, authenticator, and uploader together using the platform SDK’s split API. For the compatibility exceptions above, use the platform reference’s supported combined call. Full downloads and uploads are the default onboarding outcome; do not issue separate calls for each direction.
     - `connect()` is fire-and-forget — use `waitForFirstSync()` if you need readiness.
     - Use `disconnectAndClear()` on logout or user switch.
 

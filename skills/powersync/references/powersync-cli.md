@@ -562,10 +562,10 @@ For full usage and flags, run `powersync --help` or `powersync <command> --help`
 
 ```bash
 powersync generate token --subject=user-test-1
-# Copy the token output and use it as the JWT in fetchCredentials()
+# Copy the token output and return it from `Authenticator.resolveCredentials()`
 ```
 
-Dev tokens are for development only. In production, `fetchCredentials()` must return a real JWT from your auth provider.
+Dev tokens are for development only. In production, the authenticator must return a real JWT from your auth provider.
 
 **Test-client (`@powersync/service-test-client`):** If using `node dist/bin.js generate-token` instead of the CLI, and your `service.yaml` uses `!env PS_*` tags, the test-client reads those values from your shell by default. To load them from a dotenv file instead, pass `--env`:
 

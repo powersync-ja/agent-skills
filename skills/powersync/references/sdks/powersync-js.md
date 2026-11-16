@@ -1,6 +1,6 @@
 ---
 name: powersync-js
-description: PowerSync JavaScript/TypeScript SDK — schema, backend connector, queries, transactions, sync status, and debugging
+description: PowerSync JavaScript/TypeScript SDK — schema, authentication, mutation uploads, queries, transactions, sync status, and debugging
 metadata:
   tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger
 ---
@@ -9,12 +9,14 @@ metadata:
 
 # PowerSync JavaScript/TypeScript SDK
 
-Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets — schema design, the backend connector, database initialization, transactions, imperative queries, sync status, and debugging. For ORM integration see `powersync-js-orm.md`; for raw tables and sync internals see `powersync-js-raw-tables.md`.
+Core patterns and guidance shared across all PowerSync JavaScript/TypeScript targets — schema design, separate authentication and uploads, database initialization, transactions, imperative queries, sync status, and debugging. For ORM integration load `references/sdks/powersync-js-orm.md`; for raw tables load `references/raw-tables.md`.
+
+Replace `https://your-instance.powersync.journeyapps.com` in the examples with your PowerSync instance URL.
 
 ## Table of Contents
 
 - [Package Coverage](#package-coverage)
-- [Quick Setup](#quick-setup) (Install, Schema, Backend Connector, uploadData, Initialize)
+- [Quick Setup](#quick-setup) (Install, Schema, Authenticator, Mutation Uploader, Initialize)
 - [Query Patterns](#query-patterns) (useQuery, CompilableQuery, Imperative, Watch)
 - [Writes & Transactions](#writes--transactions)
 - [Sync Status, Priorities & Sync Streams](#sync-status-priorities--sync-streams)
@@ -22,11 +24,7 @@ Core patterns and guidance shared across all PowerSync JavaScript/TypeScript tar
 - [Debugging](#debugging)
 - [Common Pitfalls](#common-pitfalls)
 
-**TypeScript-only exports:** `PowerSyncBackendConnector`, `PowerSyncCredentials`, and `AbstractPowerSyncDatabase` are **TypeScript interfaces only** — they exist at compile time for type checking but have no runtime presence. This means:
-- Always use `import type` for these (e.g. `import type { PowerSyncBackendConnector } from '@powersync/web'`)
-- Runtime checks like `require('@powersync/web').PowerSyncBackendConnector` will return `undefined` — this is expected, not a bug
-- Only `UpdateType` is a runtime value (enum) and uses a regular import
-- Bundlers like Vite will error if you import these without `type` since they try to resolve them as values
+**TypeScript-only exports:** `Authenticator`, `MutationUploader`, `ResolveCredentialsOptions`, `UploadMutationsOptions`, and `AbstractPowerSyncDatabase` are types, so use `import type`. They have no runtime value. Legacy connector and credential interfaces are also type-only.
 
 | Resource | Description |
 |----------|-------------|
@@ -157,34 +155,41 @@ const tasks = new Table(
 );
 ```
 
-### 3. Create Backend Connector
+### 3. Create an Authenticator and Mutation Uploader
 
-See [Integrate with your Backend](https://docs.powersync.com/client-sdks/reference/javascript-web.md#3-integrate-with-your-backend) and [Client-Side Integration](https://docs.powersync.com/configuration/app-backend/client-side-integration.md) for more information.
+**Use the split API for new integrations.** Requires `@powersync/web` 2.6.0+, `@powersync/react-native` 2.4.0+, `@powersync/node` 1.3.0+, or `@powersync/capacitor` 0.10.0+. Older SDKs retain the combined `PowerSyncBackendConnector` (`fetchCredentials`/`uploadData`) until upgraded; do not copy that pattern into supported new integrations.
 
 ```ts
-import type { PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
-async fetchCredentials(): Promise<PowerSyncCredentials> {
-  return {
-    endpoint: 'https://your-instance.powersync.journeyapps.com',
-    token: await getJwtFromAuthService(),
-    expiresAt: new Date(Date.now() + 3600_000), // optional hint for refresh timing
-  };
+import type { Authenticator, ResolveCredentialsOptions } from '@powersync/web';
+
+class MyAuthenticator implements Authenticator {
+  private token: string | null = null;
+
+  async resolveCredentials({ abort }: ResolveCredentialsOptions): Promise<string> {
+    if (this.token) return this.token;
+    // Adapt this app-owned helper to your auth service; forward cancellation.
+    return (this.token = await getJwtFromAuthService({ signal: abort }));
+  }
+
+  invalidateCredentials(): void {
+    this.token = null;
+  }
 }
+
+const authenticator = new MyAuthenticator();
 ```
 
-`fetchCredentials` is called automatically every few minutes when the sync stream reconnects. Must always return fresh credentials — do not return stale cached tokens.
-
-`PowerSyncCredentials` interface: `{ endpoint: string; token: string; expiresAt?: Date }`. See [Authentication Setup](https://docs.powersync.com/configuration/auth/overview.md) for configuring JWT authentication.
+`resolveCredentials()` returns only the JWT; pass the PowerSync endpoint explicitly to `connect()`. The SDK does not cache these tokens: reuse valid tokens in the authenticator or your auth provider and invalidate rejected credentials. Do not fetch a new token on every resolution or reuse tokens across accounts. See `references/custom-backend.md` and `references/supabase-auth.md` for complete backend-specific implementations.
 
 ### uploadData
 
-Called automatically whenever local writes are pending. Must be synchronous with the actual backend write — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
+The `upload` callback is called automatically whenever local writes are pending. Obtain backend credentials independently of download authentication. Its options include `database` and an optional `abort` signal; forward `abort` to network requests that support cancellation. In the example, `api` is an app-owned client that manages backend authentication independently. Must be synchronous with the actual backend write — do not queue operations for async processing elsewhere. If it throws, PowerSync backs off and retries automatically. See [Writing Client-Side Changes to your Backend](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) for more information.
 
 ```ts
 import { UpdateType } from '@powersync/web'
-import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/web'
+import type { UploadMutationsOptions } from '@powersync/web'
 
-async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
+async function uploadData({ database }: UploadMutationsOptions): Promise<void> {
   const transaction = await database.getNextCrudTransaction();
   if (!transaction) return;
 
@@ -275,14 +280,29 @@ See [Instantiate the PowerSync Database](https://docs.powersync.com/client-sdks/
 // 1. Instantiate — schema applied at construction, no migrations
 const db = new PowerSyncDatabase({ schema, database: { dbFilename: 'app.db' } });
 
-// 2. Connect — starts sync stream and uploadData loop in background
-db.connect(connector);
+// 2. Connect — starts downloads and the upload callback in the background
+db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 
 // 3. Optionally wait for first sync before rendering data
 await db.waitForFirstSync();
 ```
 
 `connect()` does not block — sync happens in the background. Do NOT `await connect()` thinking data is ready after it returns.
+
+### Connection Modes
+
+```ts
+// Downloads only: no upload callback.
+await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator });
+// Uploads only: no PowerSync endpoint or download authenticator is needed.
+await db.connect({ upload: uploadData });
+// Full sync: supply both in one call (the default for onboarding).
+await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
+```
+
+These are alternatives. Each call replaces the previous configuration; download-only followed by upload-only leaves only uploads active. On the web, every tab sharing a sync worker must use the same connection mode. Download-only clients must not write to synced tables; upload-only mode still requires backend authentication within the uploader and does not provide download readiness.
+
+See [Connect for Downloads or Uploads Only](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
 
 ### 5. Provider / Plugin Setup
 
@@ -306,7 +326,7 @@ const db = new PowerSyncDatabase({
 
 If statement preparation overhead appears in profiling, set `preparedStatementsCache` to a non-zero value. Each connection maintains its own independent LRU cache up to that size. For the Dart SDK equivalent, see `SqliteOptions.preparedStatementCacheSize`. See the [API reference](https://powersync-ja.github.io/powersync-js/web-sdk/globals#preparedStatementsCache-1) for details.
 
-Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs `fetchCredentials` and `uploadData`. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
+Multi-tab behavior: By default the web SDK uses a shared sync worker so all tabs share sync state. Only the most recently opened tab runs the authenticator and upload callback; all tabs must agree on the connection mode. Disable with `enableMultiTabs: false` if causing issues — but then only the oldest tab syncs.
 
 #### VFS Options
 
@@ -605,7 +625,7 @@ db.registerListener({
 
 ```ts
 // Standard usage — gate app rendering behind first sync
-db.connect(connector);
+db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 await db.waitForFirstSync();
 // Now safe to render data-dependent screens
 
@@ -728,7 +748,7 @@ Requires PowerSync Service v1.24.0+. All client SDKs (JS, Dart, Kotlin, Swift, .
 To opt in, pass `checkpointMode: 'requests'` to `connect()`:
 
 ```ts
-await db.connect(connector, { checkpointMode: 'requests' });
+await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData, checkpointMode: 'requests' });
 ```
 
 Without this option, calling `requestCheckpoint()` throws an error. Checkpoint IDs are represented as strings in the JS/TS SDK because large int64 values exceed the safe integer range for JavaScript numbers.
@@ -775,20 +795,20 @@ This behavior relies on `uploadData()` returning only after your backend has com
 
 ### Async Upload Backends (Team/Enterprise)
 
-If `uploadData()` queues writes for later processing rather than committing them synchronously, implement the optional `postCheckpointRequest` method on your connector. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
+If `uploadData()` queues writes for later processing rather than committing them synchronously, implement the optional `postCheckpointRequest` method on your authenticator. This requires a `checkpoint_requests` event definition in your sync config and is available on [Team and Enterprise](https://www.powersync.com/pricing) plans:
 
 ```ts
-class MyBackendConnector implements PowerSyncBackendConnector {
-  // ... also implement fetchCredentials and uploadData
+class MyCheckpointAuthenticator extends MyAuthenticator {
+  // Uploads remain in the independent uploadData callback.
 
-  async postCheckpointRequest(clientId: string, requestId: string): Promise<string> {
-    const response = await myBackend.createCheckpointRequest(clientId, requestId);
+  async postCheckpointRequest(clientId: string, requestId: string, signal?: AbortSignal): Promise<string> {
+    const response = await myBackend.createCheckpointRequest(clientId, requestId, { signal });
     return response.checkpointRequestId;
   }
 }
 ```
 
-See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
+Pass an instance of `MyCheckpointAuthenticator` as `authenticator` when connecting with `checkpointMode: 'requests'`; the checkpoint backend client must obtain its own backend credentials. See [Checkpoint Requests](https://docs.powersync.com/client-sdks/checkpoint-requests) for the full setup guide.
 
 ## ORM & Raw Tables
 
@@ -960,11 +980,11 @@ const ListItem = React.memo(({ list }) => <Text>{list.name}</Text>);
 
 ```ts
 // WRONG — connect() is fire-and-forget, data is NOT available after await
-await db.connect(connector);
+await db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 renderApp(); // may show empty data
 
 // CORRECT
-db.connect(connector);
+db.connect({ powerSyncEndpoint: 'https://your-instance.powersync.journeyapps.com', authenticator, upload: uploadData });
 await db.waitForFirstSync(); // wait for data
 renderApp();
 ```

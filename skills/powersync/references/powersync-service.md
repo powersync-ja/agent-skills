@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, runner-type, PS_RUNNER_TYPE, migrate, compact, test-connection, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -184,9 +184,28 @@ healthcheck:
     use_http: true        # Expose health status via HTTP endpoints
 ```
 
+#### Service Commands
+
+Each container using the Service Docker image runs one command. If no command is set, the image runs `start`.
+
+| Command | What it runs |
+| --- | --- |
+| `start` or `start -r unified` | API and replication in one process (default runner type) |
+| `start -r api` | API only (client connections) |
+| `start -r sync` | Replication only |
+| `compact` | One compact run, then exits |
+| `migrate up` | Storage schema migrations, then exits |
+| `test-connection` | Source database connection test; exit code `0` on success, `1` on failure |
+
+If the runner type is set both by `-r` and by the `PS_RUNNER_TYPE` environment variable, `-r` wins. The `api` runner never applies migrations; `unified` and `sync` apply them on startup unless `disable_auto_migration` is `true`. If API and replication run in separate containers, the replication container or a `migrate up` job applies migrations.
+
+If deploying on Kubernetes, put the arguments in `args`, not `command`: `command` replaces the image entrypoint, so `["start", "-r", "api"]` there means the Service never starts. Docker Compose and AWS ECS use `command`.
+
+For self-hosted compaction, run `compact` on a schedule: daily for storage version 2, hourly for storage version 4.
+
 #### Storage Migrations
 
-By default, the Service applies storage schema migrations on startup. To disable automatic migrations (for example, when running migrations as a separate step):
+By default, the Service applies storage schema migrations on startup. To disable automatic migrations (for example, when running `migrate up` as a separate step):
 
 ```yaml
 migrations:

@@ -2,7 +2,7 @@
 name: powersync-debug
 description: PowerSync debugging and troubleshooting — sync status, JWT verification, PSYNC error codes, replication lag, and diagnostics tools
 metadata:
-  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics, log-reference, close-reason, checkpoint, flushed, sync-stream-started, sync-stream-complete, sync_config_source, service.version
+  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics, sync-test, log-reference, close-reason, checkpoint, flushed, sync-stream-started, sync-stream-complete, sync_config_source, service.version
 ---
 
 # PowerSync Debug
@@ -120,6 +120,8 @@ try await db.connect(
 Look for: The `Authorization: Token <jwt>` header and the response status (`200`, `401`, `404`). A `401` with `PSYNC_S2101` in the response body means JWT key ID mismatch.
 
 ## Use the Sync Diagnostics Client
+
+If the instance is on PowerSync Cloud, use the **Sync Test** view in the PowerSync Dashboard instead: it connects a browser client as a user ID (read as `auth.user_id()` in Sync Streams), accepts connection parameters, and shows DevTools for that client (synced rows, buckets, Sync Stream subscriptions, connection status). It signs in with a generated development token that contains only the user ID and requires the Development Tokens permission and development tokens enabled in Client Auth. If Sync Streams read other token claims, use the Sync Diagnostics Client below with a token from the auth provider. If the instance is self-hosted, use the Sync Diagnostics Client.
 
 What it identifies: Whether the PowerSync Service is processing your sync rules correctly, what data is in each bucket for a given user, and whether parameter queries are resolving as expected.
 

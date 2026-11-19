@@ -432,7 +432,7 @@ If the operator's source database version is below the minimum, advise them to u
 | Database | Minimum Version |
 |----------|----------------|
 | PostgreSQL | 11+ |
-| MongoDB | 6.0+ |
+| MongoDB | 7.0+ (Service 1.28.2 is the last version that supports 6.0) |
 | MySQL | 5.7+ |
 | SQL Server | 2019+ (15.0+), or Azure SQL Database |
 | Convex | — (alpha) |

@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit, high-availability, disaster-recovery, standby-instance, failover
 ---
 
 # PowerSync Service
@@ -316,6 +316,19 @@ Deploy using standard Helm install/upgrade; configure via `values.yaml` override
 A single replication instance handles roughly 50,000–100,000 concurrent clients depending on row size. Past that, run [multiple instances](https://docs.powersync.com/maintenance-ops/self-hosting/multiple-instances) by installing the chart again under a separate Helm release name with its own bucket storage database. The same source database can be shared across installs.
 
 **Important:** Clients must be **pinned to a specific instance**. Each instance maintains its own copy of bucket data — a client switching instances triggers a full resync. Pin clients via your backend (pass the endpoint explicitly) or compute the endpoint deterministically (e.g. `hash(user_id) % n`). Do not load-balance multiple instances behind one host.
+
+#### High Availability and Disaster Recovery
+
+If the user needs to survive loss of bucket storage, a Sync Config deployment that syncs the wrong data, or a regional outage, run a [standby instance](https://docs.powersync.com/maintenance-ops/self-hosting/deployment-architecture#high-availability-and-disaster-recovery): a second full instance replicating from the same source database.
+
+- Give the standby its own bucket storage database and its own S3 bucket or prefix. Two instances cannot share bucket storage.
+- Keep the standby running so it stays current. A standby that starts after the primary fails must finish initial replication first.
+- Accept the same tokens on both instances: same keys, same `audience` values (include both instance URLs if tokens use the instance URL as audience).
+- For Postgres sources, set a different `slot_name_prefix` per instance. After a failure, restore the stopped instance or drop its replication slots, because they retain WAL.
+- Deploy Sync Config changes to one instance first and confirm it syncs correctly before deploying to the other.
+- For a regional outage, run the standby in another region with bucket storage in that region. The source database and the backend API must also stay available.
+- Switch clients without an app release: return the endpoint from the backend in `fetchCredentials()` (use short token lifetimes, 5 to 15 minutes, so running clients move sooner), or route a single stable URL through an API gateway and change its target. Do not load-balance clients across both instances.
+- After the switch, every client does an initial sync from the standby and can log a one-time `Checksums didn't match` error that needs no action. Add API containers to the standby before switching.
 
 #### Observability
 

@@ -100,7 +100,7 @@ For the Dart SDK, load `references/sdks/powersync-dart-debugging.md` for instruc
 - Never define the `id` column in a PowerSync table schema; it is created automatically.
 - Use `column.integer` for booleans and `column.text` for ISO date strings.
 - `connect()` is fire-and-forget. Use `waitForFirstSync()` if you need readiness.
-- Use separate `Authenticator` and mutation uploader implementations with an explicit PowerSync endpoint on supported SDKs; load the platform SDK reference and backend reference before implementing them. .NET currently requires its combined connector.
+- Use separate `Authenticator` and mutation uploader implementations with an explicit PowerSync endpoint on supported SDKs; load the platform SDK reference and backend reference before implementing them.
 - Configure downloads and uploads together in one `connect()` call for full sync. Calls replace the previous connection configuration; separate download-only and upload-only calls do not combine. Let the SDK handle reconnects and token refreshes rather than reconnecting on focus or network changes.
 - `transaction.complete()` is mandatory or the upload queue stalls permanently.
 - On user sign-out, choose based on what data may remain on the device: if the same user will return and keeping data is acceptable, use `disconnect()` so the next session resumes without re-downloading. If visible rows must be hidden but PowerSync's internal copy may stay, use `disconnectAndClear(soft: true)`, which deletes synced rows but keeps the internal copy, so reconnecting as the same user skips a full re-download in most cases. If no synced data may remain, use the default `disconnectAndClear()`. Never retain one user's data for a different user.

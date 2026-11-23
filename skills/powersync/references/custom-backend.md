@@ -405,7 +405,7 @@ await db.connect({
 });
 ```
 
-Backend auth failures must refresh credentials and retry, leaving the transaction pending. Preserve the backend’s validation/error acknowledgement contract above. For .NET and older SDKs that cannot upgrade, use their supported combined connector interface; new supported integrations must use separate authentication and uploads.
+Backend auth failures must refresh credentials and retry, leaving the transaction pending. Preserve the backend’s validation/error acknowledgement contract above. For older SDKs that cannot upgrade, use their supported combined connector interface; new supported integrations must use separate authentication and uploads.
 
 ## Common Pitfalls
 

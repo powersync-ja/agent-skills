@@ -2,7 +2,7 @@
 name: powersync-dotnet
 description: PowerSync .NET SDK — schema, queries, sync lifecycle, and backend connectors
 metadata:
-  tags: dotnet, csharp, maui, wpf, console, sqlite, offline-first, checkpoint-requests, RequestCheckpoint, WaitForSync, CheckpointRequestException, ICustomCheckpointRequestConnector, CheckpointMode
+  tags: dotnet, csharp, maui, wpf, console, sqlite, offline-first, checkpoint-requests, RequestCheckpoint, WaitForSync, CheckpointRequestException, ICustomCheckpointRequestConnector, CheckpointMode, IFromRow, IQueryRow, IAuthenticator, IMutationUploader, GenerateSqlMapper, RawTable, MDSQLiteAdapter
 ---
 
 # PowerSync .NET SDK
@@ -11,6 +11,7 @@ metadata:
 
 ## Table of Contents
 - [Installation](#installation)
+- [Upgrading from v0.x](#upgrading-from-v0x)
 - [Quick Setup](#quick-setup)
 - [Query Patterns](#query-patterns)
 - [Writes and Transactions](#writes-and-transactions)
@@ -22,46 +23,45 @@ metadata:
 
 Best practices for building apps with the PowerSync .NET SDK.
 
-Supported targets: .NET 9, .NET 8, .NET 6, .NET Standard 2.0, .NET Framework 4.8. Application frameworks: MAUI (iOS, Android, Windows), WPF, Console.
-
-> **Alpha status** — this SDK is currently in alpha. Expect breaking changes and instability. Do not rely on it for production use.
+Supported targets: .NET 8 (desktop only), .NET 9, .NET 10. MAUI apps (Android, iOS, Mac Catalyst, Windows) must target `net9.0` or `net10.0`. Also supported: WPF and Console. The SDK is GA from v1.0.1. .NET Standard 2.0, .NET Framework 4.8 and .NET 6 are not supported.
 
 ## Connector Compatibility
 
-The .NET SDK does not yet support the split `Authenticator`/mutation uploader connection API or download-only/upload-only modes described for other SDKs. Use `IPowerSyncBackendConnector` and `Connect(connector)` in this reference; do not translate another SDK’s split signatures into C#. See [current SDK support](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
+From `PowerSync.Common` 1.0.1, the .NET SDK supports the split API: implement `IAuthenticator` (`ResolveCredentials()`, `InvalidateCredentials()`) and `IMutationUploader` (`UploadMutations(IPowerSyncDatabase db)`) independently. Use the `Connect` overloads below for new integrations. `IPowerSyncBackendConnector` with `Connect(connector)` still works for existing code.
+
+```csharp
+await db.Connect(endpoint, authenticator: new MyAuthenticator(), uploader: new MyMutationUploader()); // downloads and uploads
+await db.Connect(endpoint, authenticator: new MyAuthenticator(), uploader: null);                     // download-only
+await db.Connect(uploader: new MyMutationUploader());                                                // upload-only, no endpoint or authenticator
+```
+
+`MyMutationUploader.UploadMutations` follows the same `GetNextCrudTransaction()` / `Complete()` contract as the `UploadData` example below. See [current SDK support](https://docs.powersync.com/client-sdks/usage-examples#connect-for-downloads-or-uploads-only).
+
+## Upgrading from v0.x
+
+If the project uses `PowerSync.Common` 0.x (beta), apply these changes when moving to v1:
+
+- If targeting .NET Standard 2.0, .NET Framework 4.8 or .NET 6, move to .NET 8 or later (MAUI: .NET 9 or later).
+- If the project references `PowerSync.Maui`, remove it (deprecated; `PowerSync.Common` includes the native libraries). Replace `MAUISQLiteAdapter` with `MDSQLiteAdapter` (`MDSQLiteAdapterOptions`) and `MAUISQLiteDBOpenFactory` with `MDSQLiteDBOpenFactory` (`MDSQLiteOpenFactoryOptions`), or pass `SQLOpenOptions`.
+- If code uses Dapper-style `GetAll<T>`, `Get<T>`, `GetOptional<T>` or `Watch<T>`, implement `IFromRow<T>` on the result type, pass a mapper function, or use the alpha source generator. Dapper is no longer used. `GetAll<T>` and `Watch<T>` return `List<T>` (not `T[]`), and untyped queries return `IQueryRow` (not `dynamic`).
+- If code compares `OnChange` `ChangedTables` with view names, compare with underlying table names instead (`ps_data__todo_lists`, not `todo_lists`).
+- Operation IDs, write checkpoints and checkpoint request IDs are `long`, not `string`.
+- A class implementing `ICustomCheckpointRequestConnector` must also implement `IPowerSyncBackendConnector`.
+- `DBAdapterEvents.TablesUpdatedEvent.TablesUpdated` is a `HashSet<string>`. `BatchedUpdateNotification`, `INotification` and `UpdateNotification` are removed.
 
 ## Installation
 
-For console, WPF, or general .NET projects:
+`PowerSync.Common` works on all supported platforms, including MAUI. The `PowerSync.Maui` package is deprecated, so do not add it.
 
 ```bash
-dotnet add package PowerSync.Common --prerelease
-```
-
-For MAUI projects (also requires `PowerSync.Common`):
-
-```bash
-dotnet add package PowerSync.Maui --prerelease
-dotnet add package PowerSync.Common --prerelease
-```
-
-For .NET Framework 4.8 compatibility, add to your `.csproj`:
-
-```xml
-<PropertyGroup>
-  <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
-  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-</PropertyGroup>
-<ItemGroup>
-  <PackageReference Include="System.Net.Http" Version="4.3.4" />
-</ItemGroup>
+dotnet add package PowerSync.Common
 ```
 
 ## Quick Setup
 
 ### 1. Define Schema
 
-There are two ways to define schemas: **dictionary syntax** (simple) and **attribute syntax** (type-safe, with Dapper integration).
+There are two ways to define schemas: **dictionary syntax** (simple) and **attribute syntax** (type-safe).
 
 #### Dictionary Syntax
 
@@ -144,7 +144,7 @@ var schema = new Schema(typeof(TodoItem), typeof(TodoList));
 // Or mix: new Table(typeof(TodoItem)) also works
 ```
 
-With attribute syntax, an `id` property of type `string` is **required** on each class but is not added as a column — PowerSync adds `id TEXT PRIMARY KEY` automatically. The `[Column("id")]` attribute maps the property for Dapper deserialization.
+With attribute syntax, an `id` property of type `string` is **required** on each class but is not added as a column — PowerSync adds `id TEXT PRIMARY KEY` automatically. The `[Column("id")]` attribute maps the property when the class is used as a query result type.
 
 Column types: `ColumnType.Text`, `ColumnType.Integer`, `ColumnType.Real` only — no boolean, date, or JSON native types. With attributes, `ColumnType.Inferred` auto-maps C# types (`string` → Text, `bool`/`int`/`long`/`enum` → Integer, `float`/`double` → Real, `decimal`/`DateTime`/`Guid` → Text).
 
@@ -313,20 +313,13 @@ await db.WaitForFirstSync();
 
 #### MAUI
 
+Use the same `PowerSyncDatabase` setup as above, but store the database file in a platform-appropriate location:
+
 ```csharp
-using PowerSync.Common.Client;
-using PowerSync.Common.MDSQLite;
-using PowerSync.Maui.SQLite;
-
 var dbPath = Path.Combine(FileSystem.AppDataDirectory, "app.db");
-var factory = new MAUISQLiteDBOpenFactory(new MDSQLiteOpenFactoryOptions
-{
-    DbFilename = dbPath
-});
-
 var db = new PowerSyncDatabase(new PowerSyncDatabaseOptions
 {
-    Database = factory,
+    Database = new SQLOpenOptions { DbFilename = dbPath },
     Schema = schema,
 });
 await db.Init();
@@ -360,25 +353,26 @@ await db.Close();                         // release resources — cannot be reu
 
 ## Query Patterns
 
-The .NET SDK uses [Dapper](https://github.com/DapperLib/Dapper) for result mapping. Query results are mapped to record types, classes, or `dynamic`.
+The SDK does not map rows to objects automatically (Dapper is not used). If a query has no result type or mapper, `Get` and `GetOptional` return an `IQueryRow` and `GetAll` and `Watch` return a `QueryResult` whose `Rows` holds `IQueryRow` values. Read columns by name with `GetString("name")`, or with `OrNull` variants such as `GetDateTimeOrNull("completed_at")` for nullable columns. To get typed results, pass a mapper function or implement `IFromRow<T>` (see Result Mapping).
 
 ### Watch Queries (Reactive)
 
-Watch returns an `IAsyncEnumerable<T[]>` that emits new results whenever dependent tables change.
+Watch returns an `IAsyncEnumerable<List<T>>` that emits new results whenever dependent tables change.
 
 ```csharp
-public record TodoResult(string id, string description, string list_id, int completed);
+public record TodoResult(string Id, string Description);
 
 // Watch returns IAsyncEnumerable — call synchronously to capture table listener
-var watcher = db.Watch<TodoResult>(
-    "SELECT * FROM todos WHERE list_id = ? ORDER BY id",
-    parameters: [listId]
+var watcher = db.Watch(
+    "SELECT id, description FROM todos WHERE list_id = ? ORDER BY id",
+    [listId],
+    row => new TodoResult(row.GetString("id"), row.GetString("description"))
 );
 
 // Consume asynchronously
 await foreach (var todos in watcher)
 {
-    // todos is TodoResult[] — updated on every relevant table change
+    // todos is List<TodoResult> — updated on every relevant table change
     UpdateUI(todos);
 }
 ```
@@ -387,9 +381,11 @@ With cancellation:
 
 ```csharp
 var cts = new CancellationTokenSource();
-var watcher = db.Watch<TodoResult>(
-    "SELECT * FROM todos",
-    options: new SQLWatchOptions { Signal = cts.Token }
+var watcher = db.Watch(
+    "SELECT id, description FROM todos",
+    null,
+    row => new TodoResult(row.GetString("id"), row.GetString("description")),
+    new SQLWatchOptions { Signal = cts.Token }
 );
 
 _ = Task.Run(async () =>
@@ -417,39 +413,45 @@ await foreach (var e in onChange)
 ### One-Time Queries
 
 ```csharp
-// GetAll — returns T[]
-var todos = await db.GetAll<TodoResult>(
-    "SELECT * FROM todos WHERE list_id = ?", [listId]);
+// GetAll with a mapper — returns List<T>
+var ids = await db.GetAll("SELECT id FROM todos WHERE list_id = ?", [listId], row => row.GetString("id"));
 
-// Get — returns T, throws if not found
-var todo = await db.Get<TodoResult>(
-    "SELECT * FROM todos WHERE id = ?", [id]);
+// Get — returns one result, throws if not found
+var todo = await db.Get<TodoItem>("SELECT * FROM todos WHERE id = ?", [id]);
 
 // GetOptional — returns T? (null if not found)
-var todo = await db.GetOptional<TodoResult>(
-    "SELECT * FROM todos WHERE id = ?", [id]);
+var maybeTodo = await db.GetOptional<TodoItem>("SELECT * FROM todos WHERE id = ?", [id]);
 
-// Dynamic results (no type parameter)
-var rows = await db.GetAll("SELECT * FROM todos");
+// No result type — returns IQueryRow / QueryResult
+IQueryRow row = await db.Get("SELECT description FROM todos WHERE id = ?", [id]);
+string description = row.GetString("description");
 ```
 
 ### Result Mapping
 
-With dictionary syntax, use records/classes whose property names match column names:
+Choose one of three ways to get typed results:
+
+1. Mapper function, for one-off queries or single values: `db.GetAll(sql, parameters, row => ...)`.
+2. `IFromRow<T>`, for a class reused across queries. Pass it as the type argument, for example `db.GetAll<TodoItem>(sql)`.
+3. `[GenerateSqlMapper]` on a `partial` class, struct or record to generate the mapping at compile time. This needs the alpha `PowerSync.Common.SourceGenerators` package (`dotnet add package PowerSync.Common.SourceGenerators --prerelease`). Each property reads the column named by its `[Column]` attribute, or the same-named column (ignoring case) without it. Naming styles are not converted, so `CompletedAt` needs `[Column("completed_at")]`.
 
 ```csharp
-// Simple record — property names must match column names exactly
-public record ListResult(string id, string name, string owner_id, string created_at);
+using PowerSync.Common.DB;
 
-var lists = await db.GetAll<ListResult>("SELECT * FROM lists");
+public class TodoItem : IFromRow<TodoItem>
+{
+    public string Description { get; set; } = "";
+    public DateTime? CompletedAt { get; set; }
+
+    public static TodoItem FromRow(IQueryRow row) => new()
+    {
+        Description = row.GetString("description"),
+        CompletedAt = row.GetDateTimeOrNull("completed_at")
+    };
+}
 ```
 
-With attribute syntax, `[Column("column_name")]` maps columns to C# properties and Dapper handles the mapping automatically:
-
-```csharp
-// Using the attributed TodoItem class defined in the schema section
-var items = await db.GetAll<TodoItem>("SELECT * FROM todos");
-```
+A schema class that uses `[Column]` attributes does not map rows by itself. If it is also a query result type, add `IFromRow<T>` or `[GenerateSqlMapper]` to it.
 
 ## Writes and Transactions
 
@@ -669,21 +671,19 @@ If `DisconnectAndClear()` is called, discard any existing checkpoint objects. Re
 If your application backend needs to create checkpoint requests (rather than letting PowerSync generate them), implement `ICustomCheckpointRequestConnector`:
 
 ```csharp
-class BackendConnector : ICustomCheckpointRequestConnector
+class BackendConnector : IPowerSyncBackendConnector, ICustomCheckpointRequestConnector
 {
-    public async Task<string> PostCheckpointRequest(string clientId, string requestId, CancellationToken ct)
+    public async Task<long> PostCheckpointRequest(string clientId, long requestId, CancellationToken ct)
     {
         var response = await BackendAPI.CreateCheckpointRequest(clientId, requestId, cancellationToken: ct);
         return response.RequestId;
     }
 
-    // Also implement other IPowerSyncBackendConnector methods: FetchCredentials, UploadData
+    // Also implement FetchCredentials and UploadData
 }
 ```
 
 Use your application's own authentication for `PostCheckpointRequest` — it does not receive the PowerSync sync token.
-
-> The .NET SDK represents checkpoint IDs as strings for compatibility with older SDK APIs. This will change in a future release.
 
 ## Logging
 

@@ -2,7 +2,7 @@
 name: powersync-js
 description: PowerSync JavaScript/TypeScript SDK — schema, authentication, mutation uploads, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger
+  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger, upload-queue, upload-volume, merge-mutations, getCrudTransactions, ignoreEmptyUpdates
 ---
 
 > **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
@@ -249,6 +249,19 @@ if (batch) {
 ```
 
 `getNextCrudTransaction` is used in most connector examples — simpler, guarantees atomicity per write transaction. `getCrudBatch` is useful when you want to batch across transaction boundaries for backend throughput.
+
+#### Reducing upload volume
+
+> Load this section only when the upload queue grows large (long offline periods, frequent updates to the same rows) or the backend is overloaded by upload requests.
+
+The SDK queues every local write as its own mutation and does not merge mutations to the same row. Pick the approach by what the backend needs:
+
+- If the backend only needs fewer requests, read several transactions with `getCrudTransactions()` and send them to a batch endpoint in one request. Each transaction stays whole. `getNextCrudTransaction()` sends one request per transaction.
+- If the backend only needs the latest value of each column, merge mutations in `uploadData()` before sending, reading with `getCrudBatch(1000)` (merging only happens within one batch, and the default size is 100). Merge `PATCH` mutations to the same row into one that keeps the latest value of each column, and send it where the row's last update was. Send `PUT` and `DELETE` where queued, do not merge an update into a `PUT`, and stop merging past any `DELETE`.
+- If the app writes a frequently changing value (such as progress) that the backend only needs occasionally, write it to a local-only table and copy the latest value to the synced table with one `UPDATE` periodically or on reconnect.
+- If an `UPDATE` that changes no values should not be queued, set `ignoreEmptyUpdates` on the table.
+
+Do not merge mutations if the backend needs transactions kept together (for example an order and its line items), deduplicates by `clientId`, uses `trackMetadata` or `trackPrevious`, or runs a trigger per update (such as audit rows). A rejected merged update rejects every update merged into it. Never merge inside the upload queue (`ps_crud` table), for example with a trigger, because `complete()` can remove a mutation that was already read.
 
 #### CrudEntry Fields
 

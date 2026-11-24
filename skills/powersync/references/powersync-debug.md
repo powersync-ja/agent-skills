@@ -261,7 +261,7 @@ Key codes to recognize at runtime:
 | `PSYNC_S1603` | MSSQL: replicated table was dropped, renamed, recreated, or no longer matches the source identity the current replication process selected | Deploy an updated Sync Config; existing replicated data is retained until the new deployment becomes active |
 | `PSYNC_S1604` | MSSQL: connection configuration error | Check the connection string and credentials in the service config |
 | `PSYNC_S2305` | Too many buckets or too many parameter query results | Read the error message: `Too many buckets` means reduce unique bucket count; `Too many parameter query results` means reduce parameter lookup rows. See [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count). |
-| `PSYNC_S4106` | Sync Config reprocess blocked because another Sync Config is already deploying | Wait for the in-progress deployment to complete before triggering another |
+| `PSYNC_S4106` | Sync Config reprocess blocked, either because another Sync Config is deploying or because the configured Sync Config has fatal errors | If another Sync Config is deploying, wait for its initial replication to finish, then retry. If the configured Sync Config has fatal errors, correct it: on PowerSync Cloud deploy the corrected Sync Config; on self-hosted restart all Service processes, including API processes, because each reads the configured Sync Config only at startup. To find the cause, check the Health view in the PowerSync Dashboard or run `powersync status` and read its Deploying Sync Config section (it disappears when the deployment completes). |
 
 See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 

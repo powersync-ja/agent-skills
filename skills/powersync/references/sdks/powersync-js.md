@@ -2,7 +2,7 @@
 name: powersync-js
 description: PowerSync JavaScript/TypeScript SDK — schema, authentication, mutation uploads, queries, transactions, sync status, and debugging
 metadata:
-  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger, upload-queue, upload-volume, merge-mutations, getCrudTransactions, ignoreEmptyUpdates
+  tags: javascript, typescript, web, vfs, SimpleOpfsVFS, sqlite, offline-first, checkpoint-requests, PowerSyncLogger, upload-queue, upload-volume, merge-mutations, getCrudTransactions, ignoreEmptyUpdates, encryptionKey
 ---
 
 > **Load this when** working on any JavaScript or TypeScript project with PowerSync. This is the foundation file — always load it first, then load the applicable framework-specific file alongside it.
@@ -369,6 +369,20 @@ import { WASQLiteVFS } from '@powersync/web'
 ```
 
 Safari: Requires `OPFSCoopSyncVFS` (or `vfs: 'auto'`) for stable multi-tab, or set `database.useWebWorker: false`. See [Web SDK Reference](https://docs.powersync.com/client-sdks/reference/javascript-web.md) for full configuration options.
+
+#### Web Encryption
+
+If the app needs an encrypted client database on web (ChaCha20 by default), pass `encryptionKey` inside `database`, next to the other open options such as `vfs`. Since `@powersync/web` 2.0, a key passed at the top level is ignored and a new unencrypted database is created.
+
+```ts
+const db = new PowerSyncDatabase({
+  schema,
+  database: {
+    dbFilename: 'app.db',
+    encryptionKey: 'your-encryption-key' // load from secure storage, do not hardcode
+  }
+})
+```
 
 #### InMemoryWriteAheadLogPool (Experimental, v2.2.0+)
 

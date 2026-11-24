@@ -112,7 +112,7 @@ resource "powersync_instance" "main" {
 }
 ```
 
-Pass `replication_password` (and any other sensitive values) via environment variable — never in plaintext config or state:
+Pass `replication_password` (and any other sensitive values) via environment variable, never in plaintext config files. Terraform hides sensitive values in `plan` and `apply` output, but the provider stores them in the state file, so treat state and saved plan files as sensitive:
 
 ```sh
 export TF_VAR_replication_password="..."

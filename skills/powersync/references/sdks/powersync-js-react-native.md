@@ -2,7 +2,7 @@
 name: powersync-js-react-native
 description: PowerSync React Native, Expo, and Expo Go integration — native SQLite adapters, managed workflow setup, and Expo Go sql-js fallback
 metadata:
-  tags: react-native, expo, expo-go, mobile, op-sqlite, javascript, typescript, offline-first
+  tags: react-native, expo, devtools, rozenite, usePowerSyncDevTools, @powersync/diagnostics, expo-go, mobile, op-sqlite, javascript, typescript, offline-first
 ---
 
 # PowerSync React Native, Expo & Expo Go
@@ -147,6 +147,47 @@ When moving to development builds or production, switch to a native adapter:
 - OP-SQLite (`@op-engineering/op-sqlite`) — recommended; encryption support, New Architecture compatible
 
 This requires native compilation and cannot run inside Expo Go's prebuilt container.
+
+## DevTools (Development Only)
+
+> Load this section only when the user wants to inspect the local database or sync state of a running React Native or Expo app, or give a coding agent access to it.
+
+If the user wants to inspect the app, use `@powersync/diagnostics`, a Rozenite plugin that adds a PowerSync panel to React Native DevTools. It needs React Native 0.76+ and Rozenite 2.5.0+.
+
+1. Install as dev dependencies in the app's own `package.json` (Rozenite finds plugins only there, so in a monorepo do not rely on a shared package):
+
+```bash
+npm install -D @powersync/diagnostics @rozenite/metro @rozenite/plugin-bridge @rozenite/agent-bridge
+```
+
+2. Wrap the Metro config with `withRozenite()`. For Expo (`projectType: 'expo'` is required if the app uses `app.config.ts` or `app.config.js`; Rozenite detects Expo only from `app.json`):
+
+```javascript
+const { getDefaultConfig } = require('expo/metro-config');
+const { withRozenite } = require('@rozenite/metro');
+
+module.exports = withRozenite(getDefaultConfig(__dirname), {
+  enabled: process.env.WITH_ROZENITE === 'true',
+  projectType: 'expo'
+});
+```
+
+For bare React Native, wrap `mergeConfig(getDefaultConfig(__dirname), config)` from `@react-native/metro-config` and omit `projectType`.
+
+3. Call the hook once in a component that stays mounted, such as the root layout. If the database is created later, pass `null` until it exists. In production builds the hook does nothing, so it can stay in the code:
+
+```tsx
+import { usePowerSyncDevTools } from '@powersync/diagnostics/react-native';
+
+usePowerSyncDevTools(db);
+```
+
+4. Start Metro with `WITH_ROZENITE=true` (for example `WITH_ROZENITE=true npx expo run:ios`), press `j` in the Metro terminal, then open the **PowerSync** entry in the **Rozenite** tab.
+
+- If the user wants per-bucket operation totals in the Buckets tab, connect with `db.connect(connector, { diagnostics: __DEV__ })` (needs `@powersync/react-native` 2.4.1+).
+- If the Rozenite tab is missing, check that Metro started with `WITH_ROZENITE=true` and, for Expo with a JS or TS config, that `projectType: 'expo'` is set. Restart Metro after config changes.
+- If the Android emulator app talks to a service on `localhost`, run `adb reverse tcp:<port> tcp:<port>` for each port.
+- If a coding agent needs the app's live client, use the Rozenite agent CLI from the app folder: `npx rozenite agent powersync/diagnostics` lists the tools (`query`, `schema`, `info`, `status`, `upload-queue`, `action`), inputs are named flags such as `--sql`, and `npx rozenite agent session stop` releases the debugger connection when done. `query` writes go into the upload queue, and `action` with `clearData` deletes local data including queued changes, so confirm with the user first.
 
 ## Common Pitfalls
 

@@ -2,7 +2,7 @@
 name: custom-backend
 description: Building a custom backend for PowerSync — server-side API for uploadData, custom JWT auth, JWKS endpoints, and client-side authenticator and mutation uploader
 metadata:
-  tags: backend, custom, jwt, auth, express, fastify, uploadData, api, non-supabase
+  tags: backend, custom, jwt, auth, express, fastify, uploadData, api, non-supabase, write-path, write-endpoint, dead-letter-queue, reference-write-implementation
 ---
 
 # Custom Backend for PowerSync
@@ -28,6 +28,9 @@ For **service.yaml configuration** (Cloud or self-hosted templates), see `refere
 | [App Backend Setup](https://docs.powersync.com/configuration/app-backend/setup.md)                             | Overview of setting up the app backend for PowerSync.      |
 | [Client-Side Integration](https://docs.powersync.com/configuration/app-backend/client-side-integration.md)     | Client-side authentication and uploads.                    |
 | [Writing Client-Side Changes](https://docs.powersync.com/usage/writing-client-side-changes-to-your-backend.md) | Detailed guide on the upload queue and backend write flow. |
+| [Write Path Overview](https://docs.powersync.com/handling-writes/write-path/overview.md)                      | Pick a write endpoint setup: existing API, Supabase, or the reference write implementation. |
+| [Write Path Concepts](https://docs.powersync.com/handling-writes/write-path/concepts.md)                       | Authenticating writes, retryable errors, rejected writes, and blocked transactions.   |
+| [Reference Write Implementation](https://docs.powersync.com/handling-writes/write-path/reference-write-implementation.md) | Reference write API and connector to adopt or rebuild in another stack.        |
 | [Custom Auth](https://docs.powersync.com/configuration/auth/custom.md)                                         | JWT auth setup for non-Supabase backends.                  |
 | [Development Tokens](https://docs.powersync.com/configuration/auth/development-tokens.md)                      | Generate tokens for local development and testing.         |
 
@@ -45,6 +48,13 @@ PowerSync Service <-------------- CDC / logical replication ---|
 ```
 
 Key rule: **client writes never go through PowerSync**. The upload queue sends writes to YOUR backend API. PowerSync only handles the read/sync path.
+
+Write endpoint rules (see Write Path Concepts):
+
+- If the app uses JWTs, verify the same JWT that `fetchCredentials()` returns in the write endpoint, and accept the audience your PowerSync instance uses. PowerSync does not authenticate or authorize writes.
+- Store each write in the source database before responding. If writes must be applied asynchronously, use Custom Write Checkpoints instead of queueing silently.
+- Make writes safe to repeat: a retry resends the whole transaction, including changes already applied.
+- For a write that will never be applied, return a 2xx with the reason (optionally store it in a dead-letter table) so `uploadData()` calls `complete()`; throw only for retryable errors.
 
 > **Convex exception:** If the source database is Convex, `uploadData()` calls Convex mutations directly — no intermediate REST API is required for the write path. If using Convex Auth tokens for PowerSync client authentication, configure `client_auth.audience: [convex]` in `service.yaml`. See `references/powersync-service.md` § "Convex Quick Start".
 
@@ -405,7 +415,7 @@ await db.connect({
 });
 ```
 
-Backend auth failures must refresh credentials and retry, leaving the transaction pending. Preserve the backend’s validation/error acknowledgement contract above. For .NET and older SDKs that cannot upgrade, use their supported combined connector interface; new supported integrations must use separate authentication and uploads.
+Backend auth failures must refresh credentials and retry, leaving the transaction pending. Preserve the backend’s validation/error acknowledgement contract above. For older SDKs that cannot upgrade, use their supported combined connector interface; new supported integrations must use separate authentication and uploads.
 
 ## Common Pitfalls
 

@@ -2,7 +2,7 @@
 name: powersync-debug
 description: PowerSync debugging and troubleshooting — sync status, JWT verification, PSYNC error codes, replication lag, and diagnostics tools
 metadata:
-  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics, log-reference, close-reason, checkpoint, flushed, sync-stream-started, sync-stream-complete, sync_config_source, service.version
+  tags: debugging, troubleshooting, sync-status, jwt, psync-errors, replication-lag, ps-crud, diagnostics, sync-test, log-reference, close-reason, checkpoint, flushed, sync-stream-started, sync-stream-complete, sync_config_source, service.version
 ---
 
 # PowerSync Debug
@@ -51,7 +51,7 @@ Each of the PowerSync Client SDKs have the SyncStatus class that can be used to 
 | Web             | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/web-sdk/classes/SyncStatus)                                                                                                          |
 | React Native    | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/react-native-sdk/classes/SyncStatus)                                                                                                |
 | Node.js         | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/node-sdk/classes/SyncStatus)                                                                                                         |
-| .NET (Alpha)    | [SyncStatus.cs](https://github.com/powersync-ja/powersync-dotnet/blob/main/PowerSync/PowerSync.Common/DB/Crud/SyncStatus.cs)                                   |
+| .NET            | [SyncStatus.cs](https://github.com/powersync-ja/powersync-dotnet/blob/main/PowerSync/PowerSync.Common/DB/Crud/SyncStatus.cs)                                   |
 
 Key fields to check: `connected`, `downloading`, `uploading`, `lastSyncedAt`, `hasSynced`, `downloadError`, `uploadError`.
 
@@ -121,6 +121,8 @@ Look for: The `Authorization: Token <jwt>` header and the response status (`200`
 
 ## Use the Sync Diagnostics Client
 
+If the instance is on PowerSync Cloud, use the **Sync Test** view in the PowerSync Dashboard instead: it connects a browser client as a user ID (read as `auth.user_id()` in Sync Streams), accepts connection parameters, and shows DevTools for that client (synced rows, buckets, Sync Stream subscriptions, connection status). It signs in with a generated development token that contains only the user ID and requires the Development Tokens permission and development tokens enabled in Client Auth. If Sync Streams read other token claims, use the Sync Diagnostics Client below with a token from the auth provider. If the instance is self-hosted, use the Sync Diagnostics Client.
+
 What it identifies: Whether the PowerSync Service is processing your sync rules correctly, what data is in each bucket for a given user, and whether parameter queries are resolving as expected.
 
 Why: Most "data not showing up on the client" issues are actually server-side: wrong Sync Rules / Sync Streams, parameter query not matching etc. The Diagnostics Client lets you verify this without touching client code. It runs entirely in the browser against your real instance.
@@ -163,7 +165,7 @@ What it identifies: Whether the endpoint passed to `connect()` points at the Pow
 
 Why: The most common cause of `404 Not Found` on `/write-checkpoint2.json` and `/sync/stream` is passing the wrong URL as `endpoint`. PowerSync builds its own request URLs by appending paths to the configured endpoint, if that's your app backend, every internal PowerSync request 404s. Adding a log statement catches this immediately.
 
-How: Inspect or log only the configured endpoint immediately before `connect()`. For legacy combined connectors (.NET or older SDKs), inspect the endpoint returned by `fetchCredentials()` instead.
+How: Inspect or log only the configured endpoint immediately before `connect()`. For legacy combined connectors (older SDKs), inspect the endpoint returned by `fetchCredentials()` instead.
 
 ## Run `EXPLAIN QUERY PLAN` for Slow Queries
 
@@ -259,7 +261,7 @@ Key codes to recognize at runtime:
 | `PSYNC_S1603` | MSSQL: replicated table was dropped, renamed, recreated, or no longer matches the source identity the current replication process selected | Deploy an updated Sync Config; existing replicated data is retained until the new deployment becomes active |
 | `PSYNC_S1604` | MSSQL: connection configuration error | Check the connection string and credentials in the service config |
 | `PSYNC_S2305` | Too many buckets or too many parameter query results | Read the error message: `Too many buckets` means reduce unique bucket count; `Too many parameter query results` means reduce parameter lookup rows. See [Reducing Bucket Count](https://docs.powersync.com/sync/advanced/reducing-bucket-count). |
-| `PSYNC_S4106` | Sync Config reprocess blocked because another Sync Config is already deploying | Wait for the in-progress deployment to complete before triggering another |
+| `PSYNC_S4106` | Sync Config reprocess blocked, either because another Sync Config is deploying or because the configured Sync Config has fatal errors | If another Sync Config is deploying, wait for its initial replication to finish, then retry. If the configured Sync Config has fatal errors, correct it: on PowerSync Cloud deploy the corrected Sync Config; on self-hosted restart all Service processes, including API processes, because each reads the configured Sync Config only at startup. To find the cause, check the Health view in the PowerSync Dashboard or run `powersync status` and read its Deploying Sync Config section (it disappears when the deployment completes). |
 
 See [Error Codes Reference](https://docs.powersync.com/debugging/error-codes.md#error-codes-reference) for more information.
 

@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, runner-type, PS_RUNNER_TYPE, migrate, compact, test-connection, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, runner-type, PS_RUNNER_TYPE, migrate, compact, test-connection, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -258,6 +258,15 @@ Additional options for this configuration:
 - `chunk_compaction_concurrency` (at `storage` level, not inside `object_storage`): Maximum buckets chunk-merge compaction processes at the same time on storage version 4. Defaults to `4` with `object_storage` configured, `2` without. Must be between 1 and 64. Available since Service 1.26.1. With object storage, request latency dominates per-bucket processing; raising this value shortens compaction and reduces the delay before a new Sync Config becomes active.
 
 For the full self-hosted setup — bucket creation, permissions, and lifecycle rules — follow the [S3 setup guide](https://docs.powersync.com/sync/advanced/storage-version-4#self-hosted-s3-setup).
+
+#### MongoDB Storage: `replication_batch_size`
+
+If replication on MongoDB bucket storage needs tuning, set `storage.replication_batch_size` to `small`, `medium` (default), or `large`. It applies to all MongoDB storage versions. Available since Service 1.29.0.
+
+- If memory is constrained, use `small`.
+- If throughput matters more than memory, use `large`. It doubles the `medium` batch targets, which allows more operations per transaction and fewer storage round trips, at the cost of higher memory use and larger transactions.
+
+The targets are estimates, not hard memory or transaction size limits.
 
 #### Storage Version Default
 

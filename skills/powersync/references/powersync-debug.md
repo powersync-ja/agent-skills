@@ -51,7 +51,7 @@ Each of the PowerSync Client SDKs have the SyncStatus class that can be used to 
 | Web             | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/web-sdk/classes/SyncStatus)                                                                                                          |
 | React Native    | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/react-native-sdk/classes/SyncStatus)                                                                                                |
 | Node.js         | [SyncStatus Class](https://powersync-ja.github.io/powersync-js/node-sdk/classes/SyncStatus)                                                                                                         |
-| .NET (Alpha)    | [SyncStatus.cs](https://github.com/powersync-ja/powersync-dotnet/blob/main/PowerSync/PowerSync.Common/DB/Crud/SyncStatus.cs)                                   |
+| .NET            | [SyncStatus.cs](https://github.com/powersync-ja/powersync-dotnet/blob/main/PowerSync/PowerSync.Common/DB/Crud/SyncStatus.cs)                                   |
 
 Key fields to check: `connected`, `downloading`, `uploading`, `lastSyncedAt`, `hasSynced`, `downloadError`, `uploadError`.
 
@@ -163,7 +163,7 @@ What it identifies: Whether the endpoint passed to `connect()` points at the Pow
 
 Why: The most common cause of `404 Not Found` on `/write-checkpoint2.json` and `/sync/stream` is passing the wrong URL as `endpoint`. PowerSync builds its own request URLs by appending paths to the configured endpoint, if that's your app backend, every internal PowerSync request 404s. Adding a log statement catches this immediately.
 
-How: Inspect or log only the configured endpoint immediately before `connect()`. For legacy combined connectors (.NET or older SDKs), inspect the endpoint returned by `fetchCredentials()` instead.
+How: Inspect or log only the configured endpoint immediately before `connect()`. For legacy combined connectors (older SDKs), inspect the endpoint returned by `fetchCredentials()` instead.
 
 ## Run `EXPLAIN QUERY PLAN` for Slow Queries
 

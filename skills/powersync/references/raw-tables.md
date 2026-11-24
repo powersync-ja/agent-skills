@@ -1,13 +1,13 @@
 ---
 name: raw-tables
-description: PowerSync Raw Tables — native SQLite tables bypassing JSON views, with multi-SDK examples (JS, Dart, Kotlin, Swift, Rust), triggers, local-only columns, and migration strategies
+description: PowerSync Raw Tables — native SQLite tables bypassing JSON views, with multi-SDK examples (JS, Dart, Kotlin, Swift, .NET, Rust), triggers, local-only columns, and migration strategies
 metadata:
   tags: raw-tables, managed-tables, direct, sqlite, advanced, powersync, javascript, dart, kotlin, swift, rust
 ---
 
 # Raw Tables
 
-> **Load this when** the project needs native SQLite tables (column types, constraints, indexes, generated columns) instead of PowerSync's default JSON-based views. Works across all SDKs except .NET.
+> **Load this when** the project needs native SQLite tables (column types, constraints, indexes, generated columns) instead of PowerSync's default JSON-based views. Works across all SDKs.
 
 Raw tables let PowerSync sync data directly into native SQLite tables you define, instead of storing data as JSON in `ps_data__<table>` and exposing it via views. This gives full SQLite control and better query performance. See [Raw Tables](https://docs.powersync.com/client-sdks/advanced/raw-tables.md) for the full reference.
 
@@ -34,7 +34,7 @@ Raw tables let PowerSync sync data directly into native SQLite tables you define
 | Kotlin | 1.11.0 | `com.powersync:core` |
 | Swift | 1.12.0 | `PowerSync` |
 | Rust | 0.0.4 | `powersync` |
-| .NET | — | **Not yet available** |
+| .NET | 1.0.1 | `PowerSync.Common` |
 
 ## When to Use Raw Tables
 
@@ -76,7 +76,7 @@ let schema = Schema(Table(name: "users", columns: [.text("name")], direct: true)
 schema.tables.push(Table::create("users", vec![Column::text("name")], |tbl| { tbl.direct = true }));
 ```
 
-Minimum SDK versions: JS Web 2.6.0, React Native 2.4.0, Node 1.3.0, Capacitor 0.10.0, Dart 2.6.0, Kotlin 1.16.0, Swift 1.17.0, Rust 0.2.0. .NET is not supported.
+Minimum SDK versions: JS Web 2.6.0, React Native 2.4.0, Node 1.3.0, Capacitor 0.10.0, Dart 2.6.0, Kotlin 1.16.0, Swift 1.17.0, Rust 0.2.0, .NET 1.0.1.
 
 Rules:
 
@@ -128,6 +128,12 @@ val schema = Schema(listOf(
 ```swift
 let lists = RawTable(name: "todo_lists", schema: RawTableSchema())
 let schema = Schema(lists)
+```
+
+**.NET:**
+```csharp
+var lists = new RawTable(name: "todo_lists", schema: new RawTableSchema());
+var schema = new Schema(lists);
 ```
 
 **Rust:**
@@ -316,7 +322,6 @@ Three strategies:
 
 ## Caveats
 
-- **Not available on .NET** yet
 - **No automatic column migration** — adding columns requires one of the migration strategies above
 - **Foreign keys** — must use `DEFERRABLE INITIALLY DEFERRED`; enable with `PRAGMA foreign_keys = ON`; avoid FK references from high-priority to lower-priority raw tables
 - **`disconnectAndClear()` won't clear raw tables** by default — add a `clear` statement to `RawTable` if needed

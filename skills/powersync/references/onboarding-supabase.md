@@ -85,7 +85,7 @@ Only after Phase 2 is complete.
     ```
     Or write manually — but never define the `id` column (it is automatic).
 
-11. **Implement separate authentication and uploads.** Load `references/supabase-auth.md` § "Authenticator — Client Implementation" and § "uploadData()", plus the platform SDK reference. Resolve the JWT from the Supabase session and implement uploads independently through the Supabase client, including the documented error handling. Use the supported combined connector only for .NET or older SDKs that cannot upgrade.
+11. **Implement separate authentication and uploads.** Load `references/supabase-auth.md` § "Authenticator — Client Implementation" and § "uploadData()", plus the platform SDK reference. Resolve the JWT from the Supabase session and implement uploads independently through the Supabase client, including the documented error handling. Use the supported combined connector only for older SDKs that cannot upgrade.
 
     **Auth prerequisite:** `resolveCredentials()` requires an active Supabase session. Connect only after the user has signed in. For apps without a sign-in screen, enable anonymous auth in Supabase Dashboard → Authentication → Providers → Anonymous.
 

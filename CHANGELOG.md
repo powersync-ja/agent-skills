@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.7](https://github.com/powersync-ja/agent-skills/compare/v1.6.6...v1.6.7) (2026-11-25)
+
+
+### Bug Fixes
+
+* sync from docs, correct .NET API reference link (powersync-docs [#804](https://github.com/powersync-ja/agent-skills/issues/804)) ([#158](https://github.com/powersync-ja/agent-skills/issues/158)) ([001139c](https://github.com/powersync-ja/agent-skills/commit/001139cb3bf9a54bfa59fd3298e7f2e02a125faf))
+* sync from docs, expand PSYNC_S4106 causes and fixes (powersync-docs [#784](https://github.com/powersync-ja/agent-skills/issues/784)) ([#151](https://github.com/powersync-ja/agent-skills/issues/151)) ([32357d3](https://github.com/powersync-ja/agent-skills/commit/32357d3dc5dcfb492e9b73ab8cdb165895a73637))
+* sync from docs, update .NET SDK guidance for v1 (powersync-docs [#779](https://github.com/powersync-ja/agent-skills/issues/779)) ([#157](https://github.com/powersync-ja/agent-skills/issues/157)) ([efb1baa](https://github.com/powersync-ja/agent-skills/commit/efb1baa1e7f11e706089b11b1862ab5e53ca5338))
+
 ## [1.6.6](https://github.com/powersync-ja/agent-skills/compare/v1.6.5...v1.6.6) (2026-11-11)
 
 

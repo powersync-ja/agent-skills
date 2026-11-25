@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: slot_failover, exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -216,6 +216,24 @@ replication:
       uri: !env PS_DATA_SOURCE_URI
       snapshot_socket_timeout: 120
 ```
+
+#### Postgres: Replication Slot Failover
+
+If the operator needs replication to survive a failover to a physical standby on Postgres 17 or later, set `slot_failover: true` on the connection (Service v1.29.0+; Cloud: **Replication Slot Failover** under Advanced on the connection). Postgres then syncs PowerSync's slots to the standby.
+
+```yaml
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI
+      slot_failover: true
+```
+
+- Only enable it if the database is set up for [logical replication failover](https://www.postgresql.org/docs/current/logical-replication-failover.html): `synchronized_standby_slots` on the primary, and on the standby `primary_slot_name`, `wal_level = logical`, `sync_replication_slots`, `hot_standby_feedback`, and `dbname` in `primary_conninfo`.
+- The option only affects slots created after it is enabled, and PowerSync checks support only when it creates a slot. If the database is not set up, no error shows until the next Sync Config deploy or reprocess, which fails with `PSYNC_S1147`.
+- For a new instance, enable it before the first deploy. For an existing instance, enable it, then make PowerSync create a new slot: deploy a Sync Config change (restarting with an unchanged Sync Config keeps the current slot) or click **Reprocess** in Cloud Settings. This replicates all data again and clients re-download it.
+- To verify, run `select slot_name, failover, synced, temporary from pg_replication_slots;` on the primary (`failover` is `true`) and the standby (`synced` is `true`, `temporary` is `false`). Until the standby shows that, a failover can still lose the slot.
+- After a failover, PowerSync must connect to the promoted standby, so use a hostname that follows the primary or update the connection.
 
 #### S3 Object Storage
 

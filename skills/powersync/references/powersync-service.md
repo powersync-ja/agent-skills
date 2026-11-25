@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -259,6 +259,10 @@ storage:
 ```
 
 Set this to pin a storage version, prepare for a Service downgrade, or delay a storage format upgrade.
+
+#### MongoDB Storage: `stats_read_preference`
+
+If the user asks about read preference for MongoDB storage statistics, set `storage.stats_read_preference` to `primary`, `primaryPreferred`, `secondary`, `secondaryPreferred`, or `nearest`. It applies to collection storage statistics reads. If unset, MongoDB driver defaults are used. Available since Service 1.28.2. Most self-hosted deployments do not need it.
 
 #### Invalid Sync Config: `sync_config.exit_on_error`
 

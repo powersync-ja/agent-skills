@@ -142,9 +142,9 @@ const logs = new Table({ message: column.text }, { insertOnly: true });
 const todos = new Table(
   { description: column.text, completed: column.integer },
   {
-    trackPreviousValues: true,
-    // or: trackPreviousValues: { columns: ['completed'] }
-    // or: trackPreviousValues: { columns: ['completed'], onlyWhenChanged: true }
+    trackPrevious: true,
+    // or: trackPrevious: { columns: ['completed'] }
+    // or: trackPrevious: { columns: ['completed'], onlyWhenChanged: true }
   }
 );
 
@@ -271,7 +271,7 @@ interface CrudEntry {
   id: string;                           // Row ID
   op: UpdateType;                       // PUT | PATCH | DELETE
   opData?: Record<string, any>;         // Changed columns — undefined for DELETE
-  previousValues?: Record<string, any>; // Previous values — requires trackPreviousValues on table
+  previousValues?: Record<string, any>; // Previous values — requires trackPrevious on table
   table: string;                        // Table name
   transactionId?: number;               // Groups ops from the same writeTransaction()
   metadata?: string;                    // Custom metadata — requires trackMetadata on table
@@ -283,7 +283,7 @@ Op types (`UpdateType` enum):
 - `PATCH` — partial update (`opData` contains only the changed columns)
 - `DELETE` — deletion (`opData` is undefined)
 
-`previousValues` is populated for PATCH and DELETE ops when the table has `trackPreviousValues: true`. Useful for implementing last-write-wins conflict resolution on the backend.
+`previousValues` is populated for PATCH and DELETE ops when the table has `trackPrevious: true`. Useful for implementing last-write-wins conflict resolution on the backend.
 
 ### 4. Initialize Database and Connect
 

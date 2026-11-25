@@ -2,7 +2,7 @@
 name: sync-config
 description: PowerSync Sync Config — Sync Streams (new), Sync Rules (legacy), parameters, CTEs, common patterns, and migration guidance
 metadata:
-  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant, prioritized-sync, fixed_booleans_in_json
+  tags: sync-streams, sync-rules, sync-config, yaml, buckets, parameters, cte, migration, convex, wildcard-schema, table-metadata, schema-per-tenant, multiple-databases, mysql, mongodb, sql-server, prioritized-sync, fixed_booleans_in_json
 ---
 
 # Sync Config
@@ -294,6 +294,16 @@ If filtering on the wildcard suffix in Sync Streams, use `table_alias.table_suff
 
 See [Wildcard Schemas](https://docs.powersync.com/sync/advanced/schemas-and-connections.md#wildcard-schemas-postgres) for setup requirements.
 
+### Schemas and databases in queries
+
+If a stream query needs a table outside the connection's default, prefix the table name. The prefix means different things per source:
+
+- Postgres and SQL Server: the prefix is a schema in the one replicated database (`SELECT * FROM "inventory"."assets"`). SQL Server defaults to `dbo`, and on self-hosted instances the connection's `schema` option changes that default (`_powersync_checkpoints` must be in it).
+- MySQL and MongoDB: one connection can replicate several databases on the same server or cluster. Unprefixed tables use the connection's `database`; prefix others with the database name (`SELECT * FROM inventory.assets`, or `SELECT *, _id AS id FROM inventory.assets` for MongoDB). Use double quotes if quoting is needed; MySQL backticks are not supported.
+- If two databases have a table with the same name, rows from both sync to one client-side table. Alias one (`SELECT * FROM inventory.assets AS inventory_assets`).
+- Wildcards are not allowed in SQL Server schema or table names, or in MySQL and MongoDB database names. A wildcard there fails replication with `PSYNC_R2201`.
+- If the databases are on separate servers or clusters, multiple connections are not supported yet (planned).
+
 ### On-demand with subscription parameter
 
 Client subscribes to a specific resource at runtime. Always include an auth guard.
@@ -485,7 +495,7 @@ Reference these when the standard patterns don't cover your use case:
 |-------|-------------|
 | [Client ID](https://docs.powersync.com/sync/advanced/client-id.md) | Filter or scope data by which specific client device is syncing |
 | [Sync Data by Time](https://docs.powersync.com/sync/advanced/sync-data-by-time.md) | Limit sync to a rolling time window (e.g. last 30 days) |
-| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Use non-public Postgres schemas; wildcard schemas (`"tenant_%"`) for schema-per-tenant databases (Service v1.24.0+); HA/replica connections |
+| [Schemas and Connections](https://docs.powersync.com/sync/advanced/schemas-and-connections.md) | Use non-public Postgres or SQL Server schemas; MySQL and MongoDB multiple databases on one connection; wildcard schemas (`"tenant_%"`) for schema-per-tenant databases (Service v1.24.0+); HA/replica connections |
 | [Multiple Client Versions](https://docs.powersync.com/sync/advanced/multiple-client-versions.md) | Support different schema versions across app releases |
 | [Partitioned Tables](https://docs.powersync.com/sync/advanced/partitioned-tables.md) | Sync from Postgres partitioned tables; in Sync Streams, use `table_alias.table_suffix()` to filter on the matched suffix (not `_table_suffix`, which is Sync Rules only) |
 | [Sharded Databases](https://docs.powersync.com/sync/advanced/sharded-databases.md) | Source data from multiple database shards |

@@ -506,6 +506,8 @@ db.createUser({
 // Change streams are used automatically
 ```
 
+If Sync Streams use collections from other databases in the same cluster (prefixed with the database name), `read` on each database is not enough. Grant `readAnyDatabase@admin` on the cluster, otherwise replication fails with `PSYNC_S1346` (`not authorized on admin to execute command`). With `post_images: auto_configure`, also grant `dbAdmin` on each additional database, or enable `changeStreamPreAndPostImages` on those collections yourself.
+
 ### Azure DocumentDB (Cosmos DB for MongoDB vCore)
 
 > **Experimental.** Azure DocumentDB support is experimental; APIs and behavior may change, and it is not yet covered by SLAs. See [Feature Status](https://docs.powersync.com/resources/feature-status) for production-readiness details.
@@ -553,6 +555,8 @@ GRANT REPLICATION SLAVE, REPLICATION CLIENT, RELOAD ON *.* TO 'powersync'@'%';
 GRANT SELECT ON your_database.* TO 'powersync'@'%';
 FLUSH PRIVILEGES;
 ```
+
+If Sync Streams use tables from other databases on the same server (prefixed with the database name), grant `SELECT` on each of those databases too. Without it, initial replication skips their tables and replication later stops with `Insufficient permissions to access [<database>.<table>]`. If you limit the binlog (`binlog-do-db`), keep every database your Sync Streams use in it, otherwise their tables stop updating after initial replication.
 
 ### SQL Server (MSSQL) Quick Start
 

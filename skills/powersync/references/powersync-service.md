@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit, standby, disaster-recovery, failover
 ---
 
 # PowerSync Service
@@ -330,6 +330,20 @@ A single replication instance handles roughly 50,000–100,000 concurrent client
 
 **Important:** Clients must be **pinned to a specific instance**. Each instance maintains its own copy of bucket data — a client switching instances triggers a full resync. Pin clients via your backend (pass the endpoint explicitly) or compute the endpoint deterministically (e.g. `hash(user_id) % n`). Do not load-balance multiple instances behind one host.
 
+#### Standby Instance (Disaster Recovery)
+
+> Load this section when the user asks about disaster recovery, failover, or switching clients to a second instance. Running multiple containers in one instance already covers single-container failures.
+
+A standby instance is a second PowerSync instance that replicates from the same source database and that clients can be switched to. It covers whole-instance failures: loss of bucket storage, a Sync Config deployment that syncs the wrong data, or a regional outage.
+
+- Give each instance its own bucket storage database (and its own S3 bucket or prefix if used). Two instances cannot share bucket storage. For Postgres sources, set a different `slot_name_prefix` per instance.
+- Keep the standby running. If it starts only after the primary fails, it must complete initial replication first, which can take long for large datasets.
+- Use the same keys on both instances and a token audience both accept. A self-hosted instance does not compare `aud` with its own URL, it accepts a token if `aud` matches a value in `client_auth.audience`. Either set one shared `audience` value on both instances, or issue tokens with both instance URLs in `aud`.
+- Deploy Sync Config changes to one instance at a time.
+- If the user needs to switch clients without an app release, do not hardcode the primary URL. Either return the endpoint from `fetchCredentials()` (backend-controlled, applies when the token expires or the app restarts, so use 5 to 15 minute tokens), or give clients one stable hostname and change a DNS record (low TTL such as 60 seconds, TLS certificate for the hostname on both load balancers), or put an API gateway or reverse proxy in front. A gateway must support long-lived streaming and not buffer responses. AWS API Gateway does not (integration timeout and buffering), so on AWS use DNS or a streaming proxy such as nginx.
+- Make the switch manual. Automatic health-check failover (for example DNS failover routing) can move clients to the standby and back, and each switch makes clients re-download all data. Never load-balance clients between the two instances.
+- After a switch, clients keep local data, can read and write locally, and keep their upload queue. They perform a full initial sync from the standby, and may log `Could not apply checkpoint, Checksums didn't match` once, which needs no action.
+
 #### Observability
 
 Prometheus metrics are exposed on port `9464`. Enable the chart's `NetworkPolicy` (`networkPolicy.enabled: true`) in production to allow scrapes on that port. Key signals:
@@ -351,6 +365,8 @@ This is required by PowerSync and can be configured in two different ways. This 
 |-----------------|--------------------------------------------------------------------------------------------------------------|
 | MongoDB         | [MongoDB Storage](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances#mongodb-storage) |
 | Postgres        | [Postgres Storage](https://docs.powersync.com/configuration/powersync-service/self-hosted-instances#postgres-storage) |
+
+If the deployment needs higher scale or performance, prefer MongoDB bucket storage, which is currently better performance-optimized than Postgres.
 
 ### Client Authentication
 

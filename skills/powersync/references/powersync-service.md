@@ -2,7 +2,7 @@
 name: powersync-service
 description: PowerSync Service configuration — self-hosting, Docker, Kubernetes, Helm, source database setup, bucket storage, authentication, and PowerSync Cloud
 metadata:
-  tags: exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
+  tags: exit_on_error, stats_read_preference, replication_batch_size, service, self-hosted, docker, postgresql, mongodb, documentdb, cosmosdb, mysql, mssql, convex, authentication, jwt, replication, configuration, private-endpoints, aurora, rds_replication, rds.logical_replication, privatelink, vpc, aws, kubernetes, helm, eks, prometheus_port, heartbeat_interval_seconds, snapshot_socket_timeout, slot_failover, healthcheck, migrations, disable_auto_migration, object_storage, s3, storage_version, storage_version_4, incremental_reprocessing, chunk_compaction_concurrency, concurrency_limit
 ---
 
 # PowerSync Service
@@ -215,6 +215,18 @@ replication:
     - type: postgresql
       uri: !env PS_DATA_SOURCE_URI
       snapshot_socket_timeout: 120
+```
+
+#### Postgres: Slot Failover
+
+If the user needs Postgres to sync PowerSync's logical replication slots to physical standbys, set `slot_failover: true` on the connection (default `false`, available since Service v1.29.0). It requires Postgres 17 or later with the cluster configured for logical replication failover (including `synchronized_standby_slots`). It only affects slots the Service creates after you enable it. If the source does not support it, replication fails with `PSYNC_S1147`; remove the option unless `synchronized_standby_slots` is configured.
+
+```yaml
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI
+      slot_failover: true
 ```
 
 #### S3 Object Storage
